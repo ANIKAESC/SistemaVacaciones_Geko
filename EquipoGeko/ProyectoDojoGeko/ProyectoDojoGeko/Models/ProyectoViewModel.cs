@@ -13,8 +13,7 @@ namespace ProyectoDojoGeko.Models
         public int IdProyecto { get; set; }
 
         [Required(ErrorMessage = "El nombre del proyecto es obligatorio.")]
-        [StringLength(100, MinimumLength = 5,
-            ErrorMessage = "El nombre del proyecto debe tener entre {2} y {1} caracteres.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "El nombre del proyecto debe tener entre {2} y {1} caracteres.")]
         [Column("Nombre")]
         public string Nombre { get; set; }
 
@@ -22,11 +21,11 @@ namespace ProyectoDojoGeko.Models
         [Column("Descripcion")]
         public string? Descripcion { get; set; }
 
-        
+        [Required(ErrorMessage = "El campo Fecha de inicio es requerido")]
         [Column("FechaInicio")]
         public DateTime? FechaInicio { get; set; }
 
-        
+        [Required(ErrorMessage = "El campo Estado es requerido")]
         [Column("FK_IdEstado")]
         public int FK_IdEstado { get; set; } 
 

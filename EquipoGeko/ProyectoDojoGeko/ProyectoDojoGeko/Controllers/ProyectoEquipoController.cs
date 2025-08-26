@@ -95,7 +95,11 @@ namespace ProyectoDojoGeko.Controllers
         [HttpPost]
         public async Task<IActionResult> EditarProyecto(ProyectoViewModel proyecto)
         {
-            if (!ModelState.IsValid) return View(proyecto);
+            if (!ModelState.IsValid)
+            {
+                await CargarEstadosEnViewBagAsync();
+                return View(proyecto);
+            }
 
             try
             {
@@ -108,6 +112,7 @@ namespace ProyectoDojoGeko.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", $"Error al editar el proyecto: {ex.Message}");
+                await CargarEstadosEnViewBagAsync();
                 return View(proyecto);
             }
         }
