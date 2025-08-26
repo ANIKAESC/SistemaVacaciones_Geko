@@ -97,7 +97,11 @@ namespace ProyectoDojoGeko.Controllers
         [HttpPost]
         public async Task<IActionResult> EditarProyecto(ProyectoViewModel proyecto)
         {
-            if (!ModelState.IsValid) return View(proyecto);
+            if (!ModelState.IsValid)
+            {
+                await CargarEstadosEnViewBagAsync();
+                return View(proyecto);
+            }
 
             try
             {
@@ -110,6 +114,7 @@ namespace ProyectoDojoGeko.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", $"Error al editar el proyecto: {ex.Message}");
+                await CargarEstadosEnViewBagAsync();
                 return View(proyecto);
             }
         }
@@ -133,7 +138,7 @@ namespace ProyectoDojoGeko.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult> Detalle(int id)
+        public async Task<ActionResult> DetalleProyecto(int id)
         {
             try
             {
@@ -153,7 +158,7 @@ namespace ProyectoDojoGeko.Controllers
 
 
                 await _bitacoraService.RegistrarBitacoraAsync("Vista DetalleProyecto", "Se accedió a la vista DetalleProyecto");
-                return View(nameof(Detalle), proyecto); 
+                return View(nameof(DetalleProyecto), proyecto); 
             }
             catch (Exception ex)
             {
