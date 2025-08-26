@@ -14,7 +14,7 @@
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">
-                <i class="fas fa-project-diagram"></i>
+                <i class="fas fa-file-alt"></i>
                 Detalle del Proyecto
             </h1>
             <p class="page-subtitle">
@@ -124,10 +124,10 @@
                 </div>
             </div>
         </div>
-
-        <!-- Footer -->
+        <hr />
+        <!-- Proyecto Footer -->
         <div class="proyecto-footer">
-            <a href="@Url.Action("Index", "Proyectos")" class="btn-secondary">
+            <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-secondary">
                 <i class="fas fa-list"></i>
                 Ver todos los proyectos
             </a>
@@ -143,5 +143,27 @@
 </div>
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/proyecto-detalle.css" />
+    <link rel="stylesheet" href="~/css/empleado-detalle.css" />
 }
+
+<style>
+    .page-header{
+        margin: 10px 30px;
+    }
+
+    .proyecto-card{
+        margin: 30px 30px;
+        padding: 2% 2%;
+        box-shadow: 0 1px 3px 0 rgba(0 0 0 / .1);
+        border-radius: 10px;
+    }
+
+    .proyecto-footer{
+        display: flex;
+        flex-flow: row-reverse;
+        background-color: #f9fafb;
+        border-radius: 10px;
+        margin-top:2%;
+        padding:40px  28px;
+    }
+</style>

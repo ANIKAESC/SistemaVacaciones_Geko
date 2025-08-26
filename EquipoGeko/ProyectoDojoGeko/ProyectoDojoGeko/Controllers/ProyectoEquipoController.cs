@@ -131,7 +131,7 @@ namespace ProyectoDojoGeko.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult> Detalle(int id)
+        public async Task<ActionResult> DetalleProyecto(int id)
         {
             try
             {
@@ -151,7 +151,7 @@ namespace ProyectoDojoGeko.Controllers
 
 
                 await _bitacoraService.RegistrarBitacoraAsync("Vista DetalleProyecto", "Se accedió a la vista DetalleProyecto");
-                return View(nameof(Detalle), proyecto); 
+                return View(nameof(DetalleProyecto), proyecto); 
             }
             catch (Exception ex)
             {

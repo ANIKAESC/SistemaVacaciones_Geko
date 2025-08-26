@@ -87,7 +87,6 @@
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-    background-color: var(--gray-200);
     align-content: space-around;
 }
 
