@@ -2178,9 +2178,9 @@ CREATE PROCEDURE sp_ListarProyectoPorId
     @IdProyecto INT
 AS
 BEGIN
-    SELECT * FROM Proyectos
-    WHERE IdProyecto = @IdProyecto;
+    SELECT * FROM Proyectos WHERE IdProyecto = @IdProyecto;
 END;
+GO
 
 -- Actualizar un proyecto
 CREATE PROCEDURE sp_ActualizarProyecto
@@ -2199,6 +2199,7 @@ BEGIN
         FK_IdEstado = @FK_IdEstado
     WHERE IdProyecto = @IdProyecto;
 END;
+GO
 
 
 -- --------------------- SPs para Equipos ---------------------

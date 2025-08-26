@@ -338,5 +338,55 @@ namespace ProyectoDojoGeko.Data
 
 
 
+        // Método para obtener solicitudes por equipo
+        public async Task<List<SolicitudEncabezadoViewModel>> ObtenerSolicitudesPorEquipoAsync(int idEquipo)
+        {
+            var solicitudes = new List<SolicitudEncabezadoViewModel>();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqlCommand("sp_ListarSolicitudesPorEquipo", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@IdEquipo", idEquipo);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            solicitudes.Add(_mapearSolicitud(reader));
+                        }
+                    }
+                }
+            }
+            return solicitudes;
+        }
+
+        public async Task<List<SolicitudEncabezadoViewModel>> ObtenerSolicitudEncabezadoAsync()
+        {
+            var solicitudes = new List<SolicitudEncabezadoViewModel>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                using var procedure = new SqlCommand("sp_ListarSolicitudEncabezado", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                await connection.OpenAsync();
+                using SqlDataReader reader = await procedure.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    solicitudes.Add(_mapearSolicitud(reader)); // Se añade la solicitudeEncabezado mapeada
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener los encabezados de las solicitudes", ex);
+            }
+
+            return solicitudes;
+        }
+
     }
 }

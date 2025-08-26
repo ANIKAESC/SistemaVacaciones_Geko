@@ -25,6 +25,7 @@ namespace ProyectoDojoGeko.Controllers
         private readonly IEstadoService _estadoService;
         private readonly ISolicitudConverter _solicitudeConverter;
         private readonly daoFeriados _daoFeriados;
+        private readonly daoEmpleadoEquipo _daoEmpleadoEquipo;
 
         /*=================================================   
 		==   Service: PdfSolicitudService               == 
@@ -44,6 +45,7 @@ namespace ProyectoDojoGeko.Controllers
             IEstadoService estadoService,
             ISolicitudConverter solicitudConverter,
             daoFeriados daoFeriados,
+            daoEmpleadoEquipo daoEmpleadoEquipo,
             IPdfSolicitudService pdfService)
         {
             _daoEmpleado = daoEmpleado;
@@ -53,6 +55,7 @@ namespace ProyectoDojoGeko.Controllers
             _estadoService = estadoService;
             _solicitudeConverter = solicitudConverter;
             _daoFeriados = daoFeriados;
+            _daoEmpleadoEquipo = daoEmpleadoEquipo;
             _pdfService = pdfService;
         }
 
@@ -398,25 +401,38 @@ namespace ProyectoDojoGeko.Controllers
 
             try
             {
-                var rolUsuario = HttpContext.Session.GetString("Rol");
-                if (rolUsuario == null) return RedirectToAction("Index", "Login"); // Si el usuario no está logeado se redirige al login
+                var rolesString = HttpContext.Session.GetString("Roles") ?? "";
+                if (string.IsNullOrEmpty(rolesString)) return RedirectToAction("Index", "Login");
 
-                var idAutorizador = HttpContext.Session.GetInt32("IdUsuario");
-                if (idAutorizador == null) return RedirectToAction("Index", "Login"); // Si el usuario no tiene Id se redirige al login
+                var userRoles = rolesString.Split(',').ToList();
 
-                if (rolUsuario == "TeamLider" || rolUsuario == "SubTeamLider")
+                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
+                if (idEmpleado == null) return RedirectToAction("Index", "Login");
+
+                if (userRoles.Contains("SuperAdministrador"))
                 {
-                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(idAutorizador); // Se obtienen las solicitudes pendientes de su equipo
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync();
                 }
-                else if (rolUsuario == "Autorizador" || rolUsuario == "SuperAdministrador")
+                else if (userRoles.Any(r => new[] { "TeamLider", "SubTeamLider", "Autorizador" }.Contains(r)))
                 {
-                    Console.WriteLine("ROL: " + rolUsuario);
-                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Se obtienen las solicitudes pendientes sin filtrar
+                    var equipos = await _daoEmpleadoEquipo.ObtenerEquiposPorEmpleadoAsync(idEmpleado.Value);
+                    var solicitudesIds = new HashSet<int>();
+
+                    foreach (var equipo in equipos)
+                    {
+                        var solicitudesEquipo = await _daoSolicitud.ObtenerSolicitudesPorEquipoAsync(equipo.IdEquipo);
+                        foreach (var solicitud in solicitudesEquipo)
+                        {
+                            if (solicitudesIds.Add(solicitud.IdSolicitud))
+                            {
+                                solicitudes.Add(solicitud);
+                            }
+                        }
+                    }
                 }
 
                 await _bitacoraService.RegistrarBitacoraAsync("Vista Autorizar", "Obtener lista detalles de solicitudes");
                 return View(solicitudes);
-
             }
             catch (Exception ex)
             {

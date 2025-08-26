@@ -9,11 +9,13 @@ namespace ProyectoDojoGeko.Controllers
     {
         private readonly daoProyectoEquipoWSAsync _daoProyectoEquipo;
         private readonly IBitacoraService _bitacoraService;
+        private readonly daoEmpleadoEquipoWSAsync _daoEmpleadoEquipo;
 
-        public ProyectoEquipoController(daoProyectoEquipoWSAsync daoProyectoEquipo, IBitacoraService bitacoraService)
+        public ProyectoEquipoController(daoProyectoEquipoWSAsync daoProyectoEquipo, IBitacoraService bitacoraService, daoEmpleadoEquipoWSAsync daoEmpleadoEquipo)
         {
             _daoProyectoEquipo = daoProyectoEquipo;
             _bitacoraService = bitacoraService;
+            _daoEmpleadoEquipo = daoEmpleadoEquipo;
         }
 
 
@@ -244,6 +246,38 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GestionarMiembros(int id)
+        {
+            var equipo = await _daoProyectoEquipo.ObtenerEquipoPorIdAsync(id);
+            if (equipo == null) return NotFound();
+
+            var viewModel = new GestionarMiembrosViewModel
+            {
+                Equipo = equipo,
+                Miembros = await _daoEmpleadoEquipo.ObtenerMiembrosPorEquipoAsync(id)
+            };
+
+            await _bitacoraService.RegistrarBitacoraAsync("Vista GestionarMiembros", $"Se accedió a la gestión de miembros del equipo {equipo.Nombre}");
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AsignarMiembro(int idEquipo, int idEmpleado, int idRol)
+        {
+            await _daoEmpleadoEquipo.AsignarEmpleadoAEquipoAsync(idEmpleado, idEquipo, idRol);
+            await _bitacoraService.RegistrarBitacoraAsync("AsignarMiembro", $"Se asignó el empleado {idEmpleado} al equipo {idEquipo} con el rol {idRol}");
+            return RedirectToAction("GestionarMiembros", new { id = idEquipo });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoverMiembro(int idEquipo, int idEmpleado)
+        {
+            await _daoEmpleadoEquipo.RemoverEmpleadoDeEquipoAsync(idEmpleado, idEquipo);
+            await _bitacoraService.RegistrarBitacoraAsync("RemoverMiembro", $"Se removió el empleado {idEmpleado} del equipo {idEquipo}");
+            return RedirectToAction("GestionarMiembros", new { id = idEquipo });
+        }
+
         #endregion
 
 
@@ -290,6 +324,21 @@ namespace ProyectoDojoGeko.Controllers
     {
         public int IdProyecto { get; set; }
         public int IdEquipo { get; set; }
+    }
+
+    public class GestionarMiembrosViewModel
+    {
+        public EquipoViewModel Equipo { get; set; }
+        public IEnumerable<MiembroViewModel> Miembros { get; set; }
+    }
+
+    public class MiembroViewModel
+    {
+        public int IdEmpleado { get; set; }
+        public string Nombre { get; set; }
+        public string Apellido { get; set; }
+        public int IdRol { get; set; }
+        public string Rol { get; set; }
     }
 
     #endregion
