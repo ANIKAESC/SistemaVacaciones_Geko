@@ -109,7 +109,7 @@ namespace ProyectoDojoGeko.Models
 
         [Range(0.01, 100000.00, ErrorMessage = "El campo {0} debe ser un número positivo válido.")]
         [Column("Salario", TypeName = "decimal(10, 2)")]
-        public decimal Salario { get; set; }
+        public decimal Salario { get; set; } = 0.00M; // En caso de que no se proporcione un valor, se establece en 0.00M
 
         [Column("Foto")]
         public string? Foto { get; set; }

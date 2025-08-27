@@ -343,12 +343,11 @@
                                 <i class="fas fa-money-bill-wave"></i>
                             </div>
                             <span>Salario</span>
-                            <span class="required">*</span>
                         </label>
                         <div class="input-container">
                             <div class="input-with-prefix">
                                 <span class="input-prefix">Q</span>
-                                <input asp-for="Salario" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                <input asp-for="Salario" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" value="0.00" />
                             </div>
                             <span asp-validation-for="Salario" class="validation-message"></span>
                         </div>

@@ -25,7 +25,7 @@ namespace ProyectoDojoGeko.Controllers
         private readonly IEstadoService _estadoService;
         private readonly ISolicitudConverter _solicitudeConverter;
         private readonly daoFeriados _daoFeriados;
-        private readonly daoEmpleadoEquipo _daoEmpleadoEquipo;
+        //private readonly daoEmpleadoEquipo _daoEmpleadoEquipo;
 
         /*=================================================   
 		==   Service: PdfSolicitudService               == 
@@ -45,7 +45,7 @@ namespace ProyectoDojoGeko.Controllers
             IEstadoService estadoService,
             ISolicitudConverter solicitudConverter,
             daoFeriados daoFeriados,
-            daoEmpleadoEquipo daoEmpleadoEquipo,
+            //daoEmpleadoEquipo daoEmpleadoEquipo,
             IPdfSolicitudService pdfService)
         {
             _daoEmpleado = daoEmpleado;
@@ -55,7 +55,7 @@ namespace ProyectoDojoGeko.Controllers
             _estadoService = estadoService;
             _solicitudeConverter = solicitudConverter;
             _daoFeriados = daoFeriados;
-            _daoEmpleadoEquipo = daoEmpleadoEquipo;
+            //_daoEmpleadoEquipo = daoEmpleadoEquipo;
             _pdfService = pdfService;
         }
 
@@ -392,7 +392,7 @@ namespace ProyectoDojoGeko.Controllers
 
         // Vista principal para autorizar solicitudes
         // GET: SolicitudesController/Solicitudes
-        [HttpGet]
+        /*[HttpGet]
         [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider")]
         public async Task<ActionResult> Autorizar()
         {
@@ -440,7 +440,44 @@ namespace ProyectoDojoGeko.Controllers
                 await RegistrarError("autorizar solicitudes", ex);
                 return View(solicitudes);
             }
+        }*/
+        [HttpGet]
+        [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider")]
+        public async Task<ActionResult> Autorizar()
+        {
+            await _bitacoraService.RegistrarBitacoraAsync("Vista Autorizar", "Acceso a la vista Autorizar exitosamente");
+            var solicitudes = new List<SolicitudEncabezadoViewModel>();
+
+            try
+            {
+                var rolUsuario = HttpContext.Session.GetString("Rol");
+                if (rolUsuario == null) return RedirectToAction("Index", "Login"); // Si el usuario no está logeado se redirige al login
+
+                var idAutorizador = HttpContext.Session.GetInt32("IdUsuario");
+                if (idAutorizador == null) return RedirectToAction("Index", "Login"); // Si el usuario no tiene Id se redirige al login
+
+                if (rolUsuario == "TeamLider" || rolUsuario == "SubTeamLider")
+                {
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(idAutorizador); // Se obtienen las solicitudes pendientes de su equipo
+                }
+                else if (rolUsuario == "Autorizador" || rolUsuario == "SuperAdministrador")
+                {
+                    Console.WriteLine("ROL: " + rolUsuario);
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Se obtienen las solicitudes pendientes sin filtrar
+                }
+
+                await _bitacoraService.RegistrarBitacoraAsync("Vista Autorizar", "Obtener lista detalles de solicitudes");
+                return View(solicitudes);
+
+            }
+            catch (Exception ex)
+            {
+                // Log the error and redirect to the Index action (hace falta DI)***
+                await RegistrarError("autorizar solicitudes", ex);
+                return View(solicitudes);
+            }
         }
+
 
         /*=================================================   
 		==   AUTORIZAR SOLICITUD CON RESTRICCIÓN PDF   == 

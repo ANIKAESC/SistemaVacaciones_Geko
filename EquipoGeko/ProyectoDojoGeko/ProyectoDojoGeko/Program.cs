@@ -116,7 +116,7 @@ else
 
 // Middleware general
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication(); // Autenticación

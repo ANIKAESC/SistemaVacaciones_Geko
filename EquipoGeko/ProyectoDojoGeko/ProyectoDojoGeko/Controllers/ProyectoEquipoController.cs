@@ -251,7 +251,7 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
 
-        [HttpGet]
+        /*[HttpGet]
         public async Task<IActionResult> GestionarMiembros(int id)
         {
             var equipo = await _daoProyectoEquipo.ObtenerEquipoPorIdAsync(id);
@@ -265,7 +265,7 @@ namespace ProyectoDojoGeko.Controllers
 
             await _bitacoraService.RegistrarBitacoraAsync("Vista GestionarMiembros", $"Se accedió a la gestión de miembros del equipo {equipo.Nombre}");
             return View(viewModel);
-        }
+        }*/
 
         [HttpPost]
         public async Task<IActionResult> AsignarMiembro(int idEquipo, int idEmpleado, int idRol)

@@ -60,9 +60,8 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
         [StringLength(50)]
         public string CorreoInstitucional { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [Range(0.01, 100000.00, ErrorMessage = "El campo {0} debe ser un número positivo válido.")]
-        public decimal Salario { get; set; }
+        public decimal Salario { get; set; } = 0.00M; // En caso de que no se proporcione un valor, se establece en 0.00M
 
         [Required(ErrorMessage = "La fecha de ingreso es obligatoria.")]
         [DataType(DataType.DateTime)]

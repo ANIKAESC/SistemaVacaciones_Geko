@@ -362,7 +362,7 @@ namespace ProyectoDojoGeko.Data
             return solicitudes;
         }
 
-        public async Task<List<SolicitudEncabezadoViewModel>> ObtenerSolicitudEncabezadoAsync()
+        /*public async Task<List<SolicitudEncabezadoViewModel>> ObtenerSolicitudEncabezadoAsync()
         {
             var solicitudes = new List<SolicitudEncabezadoViewModel>();
             try
@@ -386,7 +386,7 @@ namespace ProyectoDojoGeko.Data
             }
 
             return solicitudes;
-        }
+        }*/
 
     }
 }
