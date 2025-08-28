@@ -1,3 +1,4 @@
+@*
 @model ProyectoDojoGeko.Models.EquipoViewModel
 @{
     ViewData["Title"] = "Detalle del Equipo";
@@ -19,7 +20,7 @@
             </a>
             <a href="@Url.Action("EditarEquipo", "ProyectoEquipo", new { id = Model.IdEquipo })" class="btn-edit">
                 <i class="fas fa-edit"></i>
-                <span>Editar</span>
+                <span>Asigna o elimina empleados para este equipo</span>
             </a>
         </div>
     </div>
@@ -76,7 +77,6 @@
                                     <h4>@empleado.NombresEmpleado</h4>
                                     <p>@empleado.Puesto</p>
                                 </div>
-                                <!-- Opcional: acciones sobre el empleado -->
                             </div>
                         }
                     }
@@ -85,93 +85,10 @@
                         <div class="empty-state">
                             <i class="fas fa-info-circle"></i>
                             <p>No hay empleados asignados a este equipo</p>
-                            <button class="btn-edit" data-bs-toggle="modal" data-bs-target="#modalAsignarEmpleados">
-                                <i class="fas fa-users"></i>
-                                <span>Asignar Empleados</span>
-                            </button>
                         </div>
                     }
                 </div>
-
-                <!-- Modal para asignar empleados -->
-                <div class="modal fade" id="modalAsignarEmpleados" tabindex="-1" aria-labelledby="modalAsignarEmpleadosLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="modalAsignarEmpleadosLabel">Asignar Empleados al Equipo</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                @if (ViewBag.EmpleadosNoAsignados != null && ((List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados).Count > 0)
-                                {
-                                    <form id="formAsignarEmpleados">
-                                        <input type="hidden" name="idEquipo" value="@Model.IdEquipo" />
-                                        <div class="table-responsive">
-                                            <table class="table table-striped">
-                                                <thead>
-                                                    <tr>
-                                                        <th></th>
-                                                        <th>Nombre</th>
-                                                        <th>Puesto</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach (var emp in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
-                                                    {
-                                                        <tr>
-                                                            <td>
-                                                                <input type="checkbox" name="empleadosSeleccionados" value="@emp.IdEmpleado" />
-                                                            </td>
-                                                            <td>@emp.NombresEmpleado @emp.ApellidosEmpleado</td>
-                                                            <td>@emp.Puesto</td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-info">No hay empleados disponibles para asignar.</div>
-                                }
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-primary" onclick="asignarEmpleados()">Asignar Seleccionados</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <script>
-                    function asignarEmpleados() {
-                        var form = document.getElementById('formAsignarEmpleados');
-                        var formData = new FormData(form);
-                        var empleados = [];
-                        formData.getAll('empleadosSeleccionados').forEach(function (id) {
-                            empleados.push(parseInt(id));
-                        });
-                        if (empleados.length === 0) {
-                            alert('Selecciona al menos un empleado.');
-                            return;
-                        }
-                        fetch('@Url.Action("AsignarMiembro", "ProyectoEquipo")', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ idEquipo: @Model.IdEquipo, empleados: empleados })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                location.reload();
-                            } else {
-                                alert('Error al asignar empleados: ' + (data.message || '')); 
-                            }
-                        })
-                        .catch(error => alert('Error: ' + error));
-                    }
-                </script>
+                
             </div>
         </div>
     </div>
@@ -179,3 +96,131 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/empleado-detalle.css" />
 }
+*@
+
+
+
+@model ProyectoDojoGeko.Models.EquipoViewModel
+@{
+    ViewData["Title"] = "Detalle del Equipo";
+    Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
+}
+<div class="proyecto-detalle-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-file-alt"></i>
+                Detalle del Equipo
+            </h1>
+            <p class="page-subtitle">Información completa del equipo y empleados asignados</p>
+        </div>
+        <div class="header-actions">
+            <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver</span>
+            </a>
+            <a href="@Url.Action("EditarEquipo", "ProyectoEquipo", new { id = Model.IdEquipo })" class="btn-edit">
+                <i class="fas fa-edit"></i>
+                <span>Asigna o elimina empleados para este equipo</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjeta principal -->
+    <div class="proyecto-card">
+        
+        <!-- Contenido -->
+        <div class="proyecto-content">
+            <div class="info-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-info-circle"></i>
+                        Información General
+                    </h3>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-align-left"></i>
+                            <h3>@Model.Nombre</h3>
+                        </div>
+                        <div class="info-value">
+                            ID: @Model.IdEquipo
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="fas fa-align-left"></i>
+                            Descripción
+                        </div>
+                        <div class="info-value">
+                            @(string.IsNullOrEmpty(Model.Descripcion) ? "Sin descripción" : Model.Descripcion)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipos asignados -->
+            <div class="info-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-users"></i>
+                        Equipos Asignados
+                    </h3>
+                </div>
+                <div class="equipos-list">
+                    @if (ViewBag.Empleados != null && ((List<EmpleadoViewModel>)ViewBag.Empleados).Count > 0)
+                    {
+                        foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.Empleados)
+                        {
+                            <div class="empleado-item">
+                                <div class="empleado-icon">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="empleado-info">
+                                    <h4>@empleado.NombresEmpleado</h4>
+                                    <p>@empleado.Puesto</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No hay empleados asignados a este equipo</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <hr />
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/empleado-detalle.css" />
+}
+
+<style>
+    .page-header{
+        margin: 10px 30px;
+    }
+
+    .proyecto-card {
+        margin: 30px 30px;
+        padding: 2% 2%;
+        box-shadow: 0 1px 3px 0 rgba(0 0 0 / .1);
+        border-radius: 10px;
+    }
+
+    .proyecto-footer {
+        display: flex;
+        flex-flow: row-reverse;
+        background-color: #f9fafb;
+        border-radius: 10px;
+        margin-top:2%;
+        padding:40px  28px;
+    }
+</style>

@@ -1,77 +1,202 @@
 @model ProyectoDojoGeko.Models.EquipoViewModel
 @{
-    ViewData["Title"] = "Editar Equipo";
+    ViewData["Title"] = "Detalle del Equipo";
     Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
 }
-<div class="equipo-form-container">
+<div class="equipo-detalle-container">
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">
-                <i class="fas fa-edit"></i>
-                Editar Equipo
+                <i class="fas fa-users"></i>
+                Detalle del Equipo
             </h1>
-            <p class="page-subtitle">Actualice los datos del equipo</p>
+            <p class="page-subtitle">Información completa del equipo y empleados asignados</p>
         </div>
         <div class="header-actions">
             <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-back">
                 <i class="fas fa-arrow-left"></i>
                 <span>Volver</span>
             </a>
+            <a href="@Url.Action("EditarEquipo", "ProyectoEquipo", new { id = Model.IdEquipo })" class="btn-edit">
+                <i class="fas fa-edit"></i>
+                <span>Editar</span>
+            </a>
         </div>
     </div>
-    <div class="form-card">
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-        }
-        <form asp-action="EditarEquipo" method="post">
-            @if (Model.IdEquipo != 0)
-            {
-                <input type="hidden" asp-for="IdEquipo" />
-            }
-            <div class="form-section">
-                <div class="form-group">
-                    <label asp-for="Nombre" class="form-label">
-                        <i class="fas fa-tag"></i>
-                        <span>Nombre</span>
-                        <span class="required">*</span>
-                    </label>
-                    <div class="input-container">
-                        <input asp-for="Nombre" class="form-control" placeholder="Nombre del equipo" />
-                        <span asp-validation-for="Nombre" class="validation-message"></span>
+    <div class="equipo-card">
+
+        <form asp-action="EditarEquipo" asp-controller="ProyectoEquipo" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="equipo-header mb-4">
+
+                <div class="info-section">
+                    <div class="section-header">
+                        <h3>
+                            <i class="fas fa-info-circle"></i>
+                            Información General
+                        </h3>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label asp-for="Descripcion" class="form-label">
-                        <i class="fas fa-align-left"></i>
-                        <span>Descripción</span>
-                    </label>
-                    <div class="input-container">
-                        <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripción del equipo"></textarea>
-                        <span asp-validation-for="Descripcion" class="validation-message"></span>
+                    <div class="info-grid">
+
+                        <input type="hidden" asp-for="IdEquipo" />
+
+                        <div class="info-item">
+                            <div class="equipo-icon me-3">
+                                <i class="fas fa-users fa-2x text-primary"></i>
+                            </div>
+                            <div class="w-100">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Nombre" class="form-label fw-bold">Nombre del Equipo</label>
+                                    <input asp-for="Nombre" class="form-control" required />
+                                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                                </div>
+                                <div class="text-muted">ID: @Model.IdEquipo</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-align-left"></i>
+                                Descripción
+                            </div>
+                            <div class="info-value">
+                                <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Agrega una descripción para el equipo"></textarea>
+                                <span asp-validation-for="Descripcion" class="text-danger"></span>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="header-actions">
+                        <a href="@Url.Action("DetalleEquipo", new { id = Model.IdEquipo })" class="btn-back">
+                            <i class="fas fa-times me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Guardar Cambios
+                        </button>
+                    </div>
+
                 </div>
-            </div>
-            <div class="form-actions">
-                <button type="reset" class="btn-reset">
-                    <i class="fas fa-undo"></i>
-                    Limpiar
-                </button>
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-save"></i>
-                    Actualizar Equipo
-                </button>
+
+                
+
             </div>
         </form>
+
+        <div class="equipo-content">
+            <!-- Empleados asignados -->
+            <div class="info-section">
+                <div class="section-header d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-friends me-2"></i>
+                        Empleados del Equipo
+                    </h3>
+                    @if (ViewBag.Empleados != null && ((List<EmpleadoViewModel>)ViewBag.Empleados).Count > 0)
+                    {
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAsignarEmpleados">
+                            <i class="fas fa-plus me-1"></i>Agregar Empleados
+                        </button>
+                    }
+                </div>
+                
+                @if (ViewBag.Empleados != null && ((List<EmpleadoViewModel>)ViewBag.Empleados).Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Puesto</th>
+                                    <th>Email</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ int contador = 1; }
+                                @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.Empleados)
+                                {
+                                    <tr>
+                                        <td>@(contador++)</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-3">
+                                                    <div class="avatar-title bg-soft-primary text-primary rounded-circle">
+                                                        @empleado.NombresEmpleado.Substring(0, 1)@empleado.ApellidosEmpleado.Substring(0, 1)
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">@empleado.NombresEmpleado @empleado.ApellidosEmpleado</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>@empleado.Puesto</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmarEliminarEmpleado(@empleado.IdEmpleado, '@empleado.NombresEmpleado + @empleado.ApellidosEmpleado')">
+                                                <i class="fas fa-user-minus"></i> Quitar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 border rounded">
+                        <div class="mb-3">
+                            <i class="fas fa-users fa-3x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted mb-3">No hay empleados asignados</h5>
+                        <p class="text-muted mb-4">Agrega empleados al equipo para comenzar</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAsignarEmpleados">
+                            <i class="fas fa-plus me-2"></i>Asignar Empleados
+                        </button>
+                    </div>
+                }
+                </div>
+
+            </div>
+        </div>
     </div>
 </div>
+
 @section Styles {
-    <link rel="stylesheet" href="~/css/crearEquipo.css" />
+    <link rel="stylesheet" href="~/css/empleado-detalle.css" />
+    <style>
+        .avatar-sm {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .avatar-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .table th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        .equipo-card {
+            background: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
 }
+
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 }

@@ -240,6 +240,16 @@ namespace ProyectoDojoGeko.Controllers
         {
             var equipo = await _daoProyectoEquipo.ObtenerEquipoPorIdAsync(id);
             if (equipo == null) return NotFound();
+
+            // Obtener empleados asignados a este equipo
+            var empleadosAsignados = await _daoEmpleadoEquipo.ListarEmpleadosPorEquipoAsync(id);
+            ViewBag.Empleados = empleadosAsignados;
+
+            // Obtener todos los empleados y filtrar los NO asignados
+            var todosEmpleados = await _daoEmpleado.ObtenerEmpleadoAsync();
+            var empleadosNoAsignados = todosEmpleados.Where(e => !empleadosAsignados.Any(a => a.IdEmpleado == e.IdEmpleado)).ToList();
+            ViewBag.EmpleadosNoAsignados = empleadosNoAsignados;
+
             return View(equipo);
         }
 
