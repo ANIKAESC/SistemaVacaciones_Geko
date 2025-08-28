@@ -1,21 +1,25 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ProyectoDojoGeko.Data;
+using ProyectoDojoGeko.Filters;
 using ProyectoDojoGeko.Models;
 using ProyectoDojoGeko.Services;
 
 namespace ProyectoDojoGeko.Controllers
 {
+    [AuthorizeSession]
     public class ProyectoEquipoController : Controller
     {
         private readonly daoProyectoEquipoWSAsync _daoProyectoEquipo;
         private readonly IBitacoraService _bitacoraService;
         private readonly daoEmpleadoEquipoWSAsync _daoEmpleadoEquipo;
+        private readonly daoEmpleadoWSAsync _daoEmpleado;
 
-        public ProyectoEquipoController(daoProyectoEquipoWSAsync daoProyectoEquipo, IBitacoraService bitacoraService, daoEmpleadoEquipoWSAsync daoEmpleadoEquipo)
+        public ProyectoEquipoController(daoProyectoEquipoWSAsync daoProyectoEquipo, IBitacoraService bitacoraService, daoEmpleadoEquipoWSAsync daoEmpleadoEquipo, daoEmpleadoWSAsync daoEmpleado)
         {
             _daoProyectoEquipo = daoProyectoEquipo;
             _bitacoraService = bitacoraService;
             _daoEmpleadoEquipo = daoEmpleadoEquipo;
+            _daoEmpleado = daoEmpleado;
         }
 
 
@@ -136,7 +140,6 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
 
-
         [HttpGet]
         public async Task<ActionResult> DetalleProyecto(int id)
         {
@@ -156,9 +159,12 @@ namespace ProyectoDojoGeko.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Obtener equipos asociados al proyecto
+                var equipos = await _daoProyectoEquipo.ObtenerEquiposPorProyectoAsync(id);
+                ViewBag.Equipos = equipos; // Puedes usar List<EquipoViewModel> o similar
 
                 await _bitacoraService.RegistrarBitacoraAsync("Vista DetalleProyecto", "Se accedió a la vista DetalleProyecto");
-                return View(nameof(DetalleProyecto), proyecto); 
+                return View(nameof(DetalleProyecto), proyecto);
             }
             catch (Exception ex)
             {
@@ -168,12 +174,12 @@ namespace ProyectoDojoGeko.Controllers
         }
 
 
-#endregion
+        #endregion
 
 
         // ========================== EQUIPOS ==========================
 
-    #region EQUIPOS
+        #region EQUIPOS
 
         [HttpGet]
         public async Task<IActionResult> Equipos()
@@ -190,24 +196,41 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        public IActionResult CrearEquipo()
+        public IActionResult CrearEquipo(int? id)
         {
+            // Si viene desde el detalle de un HUB, se pasa el id del proyecto/hub
+            if (id.HasValue)
+            {
+                ViewBag.IdProyecto = id.Value;
+            }
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> CrearEquipo(EquipoViewModel equipo)
+        public async Task<IActionResult> CrearEquipo(EquipoViewModel equipo, int? IdProyecto)
         {
-            if (!ModelState.IsValid) return View(equipo);
+            if (!ModelState.IsValid)
+            {
+                if (IdProyecto.HasValue)
+                    ViewBag.IdProyecto = IdProyecto.Value;
+                return View(equipo);
+            }
 
             try
             {
-                await _daoProyectoEquipo.InsertarEquipoAsync(equipo);
-                return RedirectToAction("Equipos");
+                // Insertar el equipo y asociarlo al proyecto si corresponde
+                var nuevoEquipoId = await _daoProyectoEquipo.InsertarEquipoAsync(equipo);
+                if (IdProyecto.HasValue)
+                {
+                    await _daoProyectoEquipo.AsignarEquipoAProyectoAsync(IdProyecto.Value, nuevoEquipoId);
+                }
+                return RedirectToAction("DetalleProyecto", new { id = IdProyecto });
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", $"Error al crear el equipo: {ex.Message}");
+                if (IdProyecto.HasValue)
+                    ViewBag.IdProyecto = IdProyecto.Value;
                 return View(equipo);
             }
         }
@@ -218,6 +241,34 @@ namespace ProyectoDojoGeko.Controllers
             var equipo = await _daoProyectoEquipo.ObtenerEquipoPorIdAsync(id);
             if (equipo == null) return NotFound();
             return View(equipo);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DetalleEquipo(int id)
+        {
+            if (id <= 0)
+            {
+                TempData["ErrorMessage"] = "ID de equipo inválido.";
+                return RedirectToAction("Equipos");
+            }
+
+            var equipo = await _daoProyectoEquipo.ObtenerEquipoPorIdAsync(id);
+            if (equipo == null)
+            {
+                TempData["ErrorMessage"] = "Equipo no encontrado.";
+                return RedirectToAction("Equipos");
+            }
+
+            // Obtener empleados asignados a este equipo
+            var empleadosAsignados = await _daoEmpleadoEquipo.ListarEmpleadosPorEquipoAsync(id);
+            ViewBag.Empleados = empleadosAsignados;
+
+            // Obtener todos los empleados y filtrar los NO asignados
+            var todosEmpleados = await _daoEmpleado.ObtenerEmpleadoAsync();
+            var empleadosNoAsignados = todosEmpleados.Where(e => !empleadosAsignados.Any(a => a.IdEmpleado == e.IdEmpleado)).ToList();
+            ViewBag.EmpleadosNoAsignados = empleadosNoAsignados;
+
+            return View("DetalleEquipo", equipo);
         }
 
         [HttpPost]

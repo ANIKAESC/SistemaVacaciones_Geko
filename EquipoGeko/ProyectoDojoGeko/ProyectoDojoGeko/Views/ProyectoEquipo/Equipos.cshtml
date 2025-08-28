@@ -1,0 +1,77 @@
+@model IEnumerable<ProyectoDojoGeko.Models.EquipoViewModel>
+@{
+    ViewData["Title"] = "Equipos";
+    Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
+}
+<div class="equipo-index-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-users"></i>
+                Equipos
+            </h1>
+            <p class="page-subtitle">Listado de todos los equipos registrados</p>
+        </div>
+        <div class="header-actions">
+            <a href="@Url.Action("CrearEquipo", "ProyectoEquipo")" class="btn-primary">
+                <i class="fas fa-plus"></i>
+                <span>Nuevo Equipo</span>
+            </a>
+        </div>
+    </div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="equiposTable">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var equipo in Model)
+                        {
+                            <tr>
+                                <td>@equipo.Nombre</td>
+                                <td>@(equipo.Descripcion ?? "Sin descripción")</td>
+                                <td class="action-buttons">
+                                    <a href="@Url.Action("EditarEquipo", "ProyectoEquipo", new { id = equipo.IdEquipo })" class="btn-action btn-edit" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="@Url.Action("EliminarEquipo", "ProyectoEquipo", new { id = equipo.IdEquipo })" class="btn-action btn-delete" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/crearEquipo.css" />
+}
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#equiposTable').DataTable({
+                responsive: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json'
+                }
+            });
+        });
+    </script>
+}

@@ -2224,6 +2224,15 @@ BEGIN
 END;
 GO
 
+-- Listar equipos por Id
+CREATE PROCEDURE sp_ObtenerEquipoPorId
+	@IdEquipo INT
+AS
+BEGIN
+    SELECT * FROM Equipos WHERE IdEquipo = @IdEquipo;
+END;
+GO
+
 -- --------------------- SPs para EmpleadosEquipo  ---------------------
 
 -- Asignar empleado a equipo con un rol existente
@@ -2295,7 +2304,7 @@ GO
 
 -- Inserciones de prueba para la tabla Empresas
 INSERT INTO Empresas (Nombre, Descripcion, Codigo, FK_IdEstado)
-VALUES ('DigitalGeko, S.A.', 'Empresa de soluciones tecnológicas y desarrollo de software.', 'DG001', 1);
+VALUES ('DigitalGeko Corps, S.A.', 'Empresa de soluciones tecnológicas y desarrollo de software.', 'DG001', 1);
 GO
 
 -- Inserciones de prueba para la tabla Sistemas
