@@ -1,6 +1,6 @@
-﻿@model IEnumerable<ProyectoDojoGeko.Models.ProyectoViewModel>
+@model IEnumerable<ProyectoDojoGeko.Models.ProyectoViewModel>
 @{
-	ViewData["Title"] = "Gestión de Proyectos - GEKO Sistemas";
+	ViewData["Title"] = "Gestión de HUBS - GEKO Sistemas";
 	Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
 
 	var rolesString = Context.Session.GetString("Roles") ?? "";
@@ -16,10 +16,10 @@
 		<div class="header-content">
 			<h1 class="page-title">
 				<i class="fas fa-project-diagram"></i>
-				Proyectos
+				HUBS
 			</h1>
 			<p class="page-subtitle">
-				Listado de todos los proyectos registrados
+				Listado de todos los HUBS registrados
 			</p>
 		</div>
 		<div class="header-actions">
@@ -27,7 +27,7 @@
 			{
 				<a href="@Url.Action("CrearProyecto", "ProyectoEquipo")" class="btn-primary">
 					<i class="fas fa-plus"></i>
-					<span>Nuevo Proyecto</span>
+					<span>Nuevo HUB</span>
 				</a>
 			}
 		</div>
@@ -43,11 +43,11 @@
 		<div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 	}
 
-	<!-- Tabla de proyectos -->
+	<!-- Tabla de hubs -->
 	<div class="card">
 		<div class="card-body">
 			<div class="table-responsive">
-				<table class="table table-hover" id="proyectosTable">
+				<table class="table table-hover" id="hubsTable">
 					<thead>
 						<tr>
 							<th>Nombre</th>
@@ -57,7 +57,7 @@
 							<th class ="estado">Acciones</th>
 						</tr>
 					</thead>
-					<tbody id="proyectosTbody" >
+					<tbody id="hubsTbody" >
 						@foreach (var proyecto in Model)
 						{
 							<tr>
@@ -96,7 +96,7 @@
 	<!--  Paginación  -->
 	<div class="pagination-container">
 		<div class="pagination-info">
-			Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> proyectos
+			Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> hubs
 		</div>
 		<div class="pagination-controls">
 			<button id="prev-page" class="pagination-btn" disabled>

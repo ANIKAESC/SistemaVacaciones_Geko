@@ -1,0 +1,62 @@
+@model ProyectoDojoGeko.Models.EquipoViewModel
+@{
+    ViewData["Title"] = "Eliminar Equipo";
+    Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
+}
+<div class="equipo-form-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-trash"></i>
+                Eliminar Equipo
+            </h1>
+            <p class="page-subtitle">¿Está seguro que desea eliminar este equipo?</p>
+        </div>
+        <div class="header-actions">
+            <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver</span>
+            </a>
+        </div>
+    </div>
+    <div class="form-card">
+        <form asp-action="EliminarEquipo" method="post">
+            <input type="hidden" asp-for="IdEquipo" />
+            <div class="form-section">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-tag"></i>
+                        <span>Nombre</span>
+                    </label>
+                    <div class="input-container">
+                        <input asp-for="Nombre" class="form-control" readonly />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        <span>Descripción</span>
+                    </label>
+                    <div class="input-container">
+                        <textarea asp-for="Descripcion" class="form-control" rows="3" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit btn-danger">
+                    <i class="fas fa-trash"></i>
+                    Eliminar Equipo
+                </button>
+                <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/crearEquipo.css" />
+}
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

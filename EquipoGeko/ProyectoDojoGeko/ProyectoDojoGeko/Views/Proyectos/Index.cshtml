@@ -1,6 +1,6 @@
-﻿@model IEnumerable<ProyectoDojoGeko.Models.ProyectoViewModel>
+@model IEnumerable<ProyectoDojoGeko.Models.ProyectoViewModel>
 @{
-    ViewData["Title"] = "Gestión de Proyectos - GEKO Sistemas";
+    ViewData["Title"] = "Gestión de HUBS - GEKO Sistemas";
     Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
 
     var rolesString = Context.Session.GetString("Roles") ?? "";
@@ -15,18 +15,18 @@
         <div class="header-content">
             <h1 class="page-title">
                 <i class="fas fa-project-diagram"></i>
-                Proyectos
+                HUBS
             </h1>
             <p class="page-subtitle">
-                Listado de todos los proyectos registrados
+                Listado de todos los HUBS registrados
             </p>
         </div>
         <div class="header-actions">
             @if (puedeCrear)
             {
-                <a href="@Url.Action("Crear", "Proyectos")" class="btn-primary">
+                <a href="@Url.Action("Crear", "HUBS")" class="btn-primary">
                     <i class="fas fa-plus"></i>
-                    <span>Nuevo Proyecto</span>
+                    <span>Nuevo HUB</span>
                 </a>
             }
         </div>
@@ -42,11 +42,11 @@
         <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
     }
 
-    <!-- Tabla de proyectos -->
+    <!-- Tabla de hubs -->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover" id="proyectosTable">
+                <table class="table table-hover" id="hubsTable">
                     <thead>
                         <tr>
                             <th>Nombre</th>
@@ -69,13 +69,13 @@
                                     </span>
                                 </td>
                                 <td class="action-buttons">
-                                    <a href="@Url.Action("Detalle", "Proyectos", new { id = proyecto.IdProyecto })"
+                                    <a href="@Url.Action("Detalle", "HUBS", new { id = proyecto.IdProyecto })"
                                        class="btn-action btn-view" title="Ver detalles">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     @if (puedeCrear)
                                     {
-                                        <a href="@Url.Action("Editar", "Proyectos", new { id = proyecto.IdProyecto })"
+                                        <a href="@Url.Action("Editar", "HUBS", new { id = proyecto.IdProyecto })"
                                            class="btn-action btn-edit" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -97,7 +97,7 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            $('#proyectosTable').DataTable({
+            $('#hubsTable').DataTable({
                 responsive: true,
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json'

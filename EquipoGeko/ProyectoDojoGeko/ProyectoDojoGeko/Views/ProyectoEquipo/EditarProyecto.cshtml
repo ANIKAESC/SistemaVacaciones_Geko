@@ -1,26 +1,26 @@
-﻿@model ProyectoDojoGeko.Models.ProyectoViewModel
+@model ProyectoDojoGeko.Models.ProyectoViewModel
 @{
-    ViewData["Title"] = "EditarProyecto" + " Proyecto - GEKO Sistemas";
+    ViewData["Title"] = "EditarHUB" + " HUB - GEKO Sistemas";
     Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
 
-    var rolesString = Context.Session.GetString("Roles") ?? "";
-    var userRoles = rolesString.Split(',').Where(r => !string.IsNullOrEmpty(r)).ToList();
+    var HUBSString = Context.Session.GetString("Roles") ?? "";
+    var userRoles = HUBSString.Split(',').Where(r => !string.IsNullOrEmpty(r)).ToList();
 }
 
-<div class="proyecto-form-container">
+<div class="hub-form-container">
     <!-- Header -->
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">
                 <i class="fas fa-edit"></i>
-                EditarProyecto Proyecto
+                Editar HUB
             </h1>
             <p class="page-subtitle">
-                Actualice los datos del proyecto
+                Actualice los datos del HUB
             </p>
         </div>
         <div class="header-actions">
-            <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-back">
+            <a href="@Url.Action("Index", "HUBEquipo")" class="btn-back">
                 <i class="fas fa-arrow-left"></i>
                 <span>Volver</span>
             </a>
@@ -38,7 +38,7 @@
             <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
         }
 
-        <form asp-action="EditarProyecto" method="post">
+        <form asp-action="EditarHUB" method="post">
             @if (Model.IdProyecto != 0)
             {
                 <input type="hidden" asp-for="IdProyecto" />
@@ -61,7 +61,7 @@
                             <span class="required">*</span>
                         </label>
                         <div class="input-container">
-                            <input asp-for="Nombre" class="form-control" placeholder="Nombre del proyecto" />
+                            <input asp-for="Nombre" class="form-control" placeholder="Nombre del hub" />
                             <span asp-validation-for="Nombre" class="validation-message"></span>
                         </div>
                     </div>
@@ -73,7 +73,7 @@
                             <span>Descripción</span>
                         </label>
                         <div class="input-container">
-                            <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripción del proyecto"></textarea>
+                            <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripción del hub"></textarea>
                             <span asp-validation-for="Descripcion" class="validation-message"></span>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                 </button>
                 <button type="submit" class="btn-submit">
                     <i class="fas fa-save"></i>
-                    Actualizar Proyecto
+                    Actualizar HUB
                 </button>
             </div>
         </form>
@@ -124,7 +124,7 @@
 </div>
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/crearProyecto.css" />
+    <link rel="stylesheet" href="~/css/crearHUB.css" />
 }
 
 @section Scripts {

@@ -50,6 +50,7 @@ builder.Services.AddScoped<daoBitacoraWSAsync>(_ => new daoBitacoraWSAsync(conne
 builder.Services.AddScoped<daoSolicitudesAsync>(_ => new daoSolicitudesAsync(connectionString));
 builder.Services.AddScoped<daoFeriados>(_ => new daoFeriados(connectionString));
 builder.Services.AddScoped<daoProyectoEquipoWSAsync>(_ => new daoProyectoEquipoWSAsync(connectionString));
+builder.Services.AddScoped<daoEmpleadoEquipoWSAsync>(_ => new daoEmpleadoEquipoWSAsync(connectionString));
 
 // Registro de servicios
 builder.Services.AddScoped<ILoggingService, LoggingService>();

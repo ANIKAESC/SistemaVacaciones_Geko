@@ -1,0 +1,77 @@
+@model ProyectoDojoGeko.Models.EquipoViewModel
+@{
+    ViewData["Title"] = "Editar Equipo";
+    Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
+}
+<div class="equipo-form-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-edit"></i>
+                Editar Equipo
+            </h1>
+            <p class="page-subtitle">Actualice los datos del equipo</p>
+        </div>
+        <div class="header-actions">
+            <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver</span>
+            </a>
+        </div>
+    </div>
+    <div class="form-card">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+        }
+        <form asp-action="EditarEquipo" method="post">
+            @if (Model.IdEquipo != 0)
+            {
+                <input type="hidden" asp-for="IdEquipo" />
+            }
+            <div class="form-section">
+                <div class="form-group">
+                    <label asp-for="Nombre" class="form-label">
+                        <i class="fas fa-tag"></i>
+                        <span>Nombre</span>
+                        <span class="required">*</span>
+                    </label>
+                    <div class="input-container">
+                        <input asp-for="Nombre" class="form-control" placeholder="Nombre del equipo" />
+                        <span asp-validation-for="Nombre" class="validation-message"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Descripcion" class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        <span>Descripción</span>
+                    </label>
+                    <div class="input-container">
+                        <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripción del equipo"></textarea>
+                        <span asp-validation-for="Descripcion" class="validation-message"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="reset" class="btn-reset">
+                    <i class="fas fa-undo"></i>
+                    Limpiar
+                </button>
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save"></i>
+                    Actualizar Equipo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/crearEquipo.css" />
+}
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
