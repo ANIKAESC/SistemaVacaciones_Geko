@@ -14,13 +14,12 @@ namespace ProyectoDojoGeko.Data
         }
 
         // Asignar empleado a equipo
-        public async Task<bool> AsignarEmpleadoAEquipoAsync(int idEmpleado, int idEquipo, int idRol)
+        public async Task<bool> AsignarEmpleadoAEquipoAsync(int idEmpleado, int idEquipo)
         {
             var parametros = new[]
             {
-                new SqlParameter("@FK_IdEmpleado", idEmpleado),
                 new SqlParameter("@FK_IdEquipo", idEquipo),
-                new SqlParameter("@FK_IdRol", idRol)
+                new SqlParameter("@FK_IdEmpleado", idEmpleado),
             };
 
             using (SqlConnection conn = new SqlConnection(_connectionString))

@@ -2122,9 +2122,9 @@ GO
 CREATE TABLE EmpleadosEquipo (
     IdEmpleadoEquipo INT IDENTITY(1,1) PRIMARY KEY,
     FK_IdEquipo INT NOT NULL,
-    FK_IdEmpleado INT NOT NULL,
-    FK_IdRol INT NOT NULL, -- Usamos la FK de la tabla Roles
-    CONSTRAINT FK_EmpleadosEquipo_Equipos
+    FK_IdEmpleado INT NOT NULL
+    --FK_IdRol INT NOT NULL -- Usamos la FK de la tabla Roles
+    /*CONSTRAINT FK_EmpleadosEquipo_Equipos
         FOREIGN KEY (FK_IdEquipo)
             REFERENCES Equipos (IdEquipo),
     CONSTRAINT FK_EmpleadosEquipo_Empleados
@@ -2132,7 +2132,7 @@ CREATE TABLE EmpleadosEquipo (
             REFERENCES Empleados (IdEmpleado),
     CONSTRAINT FK_EmpleadosEquipo_Roles -- La FK ahora apunta a la tabla Roles
         FOREIGN KEY (FK_IdRol)
-            REFERENCES Roles (IdRol)
+            REFERENCES Roles (IdRol)*/
 );
 GO
 
@@ -2243,12 +2243,12 @@ GO
 -- Asignar empleado a equipo con un rol existente
 CREATE PROCEDURE sp_AsignarEmpleadoAEquipo
     @FK_IdEquipo INT,
-    @FK_IdEmpleado INT,
-    @FK_IdRol INT -- Parámetro actualizado para usar FK_IdRol
+    @FK_IdEmpleado INT
+    --@FK_IdRol INT -- Parámetro actualizado para usar FK_IdRol
 AS
 BEGIN
-    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado, FK_IdRol)
-    VALUES (@FK_IdEquipo, @FK_IdEmpleado, @FK_IdRol);
+    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado)
+    VALUES (@FK_IdEquipo, @FK_IdEmpleado);
 END;
 GO
 
@@ -2257,10 +2257,10 @@ CREATE PROCEDURE sp_ListarEmpleadosPorEquipo
     @FK_IdEquipo INT
 AS
 BEGIN
-    SELECT e.*, r.NombreRol
+    SELECT e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado
     FROM Empleados e
     INNER JOIN EmpleadosEquipo ee ON ee.FK_IdEmpleado = e.IdEmpleado
-    INNER JOIN Roles r ON r.IdRol = ee.FK_IdRol -- Join actualizado a la tabla Roles
+    --INNER JOIN Roles r ON r.IdRol = ee.FK_IdRol -- Join actualizado a la tabla Roles
     WHERE ee.FK_IdEquipo = @FK_IdEquipo;
 END;
 GO
@@ -2470,6 +2470,29 @@ FROM Modulos m
 JOIN ModulosSistema  sm ON m.IdModulo = sm.FK_IdModulo
 WHERE sm.FK_IdSistema = 1
   AND m.FK_IdEstado = 1 -- Solo activos
+GO
+
+/* Prueba query usuarios for empleado*/
+SELECT 
+	CONCAT(e.NombresEmpleado, ' ', e.ApellidosEmpleado), 
+	r.NombreRol 
+FROM Empleados e 
+	JOIN Usuarios u ON u.FK_IdEmpleado = e.IdEmpleado 
+	JOIN UsuariosRol ur ON ur.FK_IdUsuario = u.IdUsuario 
+	JOIN Roles r ON r.IdRol = ur.FK_IdRol;
+GO
+
+SELECT 
+	e.IdEmpleado,
+	CONCAT(e.NombresEmpleado, ' ', e.ApellidosEmpleado) as NombreCompleto,
+	r.NombreRol as Rol
+FROM Empleados e 
+JOIN EmpleadosEquipo ee ON e.IdEmpleado = ee.FK_IdEmpleado
+JOIN Usuarios u ON u.FK_IdEmpleado = e.IdEmpleado 
+JOIN UsuariosRol ur ON ur.FK_IdUsuario = u.IdUsuario 
+JOIN Roles r ON r.IdRol = ur.FK_IdRol
+WHERE ee.FK_IdEquipo = 1
+AND r.NombreRol IN ('TeamLider', 'SubLider')
 GO
 
 /*ErickDev*/

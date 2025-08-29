@@ -159,6 +159,70 @@
 
             </div>
         </div>
+
+
+        <!-- Modal para asignar empleados -->
+        <div class="modal fade" id="modalAsignarEmpleados" tabindex="-1" aria-labelledby="modalAsignarEmpleadosLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="modalAsignarEmpleadosLabel">
+                            <i class="fas fa-user-plus me-2"></i> Asignar Empleados al Equipo
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form asp-action="AsignarMiembro" asp-controller="ProyectoEquipo" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" asp-for="IdEquipo" name="idEquipo" value="@Model.IdEquipo" />
+
+                        <div class="modal-body">
+                            @if (ViewBag.EmpleadosNoAsignados != null && ((List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados).Count > 0)
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th></th>
+                                                <th>Nombre Completo</th>
+                                                <th>Puesto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <input type="checkbox" name="empleadosSeleccionados" value="@empleado.IdEmpleado" />
+                                                    </td>
+                                                    <td>@empleado.NombresEmpleado @empleado.ApellidosEmpleado</td>
+                                                    <td>@empleado.Puesto</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-info-circle me-2"></i> No hay empleados disponibles para asignar.
+                                </div>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-1"></i> Asignar Seleccionados
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 

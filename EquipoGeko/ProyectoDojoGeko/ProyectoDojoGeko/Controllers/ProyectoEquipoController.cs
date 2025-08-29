@@ -329,11 +329,15 @@ namespace ProyectoDojoGeko.Controllers
         }*/
 
         [HttpPost]
-        public async Task<IActionResult> AsignarMiembro(int idEquipo, int idEmpleado, int idRol)
+        public async Task<IActionResult> AsignarMiembro(int idEquipo, List<int> empleadosSeleccionados)
         {
-            await _daoEmpleadoEquipo.AsignarEmpleadoAEquipoAsync(idEmpleado, idEquipo, idRol);
-            await _bitacoraService.RegistrarBitacoraAsync("AsignarMiembro", $"Se asignó el empleado {idEmpleado} al equipo {idEquipo} con el rol {idRol}");
-            return RedirectToAction("GestionarMiembros", new { id = idEquipo });
+            foreach (var idEmpleado in empleadosSeleccionados)
+            {
+                await _daoEmpleadoEquipo.AsignarEmpleadoAEquipoAsync(idEmpleado, idEquipo);
+                await _bitacoraService.RegistrarBitacoraAsync("AsignarMiembro", $"Se asignó el empleado {idEmpleado} al equipo {idEquipo}");
+            }
+
+            return RedirectToAction("DetalleEquipo", new { id = idEquipo });
         }
 
         [HttpPost]
