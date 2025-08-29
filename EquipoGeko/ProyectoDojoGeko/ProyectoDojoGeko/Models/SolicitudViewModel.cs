@@ -47,7 +47,7 @@ namespace ProyectoDojoGeko.Models
         public string SolicitudLider { get; set; }
 
         [Column("Observaciones")]
-        public string Observaciones { get; set; }
+        public string? Observaciones { get; set; }
 
         [Column("FK_IdEstadoSolicitud")]
         public int Estado { get; set; }
