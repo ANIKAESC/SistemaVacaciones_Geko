@@ -131,8 +131,29 @@ namespace ProyectoDojoGeko.Data
                 return false;
             }
         }
-       
-    #region Métodos GET de encabezado de solicitud
+
+        // Método para cancelar una solicitud
+        public async Task<bool> CancelarSolicitudAsync(int idSolicitud)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var query = @"UPDATE Solicitudes 
+                      SET Estado = 4 -- Cancelada
+                      WHERE IdSolicitud = @IdSolicitud";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+
+                    int result = await command.ExecuteNonQueryAsync();
+                    return result > 0;
+                }
+            }
+        }
+
+        #region Métodos GET de encabezado de solicitud
 
 
         //JuniorDev | Método para obtener encabezado de solicitud por autorizador (IdAutorizador)
@@ -400,7 +421,59 @@ namespace ProyectoDojoGeko.Data
             }
 
             return solicitudes;
-        }*/
+       }*/
 
+        public async Task<bool> ActualizarEstadoSolicitud(int idSolicitud, int nuevoEstado, int idAutorizador, string motivoRechazo = null)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                var query = "sp_ActualizarEstadoSolicitud";
+                using var procedure = new SqlCommand(query, connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                procedure.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+                procedure.Parameters.AddWithValue("@NuevoEstado", nuevoEstado);
+                procedure.Parameters.AddWithValue("@IdAutorizador", idAutorizador);
+
+                if (!string.IsNullOrEmpty(motivoRechazo))
+                {
+                    procedure.Parameters.AddWithValue("@MotivoRechazo", motivoRechazo);
+                }
+
+                await connection.OpenAsync();
+                await procedure.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.ToString());
+                return false;
+            }
+        }
+
+        public async Task<bool> CancelarSolicitud(int idSolicitud)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                var query = "sp_CancelarSolicitud";
+                using var procedure = new SqlCommand(query, connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                procedure.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+                await connection.OpenAsync();
+                await procedure.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.ToString());
+                return false;
+            }
+        }
     }
 }

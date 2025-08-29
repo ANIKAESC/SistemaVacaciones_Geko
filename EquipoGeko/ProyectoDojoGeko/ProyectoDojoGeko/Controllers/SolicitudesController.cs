@@ -697,6 +697,54 @@ namespace ProyectoDojoGeko.Controllers
         }
         /*-----End ErickDev---------*/
 
+        //  =====================================================================
+        //  = CANCELAR SOLICITUD (UNIFICADO PARA EMPLEADO, RRHH Y ADMIN)      =
+        //  =====================================================================
+        [HttpPost]
+        [AuthorizeRole("Empleado", "SuperAdministrador", "RRHH")]
+        public async Task<IActionResult> CancelarSolicitud(int idSolicitud)
+        {
+            try
+            {
+                if (idSolicitud == 0)
+                {
+                    TempData["ErrorMessage"] = "El ID de la solicitud no es válido.";
+                    // Redirigir según el rol
+                    if (User.IsInRole("SuperAdministrador") || User.IsInRole("RRHH"))
+                    {
+                        return RedirectToAction(nameof(RecursosHumanos));
+                    }
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // La lógica de negocio (validar estado, devolver días, cambiar estado) 
+                // está centralizada en el DAO, que llama al Stored Procedure.
+                var cancelada = await _daoSolicitud.CancelarSolicitud(idSolicitud);
+
+                if (cancelada)
+                {
+                    TempData["SuccessMessage"] = "La solicitud ha sido cancelada exitosamente.";
+                    await _bitacoraService.RegistrarBitacoraAsync("Cancelar Solicitud", $"La solicitud {idSolicitud} fue cancelada.");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No se pudo cancelar la solicitud. Es posible que no se encuentre en un estado que permita la cancelación (Ingresada o Autorizada).";
+                }
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("cancelar solicitud", ex);
+                TempData["ErrorMessage"] = "Ocurrió un error al intentar cancelar la solicitud.";
+            }
+
+            // Redirigir a la vista correcta según el rol del usuario
+            if (User.IsInRole("SuperAdministrador") || User.IsInRole("RRHH"))
+            {
+                return RedirectToAction(nameof(RecursosHumanos));
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
 
     }
 }

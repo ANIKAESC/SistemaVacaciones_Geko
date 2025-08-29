@@ -2074,6 +2074,56 @@ END
 GO
 -------------
 
+
+----CANCELAR SOLICITUD POR PARTE EMPLEADO--
+CREATE PROCEDURE sp_CancelarSolicitud
+@IdSolicitud INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @IdEmpleado INT;
+    DECLARE @DiasAReembolsar DECIMAL(4, 2);
+    DECLARE @EstadoActual INT;
+    DECLARE @EstadoIngresada INT = 1; -- Estado "Ingresada"
+    DECLARE @EstadoAutorizada INT = 2; -- Estado "Autorizada"
+    DECLARE @EstadoCancelada INT = 4; -- Estado "Cancelada"
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Obtener el estado actual, los días y el empleado de la solicitud
+        SELECT
+            @EstadoActual = FK_IdEstadoSolicitud,
+            @DiasAReembolsar = DiasSolicitadosTotal,
+            @IdEmpleado = FK_IdEmpleado
+        FROM SolicitudEncabezado
+        WHERE IdSolicitud = @IdSolicitud;
+
+        -- Solo proceder si la solicitud está en estado "Ingresada" o "Autorizada"
+        IF @EstadoActual IN (@EstadoIngresada, @EstadoAutorizada)
+        BEGIN
+            -- Actualizar el estado de la solicitud a "Cancelada"
+            UPDATE SolicitudEncabezado
+            SET FK_IdEstadoSolicitud = @EstadoCancelada
+            WHERE IdSolicitud = @IdSolicitud;
+
+            -- Devolver los días al saldo del empleado
+            UPDATE Empleados
+            SET DiasVacacionesAcumulados = DiasVacacionesAcumulados + @DiasAReembolsar
+            WHERE IdEmpleado = @IdEmpleado;
+        END
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END
+GO
+---
 CREATE PROCEDURE sp_InsertarSolicitudDetalle
     @IdSolicitud INT,
     @FechaInicio DATE,
