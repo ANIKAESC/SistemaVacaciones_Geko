@@ -89,5 +89,30 @@ namespace ProyectoDojoGeko.Data
             }
             return empleados;
         }
+
+        // Actualizar días de vacaciones acumulados para un empleado
+        public async Task<bool> ActualizarEmpleadoAsync(EmpleadoViewModel empleado)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var query = @"UPDATE Empleados 
+                      SET DiasVacacionesAcumulados = @DiasVacacionesAcumulados
+                      WHERE IdEmpleado = @IdEmpleado";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiasVacacionesAcumulados", empleado.DiasVacacionesAcumulados);
+                    command.Parameters.AddWithValue("@IdEmpleado", empleado.IdEmpleado);
+
+                    int result = await command.ExecuteNonQueryAsync();
+                    return result > 0;
+                }
+            }
+        }
+
+
+
     }
 }

@@ -117,8 +117,29 @@ namespace ProyectoDojoGeko.Data
                 return false;
             }
         }
-       
-    #region Métodos GET de encabezado de solicitud
+
+        // Método para cancelar una solicitud
+        public async Task<bool> CancelarSolicitudAsync(int idSolicitud)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var query = @"UPDATE Solicitudes 
+                      SET Estado = 4 -- Cancelada
+                      WHERE IdSolicitud = @IdSolicitud";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+
+                    int result = await command.ExecuteNonQueryAsync();
+                    return result > 0;
+                }
+            }
+        }
+
+        #region Métodos GET de encabezado de solicitud
 
 
         //JuniorDev | Método para obtener encabezado de solicitud por autorizador (IdAutorizador)

@@ -686,6 +686,73 @@ namespace ProyectoDojoGeko.Controllers
         }
         /*-----End ErickDev---------*/
 
+        //  ================================================
+        //  = CANCELAR SOLICITUD APROBADA Y DEVOLVER DÍAS  =
+        //  ================================================
+        [AuthorizeRole("SuperAdministrador", "RRHH")]
+        [HttpPost]
+        public async Task<IActionResult> CancelarSolicitud(int idSolicitud)
+        {
+            try
+            {
+                if (idSolicitud == 0)
+                {
+                    TempData["ErrorMessage"] = "El campo idSolicitud no puede ser cero o estar vacío.";
+                    return RedirectToAction(nameof(RecursosHumanos));
+                }
+
+                // 1. Obtener la solicitud con todo el detalle
+                var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(idSolicitud);
+                if (solicitud == null)
+                {
+                    TempData["ErrorMessage"] = "La solicitud no fue encontrada.";
+                    return RedirectToAction(nameof(RecursosHumanos));
+                }
+
+                // 2. Validar que esté aprobada 
+                if (solicitud.Encabezado.Estado != 2) 
+                {
+                    TempData["ErrorMessage"] = "Solo se pueden cancelar solicitudes que ya han sido aprobadas.";
+                    return RedirectToAction(nameof(DetalleRH), new { id = idSolicitud });
+                }
+
+                // 3. Obtener empleado
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdEmpleado);
+                if (empleado == null)
+                {
+                    TempData["ErrorMessage"] = "El empleado asociado no fue encontrado.";
+                    return RedirectToAction(nameof(RecursosHumanos));
+                }
+
+                // 4. Devolver los días al empleado
+                empleado.DiasVacacionesAcumulados += solicitud.Encabezado.DiasSolicitadosTotal;
+                await _daoEmpleado.ActualizarEmpleadoAsync(empleado); // Asegúrate que tu DAO tenga este método
+
+                // 5. Cambiar estado de la solicitud a "Cancelada"
+                bool cancelada = await _daoSolicitud.CancelarSolicitudAsync(idSolicitud);
+               
+
+                if (!cancelada)
+                {
+                    TempData["ErrorMessage"] = "No se pudo cancelar la solicitud.";
+                    return RedirectToAction(nameof(DetalleRH), new { id = idSolicitud });
+                }
+
+                // 6. Registrar en bitácora y log
+                await _bitacoraService.RegistrarBitacoraAsync("Solicitud Cancelada",
+                    $"Se canceló la solicitud {idSolicitud} y se devolvieron {solicitud.Encabezado.DiasSolicitadosTotal} días al empleado {empleado.NombresEmpleado}");
+
+                TempData["Message"] = "La solicitud fue cancelada exitosamente y los días devueltos al empleado.";
+                return RedirectToAction(nameof(RecursosHumanos));
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("cancelar solicitud", ex);
+                TempData["ErrorMessage"] = "Ocurrió un error al cancelar la solicitud.";
+                return RedirectToAction(nameof(RecursosHumanos));
+            }
+        }
+
 
     }
 }
