@@ -124,8 +124,8 @@ namespace ProyectoDojoGeko.Controllers
                 // Obtiene todas las solicitudes y sus detalles
                 var solicitudes = await _daoSolicitud.ObtenerSolicitudesPorEmpleadoAsync(empleado.IdEmpleado);
 
-                // Obtiene todos los estados activos para el dropdown
-                var estados = await _estadoService.ObtenerEstadosActivosAsync();
+                // Obtiene todos los estados de solicitud para el dropdown
+                var estados = await _estadoService.ObtenerEstadosActivosSolicitudesAsync();
 
                 // Le decimos que es de tipo double para que pueda manejar decimales
                 ViewBag.DiasDisponibles = (double)(empleado.DiasVacacionesAcumulados);
@@ -136,8 +136,8 @@ namespace ProyectoDojoGeko.Controllers
                 // Mandamos los estados al ViewBag para usarlos en la vista
                 ViewBag.Estados = estados.Select(e => new SelectListItem
                 {
-                    Value = e.IdEstado.ToString(), // <-- Así lo espera el SelectListItem
-                    Text = e.Estado
+                    Value = e.IdEstadoSolicitud.ToString(),
+                    Text = e.NombreEstado
                 }).ToList();
 
                 // Registramos la acción en la bitácora
@@ -472,6 +472,10 @@ namespace ProyectoDojoGeko.Controllers
                     Console.WriteLine("ROL: " + rolUsuario);
                     solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Se obtienen las solicitudes pendientes sin filtrar
                 }
+
+                // Cargar los estados para la vista
+                var estados = await _estadoService.ObtenerEstadosActivosSolicitudesAsync();
+                ViewBag.Estados = estados.ToDictionary(e => e.IdEstadoSolicitud, e => e.NombreEstado);
 
                 await _bitacoraService.RegistrarBitacoraAsync("Vista Autorizar", "Obtener lista detalles de solicitudes");
                 return View(solicitudes);
