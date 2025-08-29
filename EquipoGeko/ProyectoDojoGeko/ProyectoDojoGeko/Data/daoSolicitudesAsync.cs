@@ -77,7 +77,7 @@ namespace ProyectoDojoGeko.Data
                     cmdEnc.Parameters.AddWithValue("@DiasSolicitadosTotal", solicitud.Encabezado.DiasSolicitadosTotal);
                     cmdEnc.Parameters.AddWithValue("@FechaIngresoSolicitud", solicitud.Encabezado.FechaIngresoSolicitud);
                     cmdEnc.Parameters.AddWithValue("@SolicitudLider", solicitud.Encabezado.SolicitudLider);
-                    cmdEnc.Parameters.AddWithValue("@Observaciones", solicitud.Encabezado.Observaciones);
+                    cmdEnc.Parameters.AddWithValue("@Observaciones", string.IsNullOrWhiteSpace(solicitud.Encabezado.Observaciones) ? (object)DBNull.Value : solicitud.Encabezado.Observaciones);
                     cmdEnc.Parameters.AddWithValue("@Estado", solicitud.Encabezado.Estado);
 
                     // SP retorna el ID con SELECT SCOPE_IDENTITY()
