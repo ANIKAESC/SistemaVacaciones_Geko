@@ -42,6 +42,8 @@ BEGIN
 END;
 GO
 
+select u.*, r.* from usuarios u join UsuariosRol ur on ur.FK_IdUsuario = u.IdUsuario join roles r on r.IdRol = ur.FK_IdRol;
+
 -- Listar todos los estados
 CREATE PROCEDURE sp_ListarEstados
 AS
