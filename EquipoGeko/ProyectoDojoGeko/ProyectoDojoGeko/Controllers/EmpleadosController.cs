@@ -219,7 +219,7 @@ namespace ProyectoDojoGeko.Controllers
                     CorreoPersonal = empleado.CorreoPersonal,
                     Telefono = empleado.Telefono,
                     NIT = empleado.NIT,
-                    Direccion = empleado.Direccion, // Añadido para mostrar en el formulario
+                    Direccion = empleado.Direccion, 
                     Genero = empleado.Genero,
                     Salario = empleado.Salario,
                     Estado = empleado.Estado

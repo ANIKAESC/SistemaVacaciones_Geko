@@ -179,20 +179,18 @@
                                 <table class="table table-hover align-middle">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Puesto</th>
+                                            <th style="width: 50px;"></th>
                                             <th>Nombre Completo</th>
                                             <th>Roles</th>
-                                            <th class="text-end">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @{
-                                            int contador = 1;
-                                        }
                                         @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
                                         {
                                             <tr>
-                                                <td>@empleado.Puesto</td>
+                                                <td>
+                                                    <input type="checkbox" name="empleadosSeleccionados" value="@empleado.IdEmpleado" class="form-check-input" />
+                                                </td>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="avatar-sm me-3">
@@ -205,12 +203,7 @@
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="text-end">
-                                                    <button class="btn btn-sm btn-outline-primary"
-                                                            onclick="confirmarAgregarEmpleado(@empleado.IdEmpleado, '@empleado.NombresEmpleado @empleado.ApellidosEmpleado')">
-                                                        <i class="fas fa-user-plus"></i> Agregar
-                                                    </button>
-                                                </td>
+												<td>@empleado.Puesto</td>
                                             </tr>
                                         }
                                     </tbody>
