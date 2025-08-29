@@ -2,7 +2,13 @@
 
 @{
     ViewData["Title"] = "Autorización de Solicitudes";
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    
+    // Si hay un CodigoSistema en sesión, usar el layout del sistema
+    // De lo contrario, usar el layout por defecto
+    var codigoSistema = Context.Session.GetString("SistemaActual");
+    Layout = (codigoSistema != null || codigoSistema != "") ?
+        "~/Views/Shared/_DashboardLayoutSistema.cshtml" : 
+        "~/Views/Shared/_DashboardLayout.cshtml";
 
     var todasLasSolicitudes = Model.ToList();
     var totalSolicitudes = todasLasSolicitudes.Count;

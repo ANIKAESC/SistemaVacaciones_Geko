@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 // Usamos Mvc.Rendering para enviar tanto el Id del estado como el nombre del estado al ViewBag
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -311,7 +311,14 @@ namespace ProyectoDojoGeko.Controllers
                 solicitud.Encabezado.FechaIngresoSolicitud = DateTime.UtcNow;
                 solicitud.Encabezado.Estado = 1;
                 solicitud.Encabezado.IdEmpleado = HttpContext.Session.GetInt32("IdEmpleado") ?? 0;
-                solicitud.Encabezado.Observaciones = solicitud.Encabezado.Observaciones ?? string.Empty;
+
+
+                // Validamos que observaciones en caso de ser nulo no falle
+                // Y le asignamos string.Empty en caso de que solo tenga espacios en blanco
+                if (solicitud.Encabezado.Observaciones != null && solicitud.Encabezado.Observaciones.All(char.IsWhiteSpace))
+                    solicitud.Encabezado.Observaciones = string.Empty;
+
+                //solicitud.Encabezado.Observaciones = solicitud.Encabezado.Observaciones ?? string.Empty;
 
                 // 1. Crear la solicitud en la base de datos
                 var idSolicitudCreada = await _daoSolicitud.InsertarSolicitudAsync(solicitud);

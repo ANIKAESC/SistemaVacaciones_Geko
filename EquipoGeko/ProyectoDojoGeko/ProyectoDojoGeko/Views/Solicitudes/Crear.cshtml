@@ -1,7 +1,13 @@
 @model ProyectoDojoGeko.Models.SolicitudViewModel
 @{
     ViewData["Title"] = "Gestión de Solicitudes Vacacionales - GEKO Sistemas";
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    
+    // Si hay un CodigoSistema en sesión, usar el layout del sistema
+    // De lo contrario, usar el layout por defecto
+    var codigoSistema = Context.Session.GetString("SistemaActual");
+    Layout = (codigoSistema != null || codigoSistema != "") ?
+        "~/Views/Shared/_DashboardLayoutSistema.cshtml" :
+        "~/Views/Shared/_DashboardLayout.cshtml";
 
     var contrato = Context.Session.GetString("TipoContrato");
     var codigo = Context.Session.GetString("CodigoEmpleado");
