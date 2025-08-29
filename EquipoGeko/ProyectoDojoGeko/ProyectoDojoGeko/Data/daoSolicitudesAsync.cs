@@ -29,6 +29,20 @@ namespace ProyectoDojoGeko.Data
             };
         }
 
+        // Método para mapear encabezados de solicitud para la vista de Autorizador
+        private SolicitudEncabezadoViewModel _mapearSolicitudAutorizador(SqlDataReader reader)
+        {
+            return new SolicitudEncabezadoViewModel
+            {
+                IdSolicitud = Convert.ToInt32(reader["IdSolicitud"]),
+                IdEmpleado = Convert.ToInt32(reader["FK_IdEmpleado"]),
+                NombreEmpleado = reader["NombresEmpleado"].ToString() ?? "",
+                DiasSolicitadosTotal = Convert.ToDecimal(reader["DiasSolicitadosTotal"]),
+                FechaIngresoSolicitud = Convert.ToDateTime(reader["FechaIngresoSolicitud"]),
+                Estado = Convert.ToInt32(reader["FK_IdEstadoSolicitud"])
+            };
+        }
+
         // Método para mapear encabezados de solicitud Result
         private SolicitudEncabezadoResult _mapearSolicitudResult(SqlDataReader reader)
         {
@@ -149,7 +163,7 @@ namespace ProyectoDojoGeko.Data
                 using SqlDataReader reader = await procedure.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    solicitudes.Add(_mapearSolicitud(reader)); // Se añade la solicitudeEncabezado mapeada
+                    solicitudes.Add(_mapearSolicitudAutorizador(reader)); // Se añade la solicitudeEncabezado mapeada
                 }
 
             }

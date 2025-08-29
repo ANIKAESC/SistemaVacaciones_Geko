@@ -1863,33 +1863,38 @@ GO
 
 -- Filtro para autorizador
 CREATE PROCEDURE sp_ListarSolicitudEncabezado_Autorizador
-    @FK_IdAutorizador INT
-AS 
-BEGIN 
-   SELECT 
-    IdSolicitud,
-    FK_IdEmpleado,
-    NombresEmpleado,
-    DiasSolicitadosTotal,
-    FechaIngresoSolicitud
-
-FROM SolicitudEncabezado
-WHERE FK_IdAutorizador = @FK_IdAutorizador AND FK_IdEstadoSolicitud = 1; -- 'Ingresada'
+AS
+BEGIN
+    SELECT 
+        se.IdSolicitud,
+        se.FK_IdEmpleado,
+        e.NombresEmpleado,
+        se.DiasSolicitadosTotal,
+        se.FechaIngresoSolicitud,
+        se.FK_IdEstadoSolicitud 
+    FROM 
+        SolicitudEncabezado se
+    INNER JOIN 
+        Empleados e ON se.FK_IdEmpleado = e.IdEmpleado
+    WHERE 
+        se.FK_IdEstadoSolicitud = 1; -- Filtra por estado "Ingresada"
 END;
 GO
 -- Filtro para autorizador administrador
 CREATE PROCEDURE sp_ListarSolicitudEncabezado_Autorizador_Admin
-AS 
-BEGIN 
-   SELECT 
-    IdSolicitud,
-    FK_IdEmpleado,
-    NombresEmpleado,
-    DiasSolicitadosTotal,
-    FechaIngresoSolicitud
-
-FROM SolicitudEncabezado
-WHERE FK_IdEstadoSolicitud = 1; -- 'Ingresada'
+AS
+BEGIN
+    SELECT 
+        se.IdSolicitud,
+        se.FK_IdEmpleado,
+        e.NombresEmpleado,
+        se.DiasSolicitadosTotal,
+        se.FechaIngresoSolicitud,
+        se.FK_IdEstadoSolicitud 
+    FROM 
+        SolicitudEncabezado se
+    INNER JOIN 
+        Empleados e ON se.FK_IdEmpleado = e.IdEmpleado;
 END;
 GO
 
