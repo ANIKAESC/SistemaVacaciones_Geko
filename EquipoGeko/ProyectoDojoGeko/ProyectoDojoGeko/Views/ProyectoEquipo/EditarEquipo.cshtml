@@ -24,13 +24,12 @@
             </a>
         </div>
     </div>
-    <div class="equipo-card">
 
+    <div class="equipo-card">
+        <!-- Formulario de edición -->
         <form asp-action="EditarEquipo" asp-controller="ProyectoEquipo" method="post">
             @Html.AntiForgeryToken()
-
             <div class="equipo-header mb-4">
-
                 <div class="info-section">
                     <div class="section-header">
                         <h3>
@@ -39,7 +38,6 @@
                         </h3>
                     </div>
                     <div class="info-grid">
-
                         <input type="hidden" asp-for="IdEquipo" />
 
                         <div class="info-item">
@@ -55,6 +53,7 @@
                                 <div class="text-muted">ID: @Model.IdEquipo</div>
                             </div>
                         </div>
+
                         <div class="info-item">
                             <div class="info-label">
                                 <i class="fas fa-align-left"></i>
@@ -75,30 +74,23 @@
                             <i class="fas fa-save me-1"></i> Guardar Cambios
                         </button>
                     </div>
-
                 </div>
-
-                
-
             </div>
         </form>
 
+        <!-- Sección de empleados asignados -->
         <div class="equipo-content">
-            <!-- Empleados asignados -->
             <div class="info-section">
                 <div class="section-header d-flex justify-content-between align-items-center mb-3">
                     <h3 class="mb-0">
                         <i class="fas fa-user-friends me-2"></i>
                         Empleados del Equipo
                     </h3>
-                    @if (ViewBag.Empleados != null && ((List<EmpleadosEquipoResponse>)ViewBag.Empleados).Count > 0)
-                    {
-                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAsignarEmpleados">
-                            <i class="fas fa-plus me-1"></i>Agregar Empleados
-                        </button>
-                    }
+                    <button id="btnAbrirModalEmpleado" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Agregar Empleados
+                    </button>
                 </div>
-                
+
                 @if (ViewBag.Empleados != null && ((List<EmpleadosEquipoResponse>)ViewBag.Empleados).Count > 0)
                 {
                     <div class="table-responsive">
@@ -110,7 +102,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @{ int contador = 1; }
                                 @foreach (var empleado in (List<EmpleadosEquipoResponse>)ViewBag.Empleados)
                                 {
                                     <tr>
@@ -126,12 +117,7 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-danger" 
-                                                    onclick="confirmarEliminarEmpleado(@empleado.IdEmpleado, '@empleado.NombresEmpleado + @empleado.ApellidosEmpleado')">
-                                                <i class="fas fa-user-minus"></i> Quitar
-                                            </button>
-                                        </td>
+                                        <td>@empleado.Roles</td>
                                     </tr>
                                 }
                             </tbody>
@@ -146,90 +132,86 @@
                         </div>
                         <h5 class="text-muted mb-3">No hay empleados asignados</h5>
                         <p class="text-muted mb-4">Agrega empleados al equipo para comenzar</p>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAsignarEmpleados">
-                            <i class="fas fa-plus me-2"></i>Asignar Empleados
-                        </button>
+                        
                     </div>
                 }
-                </div>
-
             </div>
         </div>
+    </div>
+</div>
 
+<!-- Modal para asignar empleados -->
+<div class="modal fade" id="modalAsignarEmpleados" tabindex="-1" aria-labelledby="modalAsignarEmpleadosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalAsignarEmpleadosLabel">
+                    <i class="fas fa-user-plus me-2"></i> Asignar Empleados al Equipo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form asp-action="AsignarMiembro" asp-controller="ProyectoEquipo" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="IdEquipo" name="idEquipo" value="@Model.IdEquipo" />
 
-        <!-- Modal para asignar empleados -->
-        <div class="modal fade" id="modalAsignarEmpleados" tabindex="-1" aria-labelledby="modalAsignarEmpleadosLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content shadow-lg">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="modalAsignarEmpleadosLabel">
-                            <i class="fas fa-user-plus me-2"></i> Asignar Empleados al Equipo
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <form asp-action="AsignarMiembro" asp-controller="ProyectoEquipo" method="post">
-                        @Html.AntiForgeryToken()
-
-                        <input type="hidden" asp-for="IdEquipo" name="idEquipo" value="@Model.IdEquipo" />
-
-                        <div class="modal-body">
-                        @if (ViewBag.EmpleadosNoAsignados != null && ((List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados).Count > 0)
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead class="table-light">
+                <div class="modal-body">
+                    @if (ViewBag.EmpleadosNoAsignados != null && ((List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados).Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Id</th>
+                                        <th></th>
+                                        <th>Nombre Completo</th>
+                                        <th>Roles</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
+                                    {
                                         <tr>
-                                            <th style="width: 50px;"></th>
-                                            <th>Nombre Completo</th>
-                                            <th>Roles</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <input type="checkbox" name="empleadosSeleccionados" value="@empleado.IdEmpleado" class="form-check-input" />
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-3">
-                                                            <div class="avatar-title bg-soft-primary text-primary rounded-circle">
-                                                                @empleado.NombresEmpleado.Substring(0, 1)@empleado.ApellidosEmpleado.Substring(0, 1)
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-0">@empleado.NombresEmpleado @empleado.ApellidosEmpleado</h6>
+                                            <td>@empleado.IdEmpleado</td>
+                                            <td>
+                                                <input type="checkbox" name="empleadosSeleccionados" value="@empleado.IdEmpleado" class="form-check-input" />
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-3">
+                                                        <div class="avatar-title bg-soft-primary text-primary rounded-circle">
+                                                            @empleado.NombresEmpleado.Substring(0, 1)@empleado.ApellidosEmpleado.Substring(0, 1)
                                                         </div>
                                                     </div>
-                                                </td>
-												<td>@empleado.Puesto</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                            }
-                            else
-                            {
-                                <div class="alert alert-info text-center">
-                                    <i class="fas fa-info-circle me-2"></i> No hay empleados disponibles para asignar.
-                                </div>
-                            }
+                                                    <div>
+                                                        <h6 class="mb-0">@empleado.NombresEmpleado @empleado.ApellidosEmpleado</h6>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>@empleado.Puesto</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-1"></i> Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-check me-1"></i> Asignar Seleccionados
-                            </button>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle me-2"></i> No hay empleados disponibles para asignar.
                         </div>
-                    </form>
+                    }
                 </div>
-            </div>
-        </div>
 
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-1"></i> Asignar Seleccionados
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -237,7 +219,22 @@
     <link rel="stylesheet" href="~/css/equipos.css" />
 }
 
-
 @section Scripts {
+    <!-- Bootstrap Bundle (incluye Popper.js, necesario para modales) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const btnAbrirModal = document.querySelector("#btnAbrirModalEmpleado");
+            if (btnAbrirModal) {
+                btnAbrirModal.addEventListener("click", function () {
+                    const modal = new bootstrap.Modal(document.getElementById("modalAsignarEmpleados"));
+                    modal.show();
+                });
+            }
+        });
+    </script>
 }

@@ -540,3 +540,61 @@ body {
 .slide-in-up {
     animation: slideInUp 0.3s ease-out;
 }
+/* Estilos para el modal de asignación de empleados */
+.modal-content {
+    border: none;
+    border-radius: var(--border-radius-lg);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.search-box {
+    position: relative;
+}
+
+    .search-box .form-control {
+        padding-left: 2.5rem;
+    }
+
+    .search-box::before {
+        content: '\f002';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--color-gray-500);
+    }
+
+.table-container {
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--border-radius-md);
+}
+
+.empleado-checkbox {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.selected-count {
+    font-weight: var(--font-weight-medium);
+}
+
+/* Estilos para la tabla en el modal */
+.modal-body .table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-gray-100);
+    z-index: 10;
+}
+
+.modal-body .table td {
+    vertical-align: middle;
+}
