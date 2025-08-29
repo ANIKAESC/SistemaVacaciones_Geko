@@ -1,0 +1,127 @@
+﻿body {
+    /* ----- Contenedor general ----- */
+    .equipo-detalle-container
+
+{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* ----- Encabezado ----- */
+.page-header {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.page-subtitle {
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* ----- Card contenedora ----- */
+.equipo-card {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+    /* ----- Formularios ----- */
+    .equipo-card .form-label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .equipo-card .form-control {
+        border-radius: 0.6rem;
+        transition: border-color 0.2s ease;
+    }
+
+        .equipo-card .form-control:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+/* ----- Botones ----- */
+.btn {
+    border-radius: 0.6rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+}
+
+.btn-outline-secondary {
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        color: #111827;
+    }
+
+.btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+    .btn-primary:hover {
+        background: #1e40af;
+        border-color: #1e40af;
+    }
+
+/* ----- Tabla de empleados ----- */
+.table th {
+    font-weight: 600;
+    color: #374151;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* ----- Avatares ----- */
+.avatar-sm {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.avatar-title {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+/* ----- Estado vacío ----- */
+.bg-light {
+    background: #f9fafb !important;
+}
+
+.text-center .fa-users {
+    opacity: 0.6;
+}
+
+.text-center button {
+    margin-top: 0.8rem;
+}
+
+}
