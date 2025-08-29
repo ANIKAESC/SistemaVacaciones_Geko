@@ -4,9 +4,8 @@
     Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
 }
 
-<h1>Aprobación de Usuarios Pendientes</h1>
 
-@if (TempData["MensajeExito"] != null)
+@* @if (TempData["MensajeExito"] != null)
 {
     <div class="alert alert-success">
         @TempData["MensajeExito"]
@@ -18,67 +17,139 @@
     <div class="alert alert-danger">
         @TempData["Error"]
     </div>
-}
+} *@
 
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">Usuarios por Aprobar</h6>
+<!-- CSS -->
+<link rel="stylesheet" href="~/css/sistemas.css" />
+
+<div class="sistemas-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fa-solid fa-user-clock"></i>
+                Usuarios pendientes de autorizar
+            </h1>
+            <p class="page-subtitle">
+                Permite aprobar los usuarios nuevos del sistema
+            </p>
+        </div>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Empleado</th>
-                        <th>Fecha de Creación</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model != null && Model.Any())
+
+    <div class="table-container">
+        <table class="sistemas-table" id="sistemasTable">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Empleado</th>
+                    <th>Fecha de Creación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
                     {
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>@item.Usuario.Username</td>
-                                <td>
-                                    @{
-                                        var empleado = item.Empleados.FirstOrDefault(e => e.Value == item.Usuario.FK_IdEmpleado.ToString());
-                                        if (empleado != null)
-                                        {
-                                            <span>@empleado.Text</span>
-                                        }
-                                        else
-                                        {
-                                            <span>No asignado</span>
-                                        }
+                        <tr>
+                            <td>@item.Usuario.Username</td>
+                            <td>
+                                @{
+                                    var empleado = item.Empleados.FirstOrDefault(e => e.Value == item.Usuario.FK_IdEmpleado.ToString());
+                                    if (empleado != null)
+                                    {
+                                        <span>@empleado.Text</span>
                                     }
-                                </td>
-                                <td>@item.Usuario.FechaCreacion.ToString("g")</td>
-                                <td>
+                                    else
+                                    {
+                                        <span>No asignado</span>
+                                    }
+                                }
+                            </td>
+                            <td>@item.Usuario.FechaCreacion.ToString("g")</td>
+                            <td class="actions-cell">
+                                <div class="actions-container">
                                     <form asp-controller="Usuarios" asp-action="AprobarUsuario" method="post" style="display:inline;">
                                         <input type="hidden" name="Id" value="@item.Usuario.IdUsuario" />
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-success btn-sm">Aprobar</button>
+                                        <button type="submit" class="btn-action aceptar">
+                                            <i class="fa-solid fa-check"></i>
+                                        </button>
                                     </form>
                                     <form asp-controller="Usuarios" asp-action="RechazarUsuario" method="post" style="display:inline;">
                                         <input type="hidden" name="Id" value="@item.Usuario.IdUsuario" />
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-danger btn-sm">Rechazar</button>
+                                        <button type="submit" class="btn-action rechazar">
+                                            <i class="fa-solid fa-x"></i>
+                                        </button>
                                     </form>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="4" class="text-center">No hay usuarios pendientes de aprobación.</td>
+                                </div>
+                            </td>
                         </tr>
                     }
-                </tbody>
-            </table>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="no-data">
+                            <div class="no-data-message">
+                                <i class="fa-solid fa-user-clock"></i>
+                                <p>No hay usuarios pendientes de autorizar</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> usuarios pendientes
+        </div>
+        <div class="pagination-controls">
+            <button id="prev-page" class="pagination-btn" disabled>
+                <i class="fas fa-chevron-left"></i>
+                Anterior
+            </button>
+            <div class="pagination-pages" id="pagination-pages">
+                <button class="page-btn active">1</button>
+            </div>
+            <button id="next-page" class="pagination-btn" disabled>
+                Siguiente
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </div>
 </div>
+
+
+
+<style>
+    .btn-action.rechazar {
+        background: #DB3939;
+    }
+
+    .btn-action.delete:hover {
+        background: #A32424;
+    }
+
+    .btn-action.aceptar {
+        background: #33BD46;
+    }
+
+        .btn-action.aceptar:hover {
+            background: #21752A;
+        }
+
+    .page-btn.active {
+        background: #F08A16;
+        color: var(--white);
+        border-color: #F08A16;
+    }
+
+    .page-title i {
+        color: #F08A16;
+    }
+</style>
