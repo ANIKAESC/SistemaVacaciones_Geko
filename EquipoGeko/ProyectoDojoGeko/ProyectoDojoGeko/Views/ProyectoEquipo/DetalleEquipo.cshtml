@@ -1,3 +1,4 @@
+@using ProyectoDojoGeko.Dtos.Equipos.Responses
 @model ProyectoDojoGeko.Models.EquipoViewModel
 @{
     ViewData["Title"] = "Detalle del Equipo";
@@ -63,17 +64,17 @@
                 </h3>
             </div>
             <div class="equipos-list">
-                @if (ViewBag.Empleados != null && ((List<EmpleadoViewModel>)ViewBag.Empleados).Count > 0)
+                @if (ViewBag.Empleados != null && ((List<EmpleadosEquipoResponse>)ViewBag.Empleados).Count > 0)
                 {
-                    foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.Empleados)
+                    @foreach (var empleado in (List<EmpleadosEquipoResponse>)ViewBag.Empleados)
                     {
                         <div class="empleado-item">
                             <div class="empleado-icon">
                                 <i class="fas fa-user"></i>
                             </div>
                             <div class="empleado-info">
-                                <h4>@empleado.NombresEmpleado</h4>
-                                <p>@empleado.Puesto</p>
+                                <h4>@empleado.NombresEmpleado @empleado.ApellidosEmpleado</h4>
+                                <p>@empleado.Roles</p>
                             </div>
                         </div>
                     }

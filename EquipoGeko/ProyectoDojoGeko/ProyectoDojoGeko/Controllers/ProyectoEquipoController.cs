@@ -241,13 +241,23 @@ namespace ProyectoDojoGeko.Controllers
             var equipo = await _daoProyectoEquipo.ObtenerEquipoPorIdAsync(id);
             if (equipo == null) return NotFound();
 
-            // Obtener empleados asignados a este equipo
-            var empleadosAsignados = await _daoEmpleadoEquipo.ListarEmpleadosPorEquipoAsync(id);
-            ViewBag.Empleados = empleadosAsignados;
+            // Obtener empleados con roles asignados a este equipo
+            var empleadosConRoles = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(id);
+            ViewBag.Empleados = empleadosConRoles;
 
             // Obtener todos los empleados y filtrar los NO asignados
             var todosEmpleados = await _daoEmpleado.ObtenerEmpleadoAsync();
-            var empleadosNoAsignados = todosEmpleados.Where(e => !empleadosAsignados.Any(a => a.IdEmpleado == e.IdEmpleado)).ToList();
+            var empleadosNoAsignados = todosEmpleados
+                .Where(e => !empleadosConRoles.Any(a => a.IdEmpleado == e.IdEmpleado))
+                .Select(e => new EmpleadoViewModel 
+                { 
+                    IdEmpleado = e.IdEmpleado,
+                    NombresEmpleado = e.NombresEmpleado,
+                    ApellidosEmpleado = e.ApellidosEmpleado,
+                    Puesto = e.Puesto
+                })
+                .ToList();
+                
             ViewBag.EmpleadosNoAsignados = empleadosNoAsignados;
 
             return View(equipo);
@@ -277,6 +287,10 @@ namespace ProyectoDojoGeko.Controllers
             var todosEmpleados = await _daoEmpleado.ObtenerEmpleadoAsync();
             var empleadosNoAsignados = todosEmpleados.Where(e => !empleadosAsignados.Any(a => a.IdEmpleado == e.IdEmpleado)).ToList();
             ViewBag.EmpleadosNoAsignados = empleadosNoAsignados;
+
+             // Obtener empleados con sus roles
+            var empleadosConRoles = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(id);
+            ViewBag.Empleados = empleadosConRoles;
 
             return View("DetalleEquipo", equipo);
         }

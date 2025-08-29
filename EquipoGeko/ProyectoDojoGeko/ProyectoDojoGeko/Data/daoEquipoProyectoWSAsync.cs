@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
+using ProyectoDojoGeko.Dtos.Equipos.Responses;
 using ProyectoDojoGeko.Models;
 using ProyectoDojoGeko.Models;
 using System.Data;
@@ -306,6 +307,39 @@ namespace ProyectoDojoGeko.Data
             }
 
             return equipos;
+        }
+
+        // Listar empleados por equipo
+        public async Task<List<EmpleadosEquipoResponse>> ObtenerEmpleadosConRolesPorEquipoAsync(int idEquipo)
+        {
+            var empleados = new List<EmpleadosEquipoResponse>();
+            string procedure = "sp_ListarEmpleadosConRolPorEquipo";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand(procedure, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IdEquipo", idEquipo);
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            empleados.Add(new EmpleadosEquipoResponse
+                            {
+                                IdEmpleado = reader.GetInt32(reader.GetOrdinal("IdEmpleado")),
+                                NombresEmpleado = reader.GetString(reader.GetOrdinal("NombresEmpleado")),
+                                ApellidosEmpleado = reader.GetString(reader.GetOrdinal("ApellidosEmpleado")),
+                                Roles = reader.GetString(reader.GetOrdinal("Roles"))
+                            });
+                        }
+                    }
+                }
+            }
+
+            return empleados;
         }
 
         public async Task<List<SelectListItem>> ListarEstadosComboAsync()

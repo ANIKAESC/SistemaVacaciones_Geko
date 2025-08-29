@@ -69,7 +69,7 @@ namespace ProyectoDojoGeko.Data
                 using (SqlCommand cmd = new SqlCommand(procedure, conn))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@FK_IdEquipo", idEquipo);
+                    cmd.Parameters.AddWithValue("@IdEquipo", idEquipo);
 
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
@@ -80,7 +80,6 @@ namespace ProyectoDojoGeko.Data
                                 IdEmpleado = reader.GetInt32(reader.GetOrdinal("IdEmpleado")),
                                 NombresEmpleado = reader.GetString(reader.GetOrdinal("NombresEmpleado")),
                                 ApellidosEmpleado = reader.GetString(reader.GetOrdinal("ApellidosEmpleado")),
-                                // Agrega aquí otras propiedades necesarias
                             });
                         }
                     }

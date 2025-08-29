@@ -2186,6 +2186,36 @@ CREATE TABLE EmpleadosEquipo (
 );
 GO
 
+CREATE PROCEDURE sp_ListarEmpleadosConRolPorEquipo
+    @IdEquipo INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+		e.IdEmpleado,
+		e.NombresEmpleado,
+		e.ApellidosEmpleado,
+		STRING_AGG(r.NombreRol, ', ') AS Roles
+	FROM 
+		EmpleadosEquipo ee
+	INNER JOIN 
+		Empleados e ON ee.FK_IdEmpleado = e.IdEmpleado
+	INNER JOIN 
+		Usuarios u ON e.IdEmpleado = u.FK_IdEmpleado
+	INNER JOIN 
+		UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
+	INNER JOIN 
+		Roles r ON ur.FK_IdRol = r.IdRol
+	WHERE 
+		ee.FK_IdEquipo = @IdEquipo
+		AND r.NombreRol IN ('TeamLider', 'SubLider', 'Autorizador', 'Empleado')
+	GROUP BY 
+		e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado
+	
+END
+GO
+
 -- --------------------- Tabla Intermedia: EquiposProyecto ---------------------
 -- Relaciona los equipos con los proyectos
 CREATE TABLE EquiposProyecto (
@@ -2304,14 +2334,14 @@ GO
 
 -- Listar empleados de un equipo con su rol
 CREATE PROCEDURE sp_ListarEmpleadosPorEquipo
-    @FK_IdEquipo INT
+    @IdEquipo INT
 AS
 BEGIN
     SELECT e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado
     FROM Empleados e
     INNER JOIN EmpleadosEquipo ee ON ee.FK_IdEmpleado = e.IdEmpleado
     --INNER JOIN Roles r ON r.IdRol = ee.FK_IdRol -- Join actualizado a la tabla Roles
-    WHERE ee.FK_IdEquipo = @FK_IdEquipo;
+    WHERE ee.FK_IdEquipo = @IdEquipo;
 END;
 GO
 

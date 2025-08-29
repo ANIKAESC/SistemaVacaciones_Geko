@@ -1,3 +1,4 @@
+@using ProyectoDojoGeko.Dtos.Equipos.Responses
 @model ProyectoDojoGeko.Models.EquipoViewModel
 @{
     ViewData["Title"] = "Detalle del Equipo";
@@ -90,7 +91,7 @@
                         <i class="fas fa-user-friends me-2"></i>
                         Empleados del Equipo
                     </h3>
-                    @if (ViewBag.Empleados != null && ((List<EmpleadoViewModel>)ViewBag.Empleados).Count > 0)
+                    @if (ViewBag.Empleados != null && ((List<EmpleadosEquipoResponse>)ViewBag.Empleados).Count > 0)
                     {
                         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAsignarEmpleados">
                             <i class="fas fa-plus me-1"></i>Agregar Empleados
@@ -98,25 +99,21 @@
                     }
                 </div>
                 
-                @if (ViewBag.Empleados != null && ((List<EmpleadoViewModel>)ViewBag.Empleados).Count > 0)
+                @if (ViewBag.Empleados != null && ((List<EmpleadosEquipoResponse>)ViewBag.Empleados).Count > 0)
                 {
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th>#</th>
                                     <th>Nombre Completo</th>
-                                    <th>Puesto</th>
-                                    <th>Email</th>
-                                    <th class="text-end">Acciones</th>
+                                    <th>Roles</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @{ int contador = 1; }
-                                @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.Empleados)
+                                @foreach (var empleado in (List<EmpleadosEquipoResponse>)ViewBag.Empleados)
                                 {
                                     <tr>
-                                        <td>@(contador++)</td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-sm me-3">
@@ -129,7 +126,6 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>@empleado.Puesto</td>
                                         <td class="text-end">
                                             <button class="btn btn-sm btn-outline-danger" 
                                                     onclick="confirmarEliminarEmpleado(@empleado.IdEmpleado, '@empleado.NombresEmpleado + @empleado.ApellidosEmpleado')">
@@ -177,31 +173,49 @@
                         <input type="hidden" asp-for="IdEquipo" name="idEquipo" value="@Model.IdEquipo" />
 
                         <div class="modal-body">
-                            @if (ViewBag.EmpleadosNoAsignados != null && ((List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados).Count > 0)
-                            {
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle">
-                                        <thead class="table-light">
+                        @if (ViewBag.EmpleadosNoAsignados != null && ((List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados).Count > 0)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Puesto</th>
+                                            <th>Nombre Completo</th>
+                                            <th>Roles</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            int contador = 1;
+                                        }
+                                        @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
+                                        {
                                             <tr>
-                                                <th></th>
-                                                <th>Nombre Completo</th>
-                                                <th>Puesto</th>
+                                                <td>@empleado.Puesto</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-3">
+                                                            <div class="avatar-title bg-soft-primary text-primary rounded-circle">
+                                                                @empleado.NombresEmpleado.Substring(0, 1)@empleado.ApellidosEmpleado.Substring(0, 1)
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-0">@empleado.NombresEmpleado @empleado.ApellidosEmpleado</h6>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                            onclick="confirmarAgregarEmpleado(@empleado.IdEmpleado, '@empleado.NombresEmpleado @empleado.ApellidosEmpleado')">
+                                                        <i class="fas fa-user-plus"></i> Agregar
+                                                    </button>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
-                                            {
-                                                <tr>
-                                                    <td>
-                                                        <input type="checkbox" name="empleadosSeleccionados" value="@empleado.IdEmpleado" />
-                                                    </td>
-                                                    <td>@empleado.NombresEmpleado @empleado.ApellidosEmpleado</td>
-                                                    <td>@empleado.Puesto</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                             }
                             else
                             {
