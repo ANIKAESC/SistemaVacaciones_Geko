@@ -16,8 +16,8 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
 
         public string? Municipio { get; set; } = string.Empty;
 
-        [StringLength(255, MinimumLength = 25, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
-        [RegularExpression(@"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$", ErrorMessage = "El campo {0} solo debe contener letras y espacios.")]
+        [StringLength(255, MinimumLength = 10, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
+        [RegularExpression(@"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s0-9.,#-]+$", ErrorMessage = "El campo {0} solo debe contener letras, números y caracteres de dirección válidos.")]
         public string Direccion { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El campo {0} es requerido")]
@@ -44,6 +44,10 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
         [StringLength(50, MinimumLength = 2, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
         [RegularExpression(@"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$", ErrorMessage = "El campo {0} solo debe contener letras y espacios.")]
         public string ApellidosEmpleado { get; set; } = string.Empty;
+
+        [StringLength(10, ErrorMessage = "El campo {0} no debe exceder los {1} caracteres.")]
+        [RegularExpression(@"^(Masculino|Femenino|Otro)$", ErrorMessage = "El campo {0} debe ser 'Masculino', 'Femenino' u 'Otro'.")]
+        public string Genero { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [EmailAddress(ErrorMessage = "El campo {0} no tiene un formato válido.")]

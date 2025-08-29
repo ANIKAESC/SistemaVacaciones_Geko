@@ -180,6 +180,20 @@
                         </div>
                     </div>
 
+                    <!-- Direccion -->
+                    <div class="form-group">
+                        <label asp-for="Direccion" class="form-label">
+                            <div class="label-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <span>Dirección</span>
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-container">
+                            <input asp-for="Direccion" class="form-control" placeholder="Ingrese la dirección" />
+                            <span asp-validation-for="Direccion" class="validation-message"></span>
+                        </div>
+                    </div>
 
                     <!-- Telefono -->
                     <div class="form-group">

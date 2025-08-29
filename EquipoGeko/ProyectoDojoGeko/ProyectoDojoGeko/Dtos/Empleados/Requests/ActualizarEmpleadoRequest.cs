@@ -33,6 +33,10 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
         [RegularExpression(@"^[0-9+\-\(\)\s]+$", ErrorMessage = "Solo se permiten números, espacios, guiones y paréntesis")]
         public string Telefono { get; set; }
 
+        [StringLength(255, MinimumLength = 10, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
+        [RegularExpression(@"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s0-9.,#-]+$", ErrorMessage = "El campo {0} solo debe contener letras, números y caracteres de dirección válidos.")]
+        public string Direccion { get; set; } = string.Empty;
+
         [StringLength(15, MinimumLength = 7, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
         [RegularExpression(@"^\d{7,15}-?\d{0,1}$", ErrorMessage = "El campo {0} debe tener formato numérico válido.")]
         public string NIT { get; set; } = string.Empty;
