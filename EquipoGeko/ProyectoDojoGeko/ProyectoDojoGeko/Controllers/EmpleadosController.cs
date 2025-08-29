@@ -163,6 +163,7 @@ namespace ProyectoDojoGeko.Controllers
                     Salario = empleado.Salario,
                     FechaIngreso = empleado.FechaIngreso,
                     FechaNacimiento = empleado.FechaNacimiento,
+                    Genero = empleado.Genero,
                     Estado = empleado.Estado
                 };
 
@@ -218,6 +219,7 @@ namespace ProyectoDojoGeko.Controllers
                     CorreoPersonal = empleado.CorreoPersonal,
                     Telefono = empleado.Telefono,
                     NIT = empleado.NIT,
+                    Direccion = empleado.Direccion, 
                     Genero = empleado.Genero,
                     Salario = empleado.Salario,
                     Estado = empleado.Estado
@@ -265,6 +267,7 @@ namespace ProyectoDojoGeko.Controllers
                     NIT = empleado.NIT,
                     NombresEmpleado = empleado.NombresEmpleado,
                     ApellidosEmpleado = empleado.ApellidosEmpleado,
+                    Direccion = empleado.Direccion, // Añadido para guardar en la BD
                     Genero = empleado.Genero,
                     CorreoInstitucional = empleado.CorreoInstitucional,
                     Telefono = empleado.Telefono,
@@ -290,6 +293,29 @@ namespace ProyectoDojoGeko.Controllers
             {
                 await RegistrarError("acceso a vista edición de empleado", ex);
                 return RedirectToAction("Editar");
+            }
+        }
+
+        [HttpGet]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
+        public async Task<IActionResult> Detalles(int id)
+        {
+            try
+            {
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(id);
+                if (empleado == null)
+                {
+                    await RegistrarError("ver detalles de empleado", new Exception($"Empleado con ID {id} no encontrado."));
+                    return NotFound();
+                }
+
+                await RegistrarBitacora("Vista Detalles Empleado", $"Acceso a detalles de empleado: {empleado.NombresEmpleado} (ID: {id})");
+                return View(empleado);
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("acceso a vista de detalles de empleado", ex);
+                return RedirectToAction("Index");
             }
         }
 

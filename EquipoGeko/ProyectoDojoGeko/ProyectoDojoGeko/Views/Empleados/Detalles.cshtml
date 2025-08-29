@@ -1,0 +1,268 @@
+@model ProyectoDojoGeko.Models.EmpleadoViewModel
+
+@{
+    ViewData["Title"] = "Detalles del Empleado";
+    Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/empleados.css" />
+    <style>
+        /* Estilos específicos para la página de detalles */
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .profile-card {
+            grid-column: 1 / -1; /* Ocupa todo el ancho */
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .profile-avatar img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--empleados-primary);
+        }
+        
+        .profile-avatar .avatar-placeholder {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--gray-400);
+        }
+
+        .profile-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 0;
+        }
+
+        .profile-position {
+            font-size: 1rem;
+            color: var(--gray-600);
+            margin: 0.25rem 0 0.5rem;
+        }
+
+        .info-card {
+            background: var(--white);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .info-card-header {
+            background: var(--gray-50);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .info-card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-card-header i {
+            color: var(--empleados-primary);
+        }
+
+        .info-card-body {
+            padding: 1rem;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: var(--gray-600);
+        }
+
+        .info-value {
+            color: var(--gray-800);
+            text-align: right;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--gray-600);
+            color: var(--white);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .btn-back:hover {
+            background: var(--gray-700);
+            color: var(--white);
+            text-decoration: none;
+        }
+    </style>
+}
+
+<div class="empleados-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-user-tie"></i>
+                Detalles del Empleado
+            </h1>
+        </div>
+        <div class="header-actions">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Volver a la Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- Employee Details Grid -->
+    <div class="details-grid">
+        <!-- Profile Card -->
+        <div class="profile-card">
+            <div class="profile-avatar">
+                @if (!string.IsNullOrEmpty(Model.Foto))
+                {
+                    <img src="@Model.Foto" alt="Foto de @Model.NombresEmpleado" />
+                }
+                else
+                {
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                }
+            </div>
+            <div class="profile-info">
+                <h2 class="profile-name">@Model.NombresEmpleado @Model.ApellidosEmpleado</h2>
+                <p class="profile-position">@Model.Puesto</p>
+                <span class="estado-badge @(Model.Estado == 1 ? "activo" : "inactivo")">
+                    @(Model.Estado == 1 ? "Activo" : "Inactivo")
+                </span>
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3><i class="fas fa-briefcase"></i> Información Laboral</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="info-item">
+                    <span class="info-label">Código</span>
+                    <span class="info-value">@Model.CodigoEmpleado</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Fecha de Ingreso</span>
+                    <span class="info-value">@Model.FechaIngreso.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Salario</span>
+                    <span class="info-value">@Model.Salario.ToString("C")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Días de Vacaciones</span>
+                    <span class="info-value">@Model.DiasVacacionesAcumulados</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3><i class="fas fa-id-card"></i> Información Personal</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="info-item">
+                    <span class="info-label">DPI</span>
+                    <span class="info-value">@Model.DPI</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Pasaporte</span>
+                    <span class="info-value">@Model.Pasaporte</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Fecha de Nacimiento</span>
+                    <span class="info-value">@Model.FechaNacimiento.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Género</span>
+                    <span class="info-value">@Model.Genero</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3><i class="fas fa-phone-alt"></i> Contacto</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="info-item">
+                    <span class="info-label">Correo Institucional</span>
+                    <span class="info-value">@Model.CorreoInstitucional</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Correo Personal</span>
+                    <span class="info-value">@Model.CorreoPersonal</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono</span>
+                    <span class="info-value">@Model.Telefono</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3><i class="fas fa-map-marker-alt"></i> Ubicación</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="info-item">
+                    <span class="info-label">País</span>
+                    <span class="info-value">@Model.Pais</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Departamento</span>
+                    <span class="info-value">@Model.Departamento</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Dirección</span>
+                    <span class="info-value">@Model.Direccion</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

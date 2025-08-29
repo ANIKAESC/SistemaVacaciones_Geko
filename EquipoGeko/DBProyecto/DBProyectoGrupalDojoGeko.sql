@@ -2188,35 +2188,51 @@ CREATE TABLE EmpleadosEquipo (
 );
 GO
 
+
 CREATE PROCEDURE sp_ListarEmpleadosConRolPorEquipo
     @IdEquipo INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    WITH EmpleadoRoles AS (
+        SELECT 
+            e.IdEmpleado,
+            e.NombresEmpleado,
+            e.ApellidosEmpleado,
+            r.NombreRol
+        FROM 
+            EmpleadosEquipo ee
+        INNER JOIN 
+            Empleados e ON ee.FK_IdEmpleado = e.IdEmpleado
+        INNER JOIN 
+            Usuarios u ON e.IdEmpleado = u.FK_IdEmpleado
+        INNER JOIN 
+            UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
+        INNER JOIN 
+            Roles r ON ur.FK_IdRol = r.IdRol
+        WHERE 
+            ee.FK_IdEquipo = 1
+        GROUP BY -- Agrupamos para evitar roles duplicados por empleado
+            e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado, r.NombreRol
+    )
     SELECT 
-		e.IdEmpleado,
-		e.NombresEmpleado,
-		e.ApellidosEmpleado,
-		STRING_AGG(r.NombreRol, ', ') AS Roles
-	FROM 
-		EmpleadosEquipo ee
-	INNER JOIN 
-		Empleados e ON ee.FK_IdEmpleado = e.IdEmpleado
-	INNER JOIN 
-		Usuarios u ON e.IdEmpleado = u.FK_IdEmpleado
-	INNER JOIN 
-		UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
-	INNER JOIN 
-		Roles r ON ur.FK_IdRol = r.IdRol
-	WHERE 
-		ee.FK_IdEquipo = @IdEquipo
-		AND r.NombreRol IN ('TeamLider', 'SubLider', 'Autorizador', 'Empleado')
-	GROUP BY 
-		e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado
-	
+        IdEmpleado,
+        NombresEmpleado,
+        ApellidosEmpleado,
+        -- Usamos STRING_AGG con un CASE para filtrar solo los roles deseados
+        STRING_AGG(
+            CASE 
+                WHEN NombreRol IN ('TeamLider', 'SubLider') THEN NombreRol
+                ELSE NULL 
+            END, ', ') AS Roles
+    FROM 
+        EmpleadoRoles
+    GROUP BY 
+        IdEmpleado, NombresEmpleado, ApellidosEmpleado;
 END
 GO
+
 
 -- --------------------- Tabla Intermedia: EquiposProyecto ---------------------
 -- Relaciona los equipos con los proyectos

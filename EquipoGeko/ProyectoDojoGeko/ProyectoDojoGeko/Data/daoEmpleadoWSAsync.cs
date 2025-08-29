@@ -250,18 +250,14 @@ namespace ProyectoDojoGeko.Data
         // Método para eliminar un empleado por su ID
         public async Task<int> EliminarEmpleadoAsync(int Id)
         {
-            var parametros = new[]
-            {
-                new SqlParameter("@IdEmpleado", Id)
-            };
-
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 await conn.OpenAsync();
-                using (SqlCommand cmd = new SqlCommand("sp_EliminarEmpleado", conn))
+                // Se corrige el nombre del SP para que coincida con el de la base de datos
+                using (SqlCommand cmd = new SqlCommand("sp_CambiarEstadoEmpleado", conn))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddRange(parametros);
+                    cmd.Parameters.Add(new SqlParameter("@IdEmpleado", Id));
                     return await cmd.ExecuteNonQueryAsync();
                 }
             }
