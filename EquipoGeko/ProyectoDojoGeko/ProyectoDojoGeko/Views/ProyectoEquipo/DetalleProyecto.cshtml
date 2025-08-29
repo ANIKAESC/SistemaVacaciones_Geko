@@ -17,20 +17,16 @@
                 <i class="fas fa-file-alt"></i>
                 Detalle del HUB
             </h1>
-            <p class="page-subtitle">
-                Información completa del HUB
-            </p>
+            <p class="page-subtitle">Información completa del HUB</p>
         </div>
         <div class="header-actions">
             <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-back">
-                <i class="fas fa-arrow-left"></i>
-                <span>Volver</span>
+                <i class="fas fa-arrow-left"></i> Volver
             </a>
             @if (puedeEditar)
             {
                 <a href="@Url.Action("EditarHUB", "ProyectoEquipo", new { id = Model.IdProyecto })" class="btn-edit">
-                    <i class="fas fa-edit"></i>
-                    <span>Editar</span>
+                    <i class="fas fa-edit"></i> Editar
                 </a>
             }
         </div>
@@ -57,26 +53,15 @@
         <div class="proyecto-content">
             <div class="info-section">
                 <div class="section-header">
-                    <h3>
-                        <i class="fas fa-info-circle"></i>
-                        Información General
-                    </h3>
+                    <h3><i class="fas fa-info-circle"></i> Información General</h3>
                 </div>
                 <div class="info-grid">
                     <div class="info-item">
-                        <div class="info-label">
-                            <i class="fas fa-calendar-alt"></i>
-                            Fecha Inicio
-                        </div>
-                        <div class="info-value">
-                            @Model.FechaInicio
-                        </div>
+                        <div class="info-label"><i class="fas fa-calendar-alt"></i> Fecha Inicio</div>
+                        <div class="info-value">@Model.FechaInicio</div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">
-                            <i class="fas fa-align-left"></i>
-                            Descripción
-                        </div>
+                        <div class="info-label"><i class="fas fa-align-left"></i> Descripción</div>
                         <div class="info-value">
                             @(string.IsNullOrEmpty(Model.Descripcion) ? "No especificada" : Model.Descripcion)
                         </div>
@@ -87,10 +72,7 @@
             <!-- Equipos asignados -->
             <div class="info-section">
                 <div class="section-header">
-                    <h3>
-                        <i class="fas fa-users"></i>
-                        Equipos Asignados
-                    </h3>
+                    <h3><i class="fas fa-users"></i> Equipos Asignados</h3>
                 </div>
                 <div class="equipos-list">
                     @if (ViewBag.Equipos != null && ((List<EquipoViewModel>)ViewBag.Equipos).Count > 0)
@@ -98,16 +80,13 @@
                         foreach (var equipo in ViewBag.Equipos)
                         {
                             <div class="equipo-item">
-                                <div class="equipo-icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
+                                <div class="equipo-icon"><i class="fas fa-users"></i></div>
                                 <div class="equipo-info">
                                     <h4>@equipo.Nombre</h4>
                                     <p>@(equipo.Descripcion ?? "Sin descripción")</p>
                                 </div>
                                 <div class="equipo-actions">
-                                    <a href="@Url.Action("DetalleEquipo", "ProyectoEquipo", new { id = equipo.IdEquipo })"
-                                       class="btn-action btn-view">
+                                    <a href="@Url.Action("DetalleEquipo", "ProyectoEquipo", new { id = equipo.IdEquipo })" class="btn-action btn-view">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 </div>
@@ -124,46 +103,239 @@
                 </div>
             </div>
         </div>
-        <hr />
+
         <!-- HUB Footer -->
         <div class="proyecto-footer">
             <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-secondary">
-                <i class="fas fa-list"></i>
-                Ver todos los HUBS
+                <i class="fas fa-list"></i> Ver todos los HUBS
             </a>
             @if (puedeEditar)
             {
                 <a href="@Url.Action("CrearEquipo", "ProyectoEquipo", new { id = Model.IdProyecto })" class="btn-primary">
-                    <i class="fas fa-users"></i>
-                    Asignar Equipo
+                    <i class="fas fa-users"></i> Asignar Equipo
                 </a>
             }
         </div>
     </div>
 </div>
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/empleado-detalle.css" />
-}
-
 <style>
-    .page-header{
-        margin: 10px 30px;
+    /* ====== ESTILOS GENERALES ====== */
+    .page-header {
+        margin: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
+    .page-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .header-actions a {
+        margin-left: 10px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-edit {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    .btn-back:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-edit:hover {
+        background: #1d4ed8;
+    }
+
+    /* ====== TARJETA ====== */
     .proyecto-card {
-        margin: 30px 30px;
-        padding: 2% 2%;
-        box-shadow: 0 1px 3px 0 rgba(0 0 0 / .1);
-        border-radius: 10px;
+        margin: 30px;
+        padding: 25px;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        border-radius: 12px;
     }
 
+    .proyecto-header {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .proyecto-icon {
+        font-size: 32px;
+        color: #2563eb;
+        margin-right: 15px;
+    }
+
+    .proyecto-meta {
+        display: flex;
+        gap: 15px;
+        margin-top: 5px;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+        .badge.activo {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge.inactivo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+    .fecha {
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    /* ====== INFO SECTIONS ====== */
+    .info-section {
+        margin-bottom: 25px;
+    }
+
+    .section-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 10px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+    }
+
+    .info-item {
+        background: #f9fafb;
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .info-label {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: #111827;
+    }
+
+    /* ====== EQUIPOS ====== */
+    .equipos-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .equipo-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f3f4f6;
+        padding: 12px;
+        border-radius: 10px;
+        transition: 0.2s;
+    }
+
+        .equipo-item:hover {
+            background: #e5e7eb;
+        }
+
+    .equipo-info h4 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 3px;
+    }
+
+    .equipo-info p {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .btn-action {
+        padding: 6px 10px;
+        border-radius: 6px;
+        text-decoration: none;
+    }
+
+    .btn-view {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    /* ====== EMPTY STATE ====== */
+    .empty-state {
+        text-align: center;
+        color: #6b7280;
+        padding: 20px;
+    }
+
+    /* ====== FOOTER ====== */
     .proyecto-footer {
         display: flex;
-        flex-flow: row-reverse;
-        background-color: #f9fafb;
-        border-radius: 10px;
-        margin-top:2%;
-        padding:40px  28px;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn-secondary, .btn-primary {
+        padding: 10px 18px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-primary {
+        background: #16a34a;
+        color: #fff;
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-primary:hover {
+        background: #15803d;
     }
 </style>

@@ -24,7 +24,6 @@ namespace ProyectoDojoGeko.Models
         [ForeignKey("Estado")]
         [Column("FK_IdEstado")]
         public int FK_IdEstado { get; set; } = 1;
-
         
     }
 }

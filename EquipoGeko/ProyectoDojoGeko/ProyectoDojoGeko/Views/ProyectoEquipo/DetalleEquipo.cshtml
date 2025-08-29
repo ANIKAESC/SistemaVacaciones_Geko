@@ -1,3 +1,4 @@
+@*
 @model ProyectoDojoGeko.Models.EquipoViewModel
 @{
     ViewData["Title"] = "Detalle del Equipo";
@@ -19,7 +20,7 @@
             </a>
             <a href="@Url.Action("EditarEquipo", "ProyectoEquipo", new { id = Model.IdEquipo })" class="btn-edit">
                 <i class="fas fa-edit"></i>
-                <span>Editar</span>
+                <span>Asigna o elimina empleados para este equipo</span>
             </a>
         </div>
     </div>
@@ -76,7 +77,6 @@
                                     <h4>@empleado.NombresEmpleado</h4>
                                     <p>@empleado.Puesto</p>
                                 </div>
-                                <!-- Opcional: acciones sobre el empleado -->
                             </div>
                         }
                     }
@@ -85,93 +85,10 @@
                         <div class="empty-state">
                             <i class="fas fa-info-circle"></i>
                             <p>No hay empleados asignados a este equipo</p>
-                            <button class="btn-edit" data-bs-toggle="modal" data-bs-target="#modalAsignarEmpleados">
-                                <i class="fas fa-users"></i>
-                                <span>Asignar Empleados</span>
-                            </button>
                         </div>
                     }
                 </div>
-
-                <!-- Modal para asignar empleados -->
-                <div class="modal fade" id="modalAsignarEmpleados" tabindex="-1" aria-labelledby="modalAsignarEmpleadosLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="modalAsignarEmpleadosLabel">Asignar Empleados al Equipo</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                @if (ViewBag.EmpleadosNoAsignados != null && ((List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados).Count > 0)
-                                {
-                                    <form id="formAsignarEmpleados">
-                                        <input type="hidden" name="idEquipo" value="@Model.IdEquipo" />
-                                        <div class="table-responsive">
-                                            <table class="table table-striped">
-                                                <thead>
-                                                    <tr>
-                                                        <th></th>
-                                                        <th>Nombre</th>
-                                                        <th>Puesto</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach (var emp in (List<EmpleadoViewModel>)ViewBag.EmpleadosNoAsignados)
-                                                    {
-                                                        <tr>
-                                                            <td>
-                                                                <input type="checkbox" name="empleadosSeleccionados" value="@emp.IdEmpleado" />
-                                                            </td>
-                                                            <td>@emp.NombresEmpleado @emp.ApellidosEmpleado</td>
-                                                            <td>@emp.Puesto</td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-info">No hay empleados disponibles para asignar.</div>
-                                }
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-primary" onclick="asignarEmpleados()">Asignar Seleccionados</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <script>
-                    function asignarEmpleados() {
-                        var form = document.getElementById('formAsignarEmpleados');
-                        var formData = new FormData(form);
-                        var empleados = [];
-                        formData.getAll('empleadosSeleccionados').forEach(function (id) {
-                            empleados.push(parseInt(id));
-                        });
-                        if (empleados.length === 0) {
-                            alert('Selecciona al menos un empleado.');
-                            return;
-                        }
-                        fetch('@Url.Action("AsignarMiembro", "ProyectoEquipo")', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ idEquipo: @Model.IdEquipo, empleados: empleados })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                location.reload();
-                            } else {
-                                alert('Error al asignar empleados: ' + (data.message || '')); 
-                            }
-                        })
-                        .catch(error => alert('Error: ' + error));
-                    }
-                </script>
+                
             </div>
         </div>
     </div>
@@ -179,3 +96,262 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/empleado-detalle.css" />
 }
+*@
+
+
+
+@model ProyectoDojoGeko.Models.EquipoViewModel
+@{
+    ViewData["Title"] = "Detalle del Equipo";
+    Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
+}
+<div class="proyecto-detalle-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="fas fa-file-alt"></i> Detalle del Equipo
+            </h1>
+            <p class="page-subtitle">Información completa del equipo y empleados asignados</p>
+        </div>
+        <div class="header-actions">
+            <a href="@Url.Action("Index", "ProyectoEquipo")" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver</span>
+            </a>
+            <a href="@Url.Action("EditarEquipo", "ProyectoEquipo", new { id = Model.IdEquipo })" class="btn-edit">
+                <i class="fas fa-edit"></i>
+                <span>Asigna o elimina empleados</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjeta principal -->
+    <div class="proyecto-card">
+
+        <!-- Información General -->
+        <div class="info-section">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-info-circle"></i>
+                    Información General
+                </h3>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Nombre</div>
+                    <div class="info-value">@Model.Nombre</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">ID del Equipo</div>
+                    <div class="info-value">@Model.IdEquipo</div>
+                </div>
+                <div class="info-item" style="grid-column: span 2;">
+                    <div class="info-label">Descripción</div>
+                    <div class="info-value">
+                        @(string.IsNullOrEmpty(Model.Descripcion) ? "Sin descripción" : Model.Descripcion)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empleados asignados -->
+        <div class="info-section">
+            <div class="section-header">
+                <h3>
+                    <i class="fas fa-users"></i>
+                    Empleados Asignados
+                </h3>
+            </div>
+            <div class="equipos-list">
+                @if (ViewBag.Empleados != null && ((List<EmpleadoViewModel>)ViewBag.Empleados).Count > 0)
+                {
+                    foreach (var empleado in (List<EmpleadoViewModel>)ViewBag.Empleados)
+                    {
+                        <div class="empleado-item">
+                            <div class="empleado-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="empleado-info">
+                                <h4>@empleado.NombresEmpleado</h4>
+                                <p>@empleado.Puesto</p>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No hay empleados asignados a este equipo</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/empleado-detalle.css" />
+}
+
+<style>
+    /* Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 16px 30px;
+        border-radius: 10px;
+        margin: 20px 30px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    .header-actions a {
+        margin-left: 10px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .btn-back {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
+    .btn-edit {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-back:hover {
+        background: #d1d5db;
+    }
+
+    .btn-edit:hover {
+        background: #1d4ed8;
+    }
+
+    /* Card principal */
+    .proyecto-card {
+        background: white;
+        margin: 20px 30px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,.05);
+        border-radius: 12px;
+    }
+
+    .info-section {
+        margin-bottom: 24px;
+    }
+
+    .section-header h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    /* Grid de info */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .info-item {
+        background: #f9fafb;
+        padding: 12px 16px;
+        border-radius: 8px;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #6b7280;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #111827;
+        margin-top: 4px;
+    }
+
+    /* Lista de empleados */
+    .empleado-item {
+        display: flex;
+        align-items: center;
+        background: #f9fafb;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+        .empleado-item:hover {
+            transform: translateY(-2px);
+            background: #f3f4f6;
+        }
+
+    .empleado-icon {
+        width: 40px;
+        height: 40px;
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 12px;
+    }
+
+    .empleado-info h4 {
+        margin: 0;
+        font-size: 1rem;
+        color: #111827;
+        font-weight: 600;
+    }
+
+    .empleado-info p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    /* Estado vacío */
+    .empty-state {
+        text-align: center;
+        padding: 20px;
+        color: #6b7280;
+        background: #f3f4f6;
+        border-radius: 8px;
+    }
+
+        .empty-state i {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: #9ca3af;
+        }
+</style>

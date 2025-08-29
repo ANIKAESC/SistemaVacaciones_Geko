@@ -9,6 +9,7 @@
 
     var codigoEmpleado = Context.Session.GetString("CodigoEmpleado") ?? "N/A";
     var nombreEmpleado = Context.Session.GetString("NombreCompletoEmpleado") ?? "N/A";
+    var estados = ViewBag.Estados as Dictionary<int, string> ?? new Dictionary<int, string>();
 }
 
 <div class="solicitudes-container azul">
@@ -89,7 +90,7 @@
                             <td>@solicitud.NombreEmpleado</td>
                             <td>@solicitud.DiasSolicitadosTotal</td>
                             <td>
-                                @(solicitud.Estado == 1 ? "Ingresada" : "Otro")
+                                @(estados.ContainsKey(solicitud.Estado) ? estados[solicitud.Estado] : "Desconocido")
                             </td>
                             <td>
                                 <a href="@Url.Action("Detalle", "Solicitudes", new { id = solicitud.IdSolicitud })"

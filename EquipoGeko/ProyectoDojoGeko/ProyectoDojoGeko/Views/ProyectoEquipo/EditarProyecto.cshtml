@@ -124,7 +124,144 @@
 </div>
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/crearHUB.css" />
+    <style>
+        .hub-form-container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: #718096;
+        }
+
+        .btn-back {
+            background: #edf2f7;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            color: #2d3748;
+            transition: 0.2s;
+        }
+
+            .btn-back:hover {
+                background: #e2e8f0;
+                transform: translateX(-3px);
+            }
+
+        .form-card {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .section-header {
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2b6cb0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-control {
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            transition: 0.2s;
+        }
+
+            .form-control:focus {
+                border-color: #3182ce;
+                box-shadow: 0 0 0 3px rgba(66,153,225,0.3);
+            }
+
+        textarea.form-control {
+            resize: vertical;
+        }
+
+        .validation-message {
+            color: #e53e3e;
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
+        }
+
+        .form-actions {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-reset {
+            background: #edf2f7;
+            color: #2d3748;
+            padding: 0.7rem 1.4rem;
+            border-radius: 8px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            .btn-reset:hover {
+                background: #e2e8f0;
+            }
+
+        .btn-submit {
+            background: #3182ce;
+            color: #fff;
+            padding: 0.7rem 1.6rem;
+            border-radius: 8px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            .btn-submit:hover {
+                background: #2b6cb0;
+            }
+    </style>
 }
 
 @section Scripts {
