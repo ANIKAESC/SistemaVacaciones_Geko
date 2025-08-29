@@ -421,7 +421,59 @@ namespace ProyectoDojoGeko.Data
             }
 
             return solicitudes;
-        }*/
+       }*/
 
+        public async Task<bool> ActualizarEstadoSolicitud(int idSolicitud, int nuevoEstado, int idAutorizador, string motivoRechazo = null)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                var query = "sp_ActualizarEstadoSolicitud";
+                using var procedure = new SqlCommand(query, connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                procedure.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+                procedure.Parameters.AddWithValue("@NuevoEstado", nuevoEstado);
+                procedure.Parameters.AddWithValue("@IdAutorizador", idAutorizador);
+
+                if (!string.IsNullOrEmpty(motivoRechazo))
+                {
+                    procedure.Parameters.AddWithValue("@MotivoRechazo", motivoRechazo);
+                }
+
+                await connection.OpenAsync();
+                await procedure.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.ToString());
+                return false;
+            }
+        }
+
+        public async Task<bool> CancelarSolicitud(int idSolicitud)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                var query = "sp_CancelarSolicitud";
+                using var procedure = new SqlCommand(query, connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                procedure.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+                await connection.OpenAsync();
+                await procedure.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.ToString());
+                return false;
+            }
+        }
     }
 }

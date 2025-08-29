@@ -58,14 +58,12 @@
                     @for (int i = 0; i < Model.Count; i++)
                     {
                         var solicitud = Model[i];
-                        <tr class="main-row" data-toggle="collapse" data-target="#detalles-@solicitud.Encabezado.IdSolicitud" style="cursor:pointer;">
+                        var nombreEstado = estados.FirstOrDefault(e => e.Value == solicitud.Encabezado.Estado.ToString())?.Text ?? "Desconocido";
+                        <tr class="main-row" data-toggle="collapse" data-target="#detalles-@solicitud.Encabezado.IdSolicitud" data-id="@solicitud.Encabezado.IdSolicitud" data-estado="@nombreEstado" style="cursor:pointer;">
                             <td>@solicitud.Encabezado.IdSolicitud</td>
                             <td>@solicitud.Encabezado.FechaIngresoSolicitud</td>
                             <td>@solicitud.Encabezado.DiasSolicitadosTotal</td>
                             <td>
-                                @{
-                                    var nombreEstado = estados.FirstOrDefault(e => e.Value == solicitud.Encabezado.Estado.ToString())?.Text ?? "Desconocido";
-                                }
                                 <span class="badge badge-success">@nombreEstado</span>
                             </td>
                         </tr>
@@ -98,10 +96,14 @@
             </button>
 
             <button class="btn-cancel"><i class="fas fa-times"></i> Cancelar solicitud</button>
-            <button class="btn-reset"><i class="fas fa-paper-plane"></i> Solicitar autorización</button>
+            <!--<button class="btn-reset"><i class="fas fa-paper-plane"></i> Solicitar autorización</button>-->
         </div>
     </div>
 </div>
+
+<form id="cancelForm" asp-action="CancelarSolicitud" method="post" style="display: none;">
+    <input type="hidden" id="idSolicitud" name="idSolicitud" />
+</form>
 
 @section Styles {
     <link rel="stylesheet" href="~/css/empleado-form.css" />
@@ -276,19 +278,22 @@
                 margin-right: 6px;
             }
 
+        .table tr.selected-row td {
+            background-color: #d6eaff; /* Light blue for selection */
+        }
+
         /* Responsive */
         @@media (max-width: 768px) {
             .empleado-info-card .info-row
+            {
+                flex-direction: column;
+                gap: 6px;
+            }
 
-        {
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .actions-container {
-            flex-direction: column;
-            align-items: stretch;
-        }
+            .actions-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
 
         }
     </style>
@@ -297,10 +302,24 @@
 
 @section Scripts {
     <script>
+        let selectedRow = null;
+        let selectedSolicitudId = 0;
+        let selectedEstado = '';
+
         document.querySelectorAll('.main-row').forEach(row => {
             row.addEventListener('click', function (e) {
                 // Evita que el evento se propague si haces click en un botón dentro de la fila
                 if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+
+                // Handle row selection
+                if (selectedRow) {
+                    selectedRow.classList.remove('selected-row');
+                }
+                selectedRow = this;
+                selectedRow.classList.add('selected-row');
+
+                selectedSolicitudId = selectedRow.dataset.id;
+                selectedEstado = selectedRow.dataset.estado;
 
                 const targetId = this.getAttribute('data-target');
                 const detalleRow = document.querySelector(targetId);
@@ -319,6 +338,23 @@
                     }
                 }
             });
+        });
+
+        document.querySelector('.btn-cancel').addEventListener('click', function () {
+            if (!selectedRow) {
+                alert('Por favor, seleccione una solicitud para cancelar.');
+                return;
+            }
+
+            if (selectedEstado !== 'Ingresada') {
+                alert('Solo se pueden cancelar solicitudes en estado "Ingresada".');
+                return;
+            }
+
+            if (confirm('¿Está seguro de que desea cancelar la solicitud seleccionada?')) {
+                document.getElementById('idSolicitud').value = selectedSolicitudId;
+                document.getElementById('cancelForm').submit();
+            }
         });
     </script>
 }
