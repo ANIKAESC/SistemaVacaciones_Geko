@@ -92,6 +92,37 @@ namespace ProyectoDojoGeko.Controllers
             return dates;
         }
 
+        // Acción para rechazar una solicitud
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Rechazar(int idSolicitud, int idAutorizador, string? observaciones = null)
+        {
+            try
+            {
+
+                // Estado 3 = Rechazado (ajusta según tus códigos de estado)
+                bool resultado = await _daoSolicitud.ActualizarEstadoSolicitud(idSolicitud, 3, idAutorizador, observaciones);
+                
+                if (resultado)
+                {
+                    // Registrar en bitácora
+                    await _bitacoraService.RegistrarBitacoraAsync("Rechazar", $"Solicitud {idSolicitud} rechazada");
+
+                    TempData["MensajeExito"] = "La solicitud ha sido rechazada correctamente.";
+                    return RedirectToAction("Index");
+                }
+                
+                TempData["MensajeError"] = "No se pudo rechazar la solicitud. Por favor, intente nuevamente.";
+                return RedirectToAction("Detalle", new { id = idSolicitud });
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("Rechazar solicitud", ex);
+                TempData["MensajeError"] = "Ocurrió un error al intentar rechazar la solicitud.";
+                return RedirectToAction("Detalle", new { id = idSolicitud });
+            }
+        }
+
         // Método para registrar errores en el log
         private async Task RegistrarError(string accion, Exception ex)
         {

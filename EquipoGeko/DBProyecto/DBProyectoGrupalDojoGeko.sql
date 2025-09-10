@@ -2405,7 +2405,7 @@ GO
 
 -- Inserciones de prueba para la tabla Empresas
 INSERT INTO Empresas (Nombre, Descripcion, Codigo, FK_IdEstado)
-VALUES ('DigitalGeko Corps, S.A.', 'Empresa de soluciones tecnológicas y desarrollo de software.', 'DG001', 1);
+VALUES ('TPP', 'Empresa de soluciones tecnológicas y desarrollo de software.', 'DG001', 1);
 GO
 
 -- Inserciones de prueba para la tabla Sistemas
@@ -2506,7 +2506,7 @@ GO
 -- Insert para la tabla Proyectos
 INSERT INTO Proyectos (Nombre, Descripcion, FechaInicio,  FK_IdEstado)
 VALUES
-('TPP', NULL, NULL, 1),
+('DigitalGeko Corp, S.A.', NULL, NULL, 1),
 ('TOM', NULL, NULL, 1),
 ('Let´s Advertise', NULL, NULL, 1),
 ('Easy Go', NULL, NULL, 1),

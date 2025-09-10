@@ -321,13 +321,23 @@
 			<nav class="sidebar-nav">
 				<ul class="nav-list">
 
-					<!-- No toquen esta mierda, gracias -->
-					@{
-						var sistemaActual = Context.Session.GetString("SistemaActual") ?? "Seguridad";
+				<!-- Botón de Regresar al Dashboard Principal -->
+				<li class="nav-item">
+					<a href="@Url.Action("Dashboard", "Dashboard")" class="nav-link">
+						<i class="fas fa-arrow-left"></i>
+						<span>Regresar al Dashboard</span>
+					</a>
+				</li>
+
+				<!-- No toquen esta mierda, gracias -->
+				@{
+					var sistemaActual = Context.Session.GetString("SistemaActual") ?? "Seguridad";
 					}
 
 					@if (sistemaActual == "Seguridad")
 					{
+
+						
 
 						// --- Todos los módulos del sistema de seguridad (igual que tu menú original) ---
 						@if (mostrarDashboard)
