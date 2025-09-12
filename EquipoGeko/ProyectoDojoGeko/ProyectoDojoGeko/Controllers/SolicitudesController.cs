@@ -61,6 +61,34 @@ namespace ProyectoDojoGeko.Controllers
 
         #endregion
 
+        #region Métodos de Validación de PDF
+
+        /// <summary>
+        /// Valida que un archivo sea un PDF válido verificando su firma mágica
+        /// </summary>
+        private async Task<bool> EsPdfValido(IFormFile archivo)
+        {
+            try
+            {
+                using var stream = archivo.OpenReadStream();
+                var cabecera = new byte[5];
+                await stream.ReadAsync(cabecera, 0, 5);
+                
+                // Los archivos PDF válidos comienzan con "%PDF-" (25 50 44 46 2D en hexadecimal)
+                return cabecera[0] == 0x25 && // %
+                       cabecera[1] == 0x50 && // P
+                       cabecera[2] == 0x44 && // D
+                       cabecera[3] == 0x46 && // F
+                       cabecera[4] == 0x2D;   // -
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #endregion
+
         // Método para obtener feriados y pasarlos como un diccionario de fecha y proporción
         private async Task<Dictionary<string, decimal>> GetFeriadosConProporcion()
         {
@@ -316,10 +344,70 @@ namespace ProyectoDojoGeko.Controllers
         [AuthorizeRole("Empleado", "SuperAdministrador")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(SolicitudViewModel solicitud)
+        [RequestSizeLimit(5 * 1024 * 1024)] // 5MB limit
+        public async Task<IActionResult> Crear(SolicitudViewModel solicitud, IFormFile DocumentoFirmado)
         {
             try
             {
+                // Handle PDF upload
+                if (DocumentoFirmado != null && DocumentoFirmado.Length > 0)
+                {
+                    // Validar tipo de contenido
+                    var allowedContentTypes = new[] { "application/pdf", "application/octet-stream" };
+                    if (!allowedContentTypes.Contains(DocumentoFirmado.ContentType.ToLower()) && 
+                        !DocumentoFirmado.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ModelState.AddModelError("DocumentoFirmado", 
+                            "Formato de archivo no válido. Solo se permiten archivos PDF.");
+                    }
+                    // Validar tamaño máximo (5MB)
+                    else if (DocumentoFirmado.Length > 5 * 1024 * 1024)
+                    {
+                        ModelState.AddModelError("DocumentoFirmado", 
+                            "El archivo es demasiado grande. El tamaño máximo permitido es de 5MB.");
+                    }
+                    // Validar contenido real del PDF
+                    else if (!await EsPdfValido(DocumentoFirmado))
+                    {
+                        ModelState.AddModelError("DocumentoFirmado", 
+                            "El archivo no es un PDF válido o está dañado.");
+                    }
+                    else
+                    {
+                        try
+                        {
+                            using var memoryStream = new MemoryStream();
+                            await DocumentoFirmado.CopyToAsync(memoryStream);
+                            // Validar que el PDF no esté vacío
+                            if (memoryStream.Length == 0)
+                            {
+                                ModelState.AddModelError("DocumentoFirmado", 
+                                    "El archivo PDF está vacío.");
+                            }
+                            else
+                            {
+                                solicitud.Encabezado.DocumentoFirmadoData = memoryStream.ToArray();
+                                solicitud.Encabezado.DocumentoContentType = "application/pdf"; // Forzamos el content type
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            await _loggingService.RegistrarLogAsync(new LogViewModel
+                            {
+                                Accion = "Error al procesar PDF",
+                                Descripcion = $"Error al procesar el archivo PDF: {ex.Message}",
+                                Estado = false
+                            });
+                            ModelState.AddModelError("DocumentoFirmado", 
+                                "Ocurrió un error al procesar el archivo. Por favor, intente nuevamente.");
+                        }
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("DocumentoFirmado", 
+                        "Es obligatorio adjuntar el documento firmado en formato PDF.");
+                }
                 if (!ModelState.IsValid)
                 {
                     // Debug: Log error de validación
@@ -634,7 +722,7 @@ namespace ProyectoDojoGeko.Controllers
                 return RedirectToAction("Index");
             }
         }
-
+        
         // Vista principal para autorizar solicitudes
         // GET: SolicitudesController/Solicitudes
         [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider")]
@@ -674,6 +762,21 @@ namespace ProyectoDojoGeko.Controllers
                 TempData["ErrorMessage"] = "Error al cargar la solicitud: " + ex.Message;
                 return RedirectToAction("Solicitudes");//error coregido
             }
+        }
+
+        // Método para ver el documento firmado de una solicitud
+        [HttpGet]
+        public async Task<IActionResult> VerDocumento(int idSolicitud)
+        {
+            var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(idSolicitud);
+
+            if (solicitud?.Encabezado?.DocumentoFirmadoData == null)
+                return NotFound("Documento no encontrado");
+
+            return File(
+                solicitud.Encabezado.DocumentoFirmadoData,
+                solicitud.Encabezado.DocumentoContentType ?? "application/pdf"
+            );
         }
 
 
@@ -776,6 +879,5 @@ namespace ProyectoDojoGeko.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
     }
 }

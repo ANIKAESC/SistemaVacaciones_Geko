@@ -77,8 +77,17 @@ namespace ProyectoDojoGeko.Data
                     cmdEnc.Parameters.AddWithValue("@DiasSolicitadosTotal", solicitud.Encabezado.DiasSolicitadosTotal);
                     cmdEnc.Parameters.AddWithValue("@FechaIngresoSolicitud", solicitud.Encabezado.FechaIngresoSolicitud);
                     cmdEnc.Parameters.AddWithValue("@SolicitudLider", solicitud.Encabezado.SolicitudLider);
-                    cmdEnc.Parameters.AddWithValue("@Observaciones", string.IsNullOrWhiteSpace(solicitud.Encabezado.Observaciones) ? (object)DBNull.Value : solicitud.Encabezado.Observaciones);
+                    cmdEnc.Parameters.AddWithValue("@Observaciones", 
+                        string.IsNullOrWhiteSpace(solicitud.Encabezado.Observaciones) ? 
+                        (object)DBNull.Value : solicitud.Encabezado.Observaciones);
                     cmdEnc.Parameters.AddWithValue("@Estado", solicitud.Encabezado.Estado);
+                    
+                    // Agregar parámetros del PDF
+                    cmdEnc.Parameters.AddWithValue("@DocumentoFirmado", 
+                        solicitud.Encabezado.DocumentoFirmadoData ?? (object)DBNull.Value);
+                    cmdEnc.Parameters.AddWithValue("@DocumentoContentType", 
+                        !string.IsNullOrEmpty(solicitud.Encabezado.DocumentoContentType) ? 
+                        solicitud.Encabezado.DocumentoContentType : (object)DBNull.Value);
 
                     // SP retorna el ID con SELECT SCOPE_IDENTITY()
                     idSolicitud = Convert.ToInt32(await cmdEnc.ExecuteScalarAsync());
@@ -279,8 +288,12 @@ namespace ProyectoDojoGeko.Data
                                     NombreEmpleado = null, // Se asignará en el controlador si es necesario
                                     DiasSolicitadosTotal = (decimal)reader["DiasSolicitadosTotal"],
                                     FechaIngresoSolicitud = (DateTime)reader["FechaIngresoSolicitud"],
+                                    Observaciones = reader["Observaciones"] != DBNull.Value ? reader["Observaciones"].ToString() : null,
+                                    DocumentoFirmadoData = !await reader.IsDBNullAsync(reader.GetOrdinal("DocumentoFirmado"))
+                                        ? await reader.GetFieldValueAsync<byte[]>(reader.GetOrdinal("DocumentoFirmado"))
+                                        : null,
+                                    DocumentoContentType = reader["DocumentoContentType"] != DBNull.Value ? reader["DocumentoContentType"].ToString() : null,
                                     Estado = Convert.ToInt32(reader["Estado"]), // Ajustar según los estados que existan
-
                                 },
                                 Detalles = new List<SolicitudDetalleViewModel>()
                             };

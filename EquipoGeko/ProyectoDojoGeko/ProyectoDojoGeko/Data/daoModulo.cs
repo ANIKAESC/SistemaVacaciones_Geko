@@ -102,5 +102,35 @@ namespace ProyectoDojoGeko.Data
                 
             return idModulo;
         }
+
+        // Método para obtener los módulos que no están asignados a un sistema específico
+        public async Task<List<ModuloViewModel>> ObtenerModulosNoAsignadosAsync(int idSistema)
+        {
+            var modulos = new List<ModuloViewModel>();
+            string procedure = "sp_ListarModulosNoAsignados";
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand(procedure, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IdSistema", idSistema);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            modulos.Add(new ModuloViewModel
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("IdModulo")),
+                                Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                                Descripcion = reader.GetString(reader.GetOrdinal("Descripcion")),
+                                FK_IdEstado = reader.GetInt32(reader.GetOrdinal("FK_IdEstado"))
+                            });
+                        }
+                    }
+                }
+            }
+            return modulos;
+        }
     }
 }

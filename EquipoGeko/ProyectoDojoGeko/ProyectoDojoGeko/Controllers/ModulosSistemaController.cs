@@ -55,6 +55,12 @@ namespace ProyectoDojoGeko.Controllers
             return RedirectToAction("Crear");
         }
 
-        
+        [HttpGet]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        public async Task<IActionResult> ObtenerModulosNoAsignados(int idSistema)
+        {
+            var modulos = await _daoModulo.ObtenerModulosNoAsignadosAsync(idSistema);
+            return Json(modulos);
+        }
     }
 }

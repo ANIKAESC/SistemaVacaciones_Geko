@@ -125,7 +125,18 @@
 
     <!-- Acciones -->
     <div class="acciones-box">
-        <!-- Botón PDF -->
+        <!-- Botón Ver PDF -->
+        @if (Model.Encabezado.DocumentoFirmadoData != null && Model.Encabezado.DocumentoFirmadoData.Length > 0)
+        {
+            <button type="button" 
+                    class="btn btn-info boton-accion" 
+                    onclick="abrirModalDocumento(@Model.Encabezado.IdSolicitud)"
+                    title="Ver documento firmado">
+                <i class="fas fa-eye"></i> Ver Documento
+            </button>
+        }
+        
+        <!-- Botón Generar PDF -->
         <button type="button" onclick="generarPDF()" class="btn btn-primary boton-accion" id="btn-pdf">
             <i class="fas fa-file-pdf"></i> <span id="pdf-text">Generar PDF</span>
         </button>
@@ -143,6 +154,30 @@
                 <i class="fas fa-times"></i> Rechazar
             </button>
         </form>
+    </div>
+</div>
+
+<!-- Modal para visualizar el documento -->
+<div id="verDocumentoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; padding:20px; box-sizing:border-box;">
+    <div style="width:100%; max-width:1000px; margin:20px auto; background:#fff; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; height:calc(100% - 40px);">
+        <div style="padding:15px 20px; background:#003C9D; color:white; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-size:1.2em;">Documento Firmado</h3>
+            <button id="closePdfModal" style="background:none; border:none; color:white; font-size:1.5em; cursor:pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div style="flex:1; padding:0; overflow:hidden;">
+            <!-- Usamos iframe en lugar de object -->
+            <iframe id="pdfViewer" src="" type="application/pdf" style="width:100%; height:100%; min-height:500px; border:none;"></iframe>
+        </div>
+        <div style="padding:15px 20px; background:#f5f5f5; display:flex; justify-content:flex-end; gap:10px;">
+            <button id="btnDescargar" class="btn btn-primary">
+                <i class="fas fa-download"></i> Descargar
+            </button>
+            <button id="closePdfModalBtn" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+        </div>
     </div>
 </div>
 
@@ -542,6 +577,49 @@
         }, 3000);
     }
 
+    // Función para abrir el modal del documento
+    function abrirModalDocumento(idSolicitud) {
+        const modal = document.getElementById("verDocumentoModal");
+        const pdfViewer = document.getElementById("pdfViewer");
+
+        // Aquí cargamos el PDF directamente desde el controlador
+        pdfViewer.src = `/Solicitudes/VerDocumento?idSolicitud=${idSolicitud}`;
+
+        modal.style.display = "block";
+        document.body.style.overflow = "hidden";
+    }
+
+    // Cerrar modal al hacer clic en la X
+    document.getElementById('closePdfModal')?.addEventListener('click', function() {
+        const modal = document.getElementById('verDocumentoModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    // Cerrar modal al hacer clic en el botón Cerrar
+    document.getElementById('closePdfModalBtn')?.addEventListener('click', function() {
+        const modal = document.getElementById('verDocumentoModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    // Cerrar modal al hacer clic fuera del contenido
+    document.getElementById('verDocumentoModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    // Cerrar con tecla ESC
+    document.addEventListener('keydown', function(e) {
+        const modal = document.getElementById('verDocumentoModal');
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+
     // Verificar carga de librerías al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Verificando pdfMake...');
@@ -551,5 +629,51 @@
         } else {
             console.error('pdfMake NO está disponible');
         }
+
+        // Manejar el modal del visor de PDF
+        const verDocumentoBtn = document.querySelector('[data-bs-target="#verDocumentoModal"]');
+        const verDocumentoModal = document.getElementById('verDocumentoModal');
+        const closePdfModal = document.getElementById('closePdfModal');
+        const closePdfModalBtn = document.getElementById('closePdfModalBtn');
+
+        if (verDocumentoBtn) {
+            verDocumentoBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                verDocumentoModal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Evitar scroll del body
+            });
+        }
+
+        // Cerrar modal al hacer clic en la X
+        if (closePdfModal) {
+            closePdfModal.addEventListener('click', function() {
+                verDocumentoModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+        }
+
+        // Cerrar modal al hacer clic en el botón Cerrar
+        if (closePdfModalBtn) {
+            closePdfModalBtn.addEventListener('click', function() {
+                verDocumentoModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+        }
+
+        // Cerrar modal al hacer clic fuera del contenido
+        verDocumentoModal.addEventListener('click', function(e) {
+            if (e.target === verDocumentoModal) {
+                verDocumentoModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Cerrar con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && verDocumentoModal.style.display === 'block') {
+                verDocumentoModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
     });
 </script>

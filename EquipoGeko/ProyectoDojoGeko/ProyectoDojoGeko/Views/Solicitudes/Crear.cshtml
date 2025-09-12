@@ -35,7 +35,7 @@
             </div>
         </div>
 
-        <form asp-action="Crear" asp-controller="Solicitudes" method="post" id="solicitudForm" novalidate>
+        <form asp-action="Crear" asp-controller="Solicitudes" method="post" id="solicitudForm" enctype="multipart/form-data" novalidate>
             @Html.AntiForgeryToken()
             <div class="form-group">
                 <label class="form-label">Fechas a solicitar <span style="color: #c00;">*</span></label>
@@ -111,8 +111,46 @@
                           placeholder="Ejemplo: Necesito estos días por motivos familiares..."></textarea>
             </div>
 
+            <!-- PDF Document Section -->
+            <div class="form-group" style="margin-top: 20px; border: 1px solid #dee2e6; border-radius: 10px; padding: 20px;">
+                <h5 style="margin-top: 0;" class="form-label">Documento de Autorización</h5>
+                <p style="color: #6c757d; font-size: 0.9em;">
+                    Por favor descargue el formulario de autorización, fírmelo y cárguelo nuevamente.
+                </p>
+                
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="form-field">
+                        <a href="/pdfs/Boleta_de_dias_de_disponibilidad_GDG.pdf" 
+                           class="btn btn-primary" 
+                           download 
+                           style="display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-download"></i> Descargar Formulario
+                        </a>
+                    </div>
+                </div>
 
-
+                <div class="form-row" style="margin-top: 20px;">
+                    <div class="form-field" style="flex: 1;">
+                        <label for="DocumentoFirmado" class="form-label">
+                            Documento firmado <span style="color: #c00;">*</span>
+                        </label>
+                        <div class="custom-file">
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="DocumentoFirmado" 
+                                   name="DocumentoFirmado" 
+                                   accept=".pdf" 
+                                   required>
+                            <div class="invalid-feedback">
+                                Por favor suba el documento firmado en formato PDF.
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">
+                            Tamaño máximo: 5MB. Solo se aceptan archivos PDF.
+                        </small>
+                    </div>
+                </div>
+            </div>
 
             <div class="actions-container">
                 <button type="button" class="btn-submit" onclick="mostrarResumen()">
@@ -514,10 +552,39 @@
             }
 
             window.mostrarResumen = function () {
-                if (rangos.length === 0) return alert("Debes agregar al menos un rango de fechas.");
+                if (rangos.length === 0) {
+                    alert("Debes agregar al menos un rango de fechas.");
+                    return false;
+                }
+                
                 const totalDias = document.getElementById("TotalDias").value || "0";
                 const solicitado = document.getElementById("SolicitadoLider").value;
-                if (!solicitado) return alert("Debes indicar si ya solicitaste a tu líder.");
+                const documentoFirmado = document.getElementById("DocumentoFirmado");
+                
+                if (!solicitado) {
+                    alert("Debes indicar si ya solicitaste a tu líder.");
+                    return false;
+                }
+                
+                // Validar archivo subido
+                if (documentoFirmado.files.length === 0) {
+                    alert("Debes subir el documento firmado.");
+                    return false;
+                }
+                
+                const file = documentoFirmado.files[0];
+                const fileSize = file.size / 1024 / 1024; // in MB
+                const fileType = file.type;
+                
+                if (fileType !== 'application/pdf') {
+                    alert("Solo se permiten archivos PDF.");
+                    return false;
+                }
+                
+                if (fileSize > 5) {
+                    alert("El archivo no debe pesar más de 5MB.");
+                    return false;
+                }
 
                 let resumen = "<ul style='padding-left: 20px;'>";
                 rangos.forEach(r => {

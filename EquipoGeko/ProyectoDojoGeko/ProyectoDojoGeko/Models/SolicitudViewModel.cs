@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -48,6 +48,15 @@ namespace ProyectoDojoGeko.Models
 
         [Column("Observaciones")]
         public string? Observaciones { get; set; }
+
+        [Column("DocumentoFirmado", TypeName = "varbinary(max)")]
+        public byte[]? DocumentoFirmadoData { get; set; }
+
+        [Column("DocumentoContentType")]
+        public string? DocumentoContentType { get; set; }
+
+        [NotMapped]
+        public IFormFile? DocumentoFirmado { get; set; }
 
         [Column("FK_IdEstadoSolicitud")]
         public int Estado { get; set; }

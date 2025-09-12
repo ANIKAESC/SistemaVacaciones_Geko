@@ -19,7 +19,7 @@
             </p>
         </div>
         <div class="header-actions">
-            <a href="@Url.Action("Index", "ModulosSistema")" class="btn-back">
+            <a href="@Url.Action("Index", "Modulos")" class="btn-back">
                 <i class="fas fa-arrow-left"></i>
                 <span>Volver al listado</span>
             </a>
@@ -56,7 +56,7 @@
                             <span class="required">*</span>
                         </label>
                         <div class="input-container">
-                            <select asp-for="FK_IdSistema" class="form-control">
+                            <select asp-for="FK_IdSistema" class="form-control" required>
                                 <option value="">Seleccione un sistema</option>
                                 @if (ViewBag.Sistemas != null)
                                 {
@@ -79,15 +79,8 @@
                             <span class="required">*</span>
                         </label>
                         <div class="input-container">
-                            <select asp-for="FK_IdModulo" class="form-control">
-                                <option value="">Seleccione un módulo</option>
-                                @if (modulos != null)
-                                {
-                                    foreach (var modulo in modulos)
-                                    {
-                                        <option value="@modulo.Id">@modulo.Nombre</option>
-                                    }
-                                }
+                            <select asp-for="FK_IdModulo" class="form-control" required>
+                                <option value="">Seleccione un sistema primero</option>
                             </select>
                             <span asp-validation-for="FK_IdModulo" class="validation-message"></span>
                         </div>
@@ -104,7 +97,7 @@
                         <i class="fas fa-undo"></i>
                         <span>Limpiar</span>
                     </button>
-                    <button type="submit" class="btn-submit" id="submitBtn">
+                    <button type="submit" class="btn-submit" id="submitBtn" disabled>
                         <i class="fas fa-plus"></i>
                         <span>Asignar Módulo</span>
                     </button>
@@ -120,4 +113,51 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Handle system selection change
+            $('#FK_IdSistema').change(function() {
+                var sistemaId = $(this).val();
+                if (sistemaId) {
+                    loadUnassignedModules(sistemaId);
+                } else {
+                    // Clear modules if no system is selected
+                    $('#FK_IdModulo').html('<option value="">Seleccione un módulo</option>');
+                    $('#FK_IdModulo').prop('disabled', true);
+                }
+            });
+
+            // Function to load unassigned modules
+            function loadUnassignedModules(sistemaId) {
+                $.getJSON('/ModulosSistema/ObtenerModulosNoAsignados', { idSistema: sistemaId }, function(data) {
+                    var items = '<option value="">Seleccione un módulo</option>';
+                    $.each(data, function(i, modulo) {
+                        items += '<option value="' + modulo.id + '">' + modulo.nombre + '</option>';
+                    });
+                    
+                    var moduloSelect = $('#FK_IdModulo');
+                    moduloSelect.html(items);
+                    moduloSelect.prop('disabled', false);
+                    
+                    // Enable/disable submit button based on module selection
+                    toggleSubmitButton();
+                });
+            }
+
+            // Enable/disable submit button based on form validity
+            function toggleSubmitButton() {
+                var isValid = $('form')[0].checkValidity();
+                $('#submitBtn').prop('disabled', !isValid);
+            }
+
+            // Initial state
+            $('#FK_IdModulo').prop('disabled', true);
+            toggleSubmitButton();
+
+            // Validate form on change
+            $('form').on('change input', function() {
+                toggleSubmitButton();
+            });
+        });
+    </script>
 }

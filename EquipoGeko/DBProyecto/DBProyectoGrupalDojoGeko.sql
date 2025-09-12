@@ -1830,11 +1830,12 @@ CREATE TABLE SolicitudEncabezado
     FechaIngresoSolicitud DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
 	SolicitudLider VARCHAR(5) NULL CHECK (SolicitudLider IN ('Sí', 'No')),
 	Observaciones NVARCHAR(100) NULL,
+	DocumentoFirmado VARBINARY(MAX) NULL,
+    DocumentoContentType NVARCHAR(100) NULL,
     FK_IdEstadoSolicitud INT NOT NULL,
     FK_IdAutorizador INT NULL,
     FechaAutorizacion DATETIME NULL,
     MotivoRechazo NVARCHAR(500) NULL,
-
     CONSTRAINT FK_Solicitud_Empleado 
 		FOREIGN KEY (FK_IdEmpleado) 
 			REFERENCES Empleados(IdEmpleado),
@@ -1994,6 +1995,9 @@ BEGIN
         se.FK_IdEmpleado AS IdEmpleado,
         se.DiasSolicitadosTotal,
         se.FechaIngresoSolicitud,
+		se.Observaciones,
+		se.DocumentoFirmado,
+        se.DocumentoContentType,
         es.IdEstadoSolicitud AS Estado
     FROM SolicitudEncabezado se
     INNER JOIN Empleados e ON se.FK_IdEmpleado = e.IdEmpleado
@@ -2010,6 +2014,8 @@ BEGIN
     WHERE sd.FK_IdSolicitud = @IdSolicitud;
 END
 GO
+
+exec sp_ObtenerDetalleSolicitud 2;
 
 -- Obtener Encabezado por medio del IdEmpleado
 CREATE PROCEDURE sp_ObtenerSolicitudesPorEmpleado
@@ -2051,16 +2057,18 @@ CREATE PROCEDURE sp_InsertarSolicitudEncabezado
     @DiasSolicitadosTotal DECIMAL(4,2),
     @FechaIngresoSolicitud DATETIME,
 	@SolicitudLider NVARCHAR(5),
-	@Observaciones NVARCHAR(100),
-    @Estado INT
+	@Observaciones NVARCHAR(100) = NULL,
+    @Estado INT,
+    @DocumentoFirmado VARBINARY(MAX) = NULL,
+    @DocumentoContentType NVARCHAR(100) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO SolicitudEncabezado
-        (FK_IdEmpleado, NombresEmpleado, DiasSolicitadosTotal, FechaIngresoSolicitud, SolicitudLider, Observaciones, FK_IdEstadoSolicitud)
+        (FK_IdEmpleado, NombresEmpleado, DiasSolicitadosTotal, FechaIngresoSolicitud, SolicitudLider, Observaciones, DocumentoFirmado, DocumentoContentType, FK_IdEstadoSolicitud)
     VALUES
-        (@IdEmpleado, @NombresEmpleado, @DiasSolicitadosTotal, @FechaIngresoSolicitud, @SolicitudLider, @Observaciones, @Estado);
+        (@IdEmpleado, @NombresEmpleado, @DiasSolicitadosTotal, @FechaIngresoSolicitud, @SolicitudLider, @Observaciones, @DocumentoFirmado, @DocumentoContentType, @Estado);
 
     -- Retornar el ID generado
     SELECT SCOPE_IDENTITY() AS IdSolicitud;
