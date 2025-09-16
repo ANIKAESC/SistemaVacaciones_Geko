@@ -23,10 +23,10 @@
     <div class="stats-cards">
         <div class="stat-card shadow-card shadow-card-f">
             <div class="stat-content d-flex align-items-center">
-                <img src="~/imagenes/feriado-fijo.png" alt="Feriado Fijo" class="img-card me-4" />
+                <img src="~/imagenes/feriado-fijo.png" alt="Asueto Fijo" class="img-card me-4" />
                 <div class="stat-text">
-                    <div class="page-title">Feriados Fijos</div>
-                    <div class="stat-label">Permite gestionar feriados y eventos que se celebran en la misma fecha cada año.</div>
+                    <div class="page-title">Asuetos Fijos</div>
+                    <div class="stat-label">Permite gestionar los asuetos y eventos que se celebran en la misma fecha cada año.</div>
                     <small><em>Ej: Navidad, Independencia.</em></small><br /><br />
                     <a href="@Url.Action("FeriadosFijos", "Feriados")" class="btn-visitar btn-sm">
                         <i class="fas fa-list"></i> Visitar
@@ -39,10 +39,10 @@
     <div class="stats-cards">
         <div class="stat-card shadow-card shadow-card-v">
             <div class="stat-content d-flex align-items-center">
-                <img src="~/imagenes/feriado-variable.png" alt="Feriado Variable" class="img-card me-4" />
+                <img src="~/imagenes/feriado-variable.png" alt="Asueto Variable" class="img-card me-4" />
                 <div class="stat-text">
-                    <div class="page-title">Feriados Variables</div>
-                    <div class="stat-label">Permite gestionar feriados y eventos cuya fecha cambia cada año.</div>
+                    <div class="page-title">Asuetos Variables</div>
+                    <div class="stat-label">Permite gestionar los asuetos y eventos cuya fecha cambia cada año.</div>
                     <small><em>Ej: Semana Santa, Día de la Madre.</em></small><br /><br />
                     <a href="@Url.Action("FeriadosVariables", "Feriados")" class="btn-visitarv btn-sm">
                         <i class="fas fa-list"></i> Visitar
@@ -58,7 +58,7 @@
 <!-- Información adicional -->
 <div class="row mt-5">
     <div class="col-lg-10 mx-auto">
-        <div class="p-4 rounded-4 shadow info-box d-flex align-items-start">
+        <div class="p-4 rounded-4 shadow info-box d-flex align-items-center justify-content-center text-center">
             <div class="me-3">
                 <i class="fas fa-lightbulb fa-2x text-warning"></i>
             </div>
@@ -67,12 +67,14 @@
                 <p class="mb-0 text-secondary">
                     Los feriados que se configuran aquí afectan directamente el cálculo de <strong>nómina y horarios</strong>.
                     <br />
-                    Asegúrese de mantener esta sección actualizada para evitar <span class="text-danger fw-semibold">inconsistencias</span> en el sistema.
+                    Asegúrese de mantener esta sección actualizada para evitar
+                    <span class="text-danger fw-semibold">inconsistencias</span> en el sistema.
                 </p>
             </div>
         </div>
     </div>
 </div>
+
 
 
 

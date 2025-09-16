@@ -2015,8 +2015,6 @@ BEGIN
 END
 GO
 
-exec sp_ObtenerDetalleSolicitud 2;
-
 -- Obtener Encabezado por medio del IdEmpleado
 CREATE PROCEDURE sp_ObtenerSolicitudesPorEmpleado
     @IdEmpleado INT
@@ -2347,12 +2345,12 @@ GO
 -- Asignar empleado a equipo con un rol existente
 CREATE PROCEDURE sp_AsignarEmpleadoAEquipo
     @FK_IdEquipo INT,
-    @FK_IdEmpleado INT
-    --@FK_IdRol INT -- Parámetro actualizado para usar FK_IdRol
+    @FK_IdEmpleado INT,
+    @FK_IdRol INT -- Parámetro actualizado para usar FK_IdRol
 AS
 BEGIN
-    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado)
-    VALUES (@FK_IdEquipo, @FK_IdEmpleado);
+    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado, FK_IdRol)
+    VALUES (@FK_IdEquipo, @FK_IdEmpleado, @FK_IdRol);
 END;
 GO
 
