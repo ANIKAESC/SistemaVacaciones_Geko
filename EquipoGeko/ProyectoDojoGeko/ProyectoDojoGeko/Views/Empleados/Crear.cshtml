@@ -93,7 +93,7 @@
                             <span class="required">*</span>
                         </label>
                         <div class="input-container">
-                            <input asp-for="DPI" class="form-control" placeholder="Ingrese el DPI (13 dígitos)" maxlength="13" />
+                            <input asp-for="DPI" class="form-control" placeholder="Ingrese el DPI (13 dígitos)" maxlength="13" pattern="\d{13}" title="El DPI debe contener exactamente 13 números." />
                             <span asp-validation-for="DPI" class="validation-message"></span>
                         </div>
                     </div>
@@ -174,7 +174,7 @@
                             <span class="required">*</span>
                         </label>
                         <div class="input-container">
-                            <input asp-for="FechaNacimiento" type="date" class="form-control" />
+                            <input asp-for="FechaNacimiento" type="date" class="form-control" id="fechaNacimientoInput" />
                             <span asp-validation-for="FechaNacimiento" class="validation-message"></span>
                         </div>
                     </div>
@@ -363,31 +363,11 @@
                             <span class="required">*</span>
                         </label>
                         <div class="input-container">
-                            <input asp-for="DiasVacacionesAcumulados" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                            <input asp-for="DiasVacacionesAcumulados" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" value="0.00" />
                             <span asp-validation-for="DiasVacacionesAcumulados" class="validation-message"></span>
                         </div>
                     </div>
 
-                    <!-- Estado -->
-                    <div class="form-group">
-                        <div class="input-container">
-                            <label asp-for="Estado" class="form-label">
-                                <div class="label-icon">
-                                    <i class="fas fa-toggle-on"></i>
-                                </div>
-                                <span>Estado</span>
-                                <span class="required">*</span>
-                            </label>
-                            <select id="estadoSelect" asp-for="Estado" class="form-control">
-                                <option value="">Seleccione un estado</option>
-                                @foreach (var estado in ViewBag.Estados)
-                                {
-                                    <option value="@estado.IdEstado">@estado.Estado</option>
-                                }
-                            </select>
-                            <span asp-validation-for="Estado" class="text-danger"></span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -458,7 +438,32 @@
             const pasaporteGroup = document.getElementById('pasaporte-group');
             const dpiInput = document.getElementById('DPI');
             const pasaporteInput = document.getElementById('Pasaporte');
+            const fechaNacimientoInput = document.getElementById('fechaNacimientoInput');
 
+            // --- Validación de Fecha de Nacimiento ---
+            const today = new Date().toISOString().split('T')[0];
+            fechaNacimientoInput.setAttribute('max', today);
+
+            fechaNacimientoInput.addEventListener('input', function () {
+                const fechaNacimiento = new Date(this.value);
+                const hoy = new Date();
+                let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+                const m = hoy.getMonth() - fechaNacimiento.getMonth();
+
+                if (m < 0 || (m === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+                    edad--;
+                }
+
+                if (edad < 18) {
+                    this.setCustomValidity('El empleado debe ser mayor de 18 años.');
+                } else if (fechaNacimiento > hoy) {
+                    this.setCustomValidity('La fecha de nacimiento no puede ser una fecha futura.');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            // --- Lógica para DPI/Pasaporte ---
             function updateFields() {
                 if (select.value === 'DPI') {
                     dpiGroup.style.display = '';
