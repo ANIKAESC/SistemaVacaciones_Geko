@@ -135,6 +135,20 @@ namespace ProyectoDojoGeko.Controllers
                     ModelState.AddModelError("DPI", "El número de DPI ya se encuentra registrado.");
                 }
 
+                // --- Validación de Fecha de Nacimiento ---
+                var today = DateTime.Today;
+                var edad = today.Year - empleado.FechaNacimiento.Year;
+                if (empleado.FechaNacimiento.Date > today.AddYears(-edad)) edad--;
+
+                if (empleado.FechaNacimiento.Date > today)
+                {
+                    ModelState.AddModelError("FechaNacimiento", "La fecha de nacimiento no puede ser una fecha futura.");
+                }
+                else if (edad < 18)
+                {
+                    ModelState.AddModelError("FechaNacimiento", "El empleado debe ser mayor de 18 años.");
+                }
+
                 // Verifica si el modelo del empleado es válido antes de proceder
                 if (!ModelState.IsValid)
                 {

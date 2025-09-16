@@ -8,13 +8,14 @@ namespace ProyectoDojoGeko.Filters
         {
             if (value is DateTime fechaNacimiento)
             {
-                if (fechaNacimiento > DateTime.Now)
+                var today = DateTime.Today;
+                if (fechaNacimiento.Date > today)
                 {
                     return new ValidationResult("La fecha de nacimiento no puede ser una fecha futura.");
                 }
 
-                var edad = DateTime.Now.Year - fechaNacimiento.Year;
-                if (fechaNacimiento.Date > DateTime.Now.AddYears(-edad))
+                var edad = today.Year - fechaNacimiento.Year;
+                if (fechaNacimiento.Date > today.AddYears(-edad))
                 {
                     edad--;
                 }
