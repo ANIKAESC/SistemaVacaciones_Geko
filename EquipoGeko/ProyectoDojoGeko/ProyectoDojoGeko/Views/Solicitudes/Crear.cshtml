@@ -5,7 +5,7 @@
     // Si hay un CodigoSistema en sesión, usar el layout del sistema
     // De lo contrario, usar el layout por defecto
     var codigoSistema = Context.Session.GetString("SistemaActual");
-    Layout = (codigoSistema != null || codigoSistema != "") ?
+    Layout = (!string.IsNullOrEmpty(codigoSistema)) ?
         "~/Views/Shared/_DashboardLayoutSistema.cshtml" :
         "~/Views/Shared/_DashboardLayout.cshtml";
 
@@ -504,6 +504,16 @@
                 if (!inicio || !fin) return alert('Debes ingresar ambas fechas.');
                 if (parseDateFromInput(fin) < parseDateFromInput(inicio)) return alert('La fecha final no puede ser menor que la inicial.');
                 if (traslapa(inicio, fin)) return alert('El rango se traslapa con otro ya agregado.');
+
+                // Confirmar si el rango inicia antes de la fecha actual
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const inicioDate = parseDateFromInput(inicio);
+                const finDate = parseDateFromInput(fin);
+                if (inicioDate < hoy) {
+                    const ok = confirm('Ha seleccionado un rango con fecha inicial anterior a hoy. ¿Está seguro de continuar?');
+                    if (!ok) return;
+                }
 
                 const dias = diasEntre(inicio, fin);
                 rangos.push({ inicio, fin, dias });

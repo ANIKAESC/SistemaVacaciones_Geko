@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -39,7 +39,7 @@ namespace ProyectoDojoGeko.Filters
                 return;
             }
 
-            // Verificar si los roles del usuario estan en la lista de roles permitidos
+            // Verificar si los roles del usuario están en la lista de roles permitidos
             if (!string.IsNullOrEmpty(rolesUsuario))
             {
                 var rolesDelUsuario = rolesUsuario.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -50,8 +50,8 @@ namespace ProyectoDojoGeko.Filters
                     return;
                 }
             }
-
-            // Si no tiene permisos, redirigir a una página de acceso denegado
+            
+            // Si llegamos aquí, el usuario no tiene los roles necesarios
             context.Result = new RedirectToActionResult("AccesoDenegado", "Home", null);
         }
 
