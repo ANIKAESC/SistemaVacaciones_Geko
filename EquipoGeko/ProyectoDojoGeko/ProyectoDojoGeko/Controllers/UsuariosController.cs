@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ProyectoDojoGeko.Data;
 using ProyectoDojoGeko.Filters;
 using ProyectoDojoGeko.Models;
 using ProyectoDojoGeko.Models.Usuario;
+using ProyectoDojoGeko.Models.RolPermisos;
 using ProyectoDojoGeko.Services;
 using ProyectoDojoGeko.Services.Interfaces;
+using System;
+using System.Linq;
 
 namespace ProyectoDojoGeko.Controllers
 {
@@ -18,6 +21,8 @@ namespace ProyectoDojoGeko.Controllers
         private readonly ILoggingService _loggingService;
         private readonly IEstadoService _estadoService;
         private readonly EmailService _emailService;
+        private readonly daoRolesWSAsync _daoRoles;
+        private readonly daoUsuariosRolWSAsync _daoUsuariosRol;
 
         public UsuariosController(
             daoUsuarioWSAsync daoUsuarioWS,
@@ -25,7 +30,9 @@ namespace ProyectoDojoGeko.Controllers
             daoBitacoraWSAsync daoBitacora,
             ILoggingService loggingService,
             IEstadoService estadoService,
-            EmailService emailService)
+            EmailService emailService,
+            daoRolesWSAsync daoRoles,
+            daoUsuariosRolWSAsync daoUsuariosRol)
         {
             _daoUsuarioWS = daoUsuarioWS;
             _daoEmpleado = daoEmpleado;
@@ -33,6 +40,8 @@ namespace ProyectoDojoGeko.Controllers
             _loggingService = loggingService;
             _estadoService = estadoService;
             _emailService = emailService;
+            _daoRoles = daoRoles;
+            _daoUsuariosRol = daoUsuariosRol;
         }
         [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
         [HttpGet]
@@ -167,11 +176,49 @@ namespace ProyectoDojoGeko.Controllers
                 // Obtener el empleado asociado al usuario  
                 var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(model.Usuario.FK_IdEmpleado);
 
+                // Asignar automáticamente el rol "Empleado"
+                try 
+                {
+                    // Obtener el ID del rol "Empleado"
+                    var roles = await _daoRoles.ObtenerRolesAsync();
+                    var rolEmpleado = roles.FirstOrDefault(r => r.NombreRol.Equals("Empleado", StringComparison.OrdinalIgnoreCase));
+                    
+                    if (rolEmpleado != null)
+                    {
+                        var usuarioRol = new UsuariosRolViewModel
+                        {
+                            FK_IdUsuario = idUsuarioCreado,
+                            FK_IdRol = rolEmpleado.IdRol
+                        };
+                        
+                        await _daoUsuariosRol.InsertarUsuarioRolAsync(usuarioRol);
+                        
+                        // Registrar en bitácora
+                        await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
+                        {
+                            Accion = "Asignación Automática Rol Empleado",
+                            Descripcion = $"Rol 'Empleado' asignado automáticamente al usuario '{model.Usuario.Username}'",
+                            FK_IdUsuario = idUsuarioSesion,
+                            FK_IdSistema = idSistema
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // No detenemos el flujo si falla la asignación automática
+                    await _loggingService.RegistrarLogAsync(new LogViewModel
+                    {
+                        Accion = "Error Asignación Rol Automático",
+                        Descripcion = $"Error al asignar automáticamente el rol Empleado al usuario {model.Usuario.Username}: {ex.Message}",
+                        Estado = false
+                    });
+                }
+
                 // Puedes usar el correo personal o institucional, según lo que necesites  
-                //var emailDestino = empleado.CorreoInstitucional; // o empleado.CorreoPersonal  
+                var emailDestino = empleado.CorreoInstitucional; // o empleado.CorreoPersonal  
 
                 // Correo de prueba para verificar que el correo es correcto
-                var emailDestino = "jperalta@digitalgeko.com";
+                // var emailDestino = "";
 
                 // Creamos la ruta directamente  
                 var urlCambioPassword = Url.Action(

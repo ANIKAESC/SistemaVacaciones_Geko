@@ -43,6 +43,20 @@ namespace ProyectoDojoGeko.Controllers
             });
         }
 
+        private async Task<List<int>> ObtenerRolesAsignados(int idUsuario)
+        {
+            try
+            {
+                var rolesAsignados = await _daoUsuariosRol.ObtenerUsuariosRolPorIdUsuarioAsync(idUsuario);
+                return rolesAsignados?.Select(r => r.FK_IdRol).Distinct().ToList() ?? new List<int>();
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("ObtenerRolesAsignados", ex);
+                return new List<int>();
+            }
+        }
+
         private async Task RegistrarBitacora(string accion, string descripcion)
         {
             var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
@@ -167,24 +181,40 @@ namespace ProyectoDojoGeko.Controllers
         }
         [HttpGet]
         [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
-        public async Task<IActionResult> Crear()
+        public async Task<IActionResult> Crear(int? usuarioId = null)
         {
             var usuarios = await _daoUsuario.ObtenerUsuariosAsync();
             var roles = await _daoRoles.ObtenerRolesAsync();
+
+            // Lista de roles disponibles (inicialmente todos)
+            var rolesDisponibles = roles?.ToList() ?? new List<RolesViewModel>();
+            
+            // Si se proporciona un usuario, filtramos los roles que ya tiene asignados
+            if (usuarioId.HasValue && usuarioId > 0)
+            {
+                var rolesAsignados = await ObtenerRolesAsignados(usuarioId.Value);
+                if (rolesAsignados.Any())
+                {
+                    rolesDisponibles = rolesDisponibles
+                        .Where(r => !rolesAsignados.Contains(r.IdRol))
+                        .ToList();
+                }
+            }
 
             var model = new UsuariosRolFormViewModel
             {
                 Usuarios = usuarios?.Select(u => new SelectListItem
                 {
                     Value = u.IdUsuario.ToString(),
-                    Text = u.Username
+                    Text = u.Username,
+                    Selected = usuarioId.HasValue && u.IdUsuario == usuarioId
                 }).ToList() ?? new List<SelectListItem>(),
 
-                Roles = roles?.Select(r => new SelectListItem
+                Roles = rolesDisponibles.Select(r => new SelectListItem
                 {
                     Value = r.IdRol.ToString(),
                     Text = r.NombreRol
-                }).ToList() ?? new List<SelectListItem>()
+                }).ToList()
             };
 
             if (model.Usuarios.Count == 0 || model.Roles.Count == 0)

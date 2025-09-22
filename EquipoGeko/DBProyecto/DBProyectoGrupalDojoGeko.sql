@@ -2015,8 +2015,6 @@ BEGIN
 END
 GO
 
-exec sp_ObtenerDetalleSolicitud 2;
-
 -- Obtener Encabezado por medio del IdEmpleado
 CREATE PROCEDURE sp_ObtenerSolicitudesPorEmpleado
     @IdEmpleado INT

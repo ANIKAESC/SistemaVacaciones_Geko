@@ -587,32 +587,6 @@
 					</div>
 					<div class="user-details">
 						<div class="user-name">@(ViewBag.Usuario ?? "Usuario")</div>
-						<div class="user-role">
-							@if (isSuperAdmin)
-							{
-								<span>Super Administrador</span>
-							}
-							else if (isRRHH)
-							{
-								<span>RRHH</span>
-							}
-							else if (isTeamLider)
-							{
-								<span>Team Líder</span>
-							}
-							else if (isSubTeamLider)
-							{
-								<span>Sub Team Líder</span>
-							}
-							else if (isEmpleado)
-							{
-								<span>Empleado</span>
-							}
-							else
-							{
-								<span>Usuario</span>
-							}
-						</div>
 					</div>
 				</div>
 				<div class="sidebar-actions">

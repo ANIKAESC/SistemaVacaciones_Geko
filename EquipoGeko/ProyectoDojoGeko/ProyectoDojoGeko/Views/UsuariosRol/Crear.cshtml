@@ -1,4 +1,4 @@
-﻿@model ProyectoDojoGeko.Models.Usuario.UsuariosRolFormViewModel
+@model ProyectoDojoGeko.Models.Usuario.UsuariosRolFormViewModel
 @{
     ViewData["Title"] = "Asignar Rol(es) a Usuario";
     Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
@@ -50,17 +50,19 @@
 
                     <!-- Roles -->
                     <div class="form-group">
-                        <label asp-for="FK_IdsRol" class="form-label">
+                        <label class="form-label">
                             <div class="label-icon">
-                                <i class="fas fa-user-tag"></i>
+                                <i class="fas fa-key"></i>
                             </div>
-                            <span>Roles</span>
+                            <span>Rol(es) Disponibles</span>
                             <span class="required">*</span>
                         </label>
-                        <select asp-for="FK_IdsRol" asp-items="Model.Roles" class="form-control" multiple="multiple">
-                        </select>
-                        <span asp-validation-for="FK_IdsRol" class="MensajeError"></span>
-                        <small class="form-text text-muted">Mantén presionada la tecla Ctrl para seleccionar múltiples opciones</small>
+                        <div id="roles-container">
+                            <select asp-for="FK_IdsRol" asp-items="Model.Roles" class="form-control" multiple="multiple">
+                            </select>
+                            <span asp-validation-for="FK_IdsRol" class="MensajeError"></span>
+                            <small class="form-text text-muted">Los roles ya asignados no aparecerán en la lista. Mantén presionada la tecla Ctrl para seleccionar múltiples roles.</small>
+                        </div>
                     </div>
 
                 </div>
@@ -153,6 +155,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
             // Inicialización del modal de confirmación
@@ -176,6 +179,62 @@
                 width: '100%',
                 theme: 'bootstrap4'
             });
+        });
+
+        // Función para cargar roles disponibles para el usuario seleccionado
+        function cargarRoles(usuarioId) {
+            if (!usuarioId) {
+                return;
+            }
+
+            // Mostrar indicador de carga
+            $('#roles-container').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando roles disponibles...</div>');
+
+            // Hacer la petición AJAX para obtener los roles disponibles
+            $.get('/UsuariosRol/Crear', { usuarioId: usuarioId }, function(data) {
+                // Extraer el HTML del select de roles de la respuesta
+                var $response = $(data);
+                var $rolesSelect = $response.find('#FK_IdsRol').first();
+                var $rolesContainer = $('#roles-container');
+                
+                if ($rolesSelect.length > 0) {
+                    // Reemplazar el contenedor de roles con el nuevo select
+                    $rolesContainer.html($rolesSelect.parent().html());
+                    
+                    // Inicializar el select múltiple si es necesario
+                    if ($.fn.select2) {
+                        $rolesContainer.find('select[multiple]').select2({
+                            placeholder: 'Seleccione uno o más roles',
+                            allowClear: true,
+                            width: '100%',
+                            theme: 'bootstrap4'
+                        });
+                    }
+                } else {
+                    $rolesContainer.html('<div class="alert alert-warning">No hay roles disponibles para asignar a este usuario.</div>');
+                }
+            }).fail(function() {
+                $('#roles-container').html('<div class="alert alert-danger">Error al cargar los roles. Intente nuevamente.</div>');
+            });
+        }
+
+        // Manejar el cambio de usuario
+        $('#FK_IdUsuario').change(function() {
+            var usuarioId = $(this).val();
+            if (usuarioId) {
+                cargarRoles(usuarioId);
+            } else {
+                // Si no hay usuario seleccionado, mostrar mensaje
+                $('#roles-container').html('<div class="alert alert-info">Seleccione un usuario para ver los roles disponibles.</div>');
+            }
+        });
+
+        // Cargar roles si ya hay un usuario seleccionado (en caso de validación fallida)
+        $(document).ready(function() {
+            var usuarioId = $('#FK_IdUsuario').val();
+            if (usuarioId) {
+                cargarRoles(usuarioId);
+            }
         });
     </script>
 }

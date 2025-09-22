@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProyectoDojoGeko.Models.Empleados
@@ -16,9 +16,8 @@ namespace ProyectoDojoGeko.Models.Empleados
 		[Required(ErrorMessage = "El campo {0} es obligatorio.")]
 		public int FK_IdEmpleado { get; set; }
 
-		[Required(ErrorMessage = "El campo {0} es obligatorio.")]
 		[Column("FK_IdDepartamento")]
-		public int FK_IdDepartamento { get; set; }
+		public int? FK_IdDepartamento { get; set; }
 
     	// --- Para el formulario de selección múltiple ---
 		[NotMapped]
