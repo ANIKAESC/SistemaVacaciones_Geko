@@ -171,33 +171,65 @@ namespace ProyectoDojoGeko.Controllers
         {
             try
             {
+                // Validar IdEmpleado en sesión primero
+                var idEmpleadoSesion = HttpContext.Session.GetInt32("IdEmpleado");
+                if (idEmpleadoSesion == null || idEmpleadoSesion <= 0)
+                {
+                    await RegistrarError("acceder a la vista de solicitudes", new Exception("IdEmpleado no encontrado en sesión."));
+                    return RedirectToAction("Index", "Login");
+                }
+
                 // Extraemos los datos del empleado desde la sesión
-                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(HttpContext.Session.GetInt32("IdEmpleado") ?? 0);
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleadoSesion.Value);
 
                 if (empleado == null)
                 {
-                    await RegistrarError("acceder a la vista de creación de sistema", new Exception("Empleado no encontrado en la sesión."));
-                    return RedirectToAction("Index");
+                    await RegistrarError("acceder a la vista de solicitudes", new Exception("Empleado no encontrado en la sesión."));
+                    return RedirectToAction("Index", "Login");
                 }
 
-                // Obtiene todas las solicitudes y sus detalles
-                var solicitudes = await _daoSolicitud.ObtenerSolicitudesPorEmpleadoAsync(empleado.IdEmpleado);
+                // Inicializar colecciones por si algo falla más adelante
+                var solicitudes = new List<SolicitudViewModel>();
+                try
+                {
+                    // Obtiene todas las solicitudes y sus detalles
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudesPorEmpleadoAsync(empleado.IdEmpleado);
+                }
+                catch (Exception exSol)
+                {
+                    await RegistrarError("obtener solicitudes del empleado", exSol);
+                    TempData["Error"] = "No fue posible cargar las solicitudes. Se muestra la vista sin datos.";
+                }
 
                 // Obtiene todos los estados de solicitud para el dropdown
-                var estados = await _estadoService.ObtenerEstadosActivosSolicitudesAsync();
+                try
+                {
+                    var estados = await _estadoService.ObtenerEstadosActivosSolicitudesAsync();
+                    ViewBag.Estados = estados.Select(e => new SelectListItem
+                    {
+                        Value = e.IdEstadoSolicitud.ToString(),
+                        Text = e.NombreEstado
+                    }).ToList();
+                }
+                catch (Exception exEstados)
+                {
+                    await RegistrarError("obtener estados de solicitudes", exEstados);
+                    ViewBag.Estados = new List<SelectListItem>();
+                }
 
                 // Le decimos que es de tipo double para que pueda manejar decimales
                 ViewBag.DiasDisponibles = (double)(empleado.DiasVacacionesAcumulados);
 
                 // Mandamos los feriados a la vista para deshabilitarlos en el calendario
-                ViewBag.Feriados = await GetFeriadosConProporcion();
-
-                // Mandamos los estados al ViewBag para usarlos en la vista
-                ViewBag.Estados = estados.Select(e => new SelectListItem
+                try
                 {
-                    Value = e.IdEstadoSolicitud.ToString(),
-                    Text = e.NombreEstado
-                }).ToList();
+                    ViewBag.Feriados = await GetFeriadosConProporcion();
+                }
+                catch (Exception exFeriados)
+                {
+                    await RegistrarError("obtener feriados", exFeriados);
+                    ViewBag.Feriados = new Dictionary<DateTime, double>();
+                }
 
                 // Registramos la acción en la bitácora
                 await _bitacoraService.RegistrarBitacoraAsync("Vista Solicitudes", "Acceso a la vista de solicitudes exitosamente");
@@ -207,9 +239,12 @@ namespace ProyectoDojoGeko.Controllers
             }
             catch (Exception ex)
             {
-                // Registra el error y redirige a la página de inicio
-                await RegistrarError("acceder a la vista de solicitudes", ex);
-                return RedirectToAction("Index", "Home");
+                // Registra el error y muestra la vista vacía, evitando redirigir a Home para facilitar el diagnóstico
+                await RegistrarError("acceder a la vista de solicitudes (general)", ex);
+                TempData["Error"] = "Ocurrió un problema al cargar la vista de solicitudes.";
+                ViewBag.Estados = ViewBag.Estados ?? new List<SelectListItem>();
+                ViewBag.Feriados = ViewBag.Feriados ?? new Dictionary<DateTime, double>();
+                return View(new List<SolicitudViewModel>());
             }
 
         }

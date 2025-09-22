@@ -27,9 +27,10 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
         [StringLength(20, MinimumLength = 5, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
         public string CodigoEmpleado { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [StringLength(13, MinimumLength = 13, ErrorMessage = "El campo {0} debe tener exactamente {1} dígitos.")]
-        [RegularExpression(@"^(\d{13})?$", ErrorMessage = "El campo {0} debe contener exactamente 13 números.")]
-        public string? DPI { get; set; }
+        [RegularExpression(@"^\d{13}$", ErrorMessage = "El campo {0} debe contener exactamente 13 números.")]
+        public string DPI { get; set; }
 
         [StringLength(15, MinimumLength = 15, ErrorMessage = "El campo {0} debe tener exactamente {1} dígitos.")]
         [RegularExpression(@"^([a-zA-Z0-9]{15})?$", ErrorMessage = "El campo {0} debe contener exactamente 15 caracteres alfanuméricos.")]
@@ -51,6 +52,7 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
 
         [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [EmailAddress(ErrorMessage = "El campo {0} no tiene un formato válido.")]
+        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com)$", ErrorMessage = "El dominio del correo debe ser gmail.com o hotmail.com")]
         public string CorreoPersonal { get; set; }
 
         [Required(ErrorMessage = "El teléfono es requerido")]
@@ -71,15 +73,12 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
         [DataType(DataType.DateTime)]
         public DateTime FechaIngreso { get; set; } = DateTime.UtcNow;
 
-        [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [Range(0.00, 365.00, ErrorMessage = "El campo {0} debe estar entre {1} y {2} días.")]
         public decimal DiasVacacionesAcumulados { get; set; } = 0.00M;
 
         [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [DataType(DataType.Date)]
         public DateTime FechaNacimiento { get; set; }
-
-        public int Estado { get; set; }
 
     }
 }

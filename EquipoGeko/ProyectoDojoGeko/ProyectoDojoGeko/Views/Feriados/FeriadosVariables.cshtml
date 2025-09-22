@@ -1,7 +1,7 @@
 @model ProyectoDojoGeko.Models.GestionFeriadosViewModel
 
 @{
-    ViewData["Title"] = "Gestión de Feriados Variables";
+    ViewData["Title"] = "Gestión de Asuetos Variables";
     Layout = "~/Views/Shared/_DashboardLayoutSistema.cshtml";
 }
 
@@ -12,20 +12,20 @@
         <div class="header-content">
             <h1 class="page-title">
                 <i class="fa-solid fa-calendar-day"></i>
-                Feriados Variables
+                Asuetos Variables
             </h1>
             <p class="page-subtitle">
-                Listado de todos los feriados que cambian de fecha cada año añadidos al sistema.
+                Listado de todos los asuetos que cambian de fecha cada año añadidos al sistema.
             </p>
         </div>
         <div class="header-actions">
             <button type="button" class="btn btn-regresarv" onclick="abrirModalFeriadoVariable()">
-                <i class="fas fa-plus me-1"></i> Nuevo feriado 
+                <i class="fas fa-plus me-1"></i> Nuevo asueto 
             </button>
         </div>
     </div>
 
-    <!-- Tabla de Feriados Variables -->
+    <!-- Tabla de Asuetos Variables -->
     <div class="table-container">
         <table class="empresas-table">
             <thead>
@@ -74,7 +74,7 @@
                     <tr>
                         <td colspan="5" class="text-center text-muted py-4">
                             <i class="fas fa-calendar-times fa-2x mb-2"></i>
-                            <br>No hay feriados variables registrados
+                            <br>No hay asuetos variables registrados
                             <br><small>Haga clic en "Agregar Nuevo" para comenzar</small>
                         </td>
                     </tr>
@@ -89,7 +89,7 @@
         <div class="modal-content modal-elegantev-content">
             <div class="modal-header modal-elegantev-header">
                 <h5 class="modal-title" id="modalFeriadoVariableLabel">
-                    <i class="fas fa-calendar-plus me-2"></i> Nuevo Feriado Variable
+                    <i class="fas fa-calendar-plus me-2"></i> Nuevo Asueto Variable
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -100,7 +100,7 @@
                     <input type="hidden" id="Id" name="Id" value="0" />
 
                     <p class="text-muted mb-4">
-                        Completa la siguiente información del feriado variable.
+                        Completa la siguiente información del asueto variable.
                     </p>
 
                     <div class="row g-4">
@@ -110,14 +110,14 @@
                             <div class="invalid-feedback" id="Fecha-error"></div>
                         </div>
                         <br />
-                        <div class="col-12">
+                        <div class="col-6">
                             <label for="Descripcion" class="form-label">Descripción: </label>
                             <input type="text" class="form-control form-control-elegante" id="Descripcion" name="Descripcion" maxlength="100" placeholder="Ej: Viernes Santo" required />
                             <div class="invalid-feedback" id="Descripcion-error"></div>
                         </div>
                         <br />
                         <div class="col-md-8">
-                            <label for="TipoFeriadoId" class="form-label">Tipo de Feriado: </label>
+                            <label for="TipoFeriadoId" class="form-label">Tipo de Asueto: </label>
                             <select class="form-select form-control-elegante" id="TipoFeriadoId" name="TipoFeriadoId" required>
                                 <option value="" disabled selected>Selecciona un tipo</option>
                                 @if (Model.TiposFeriado != null)
@@ -163,7 +163,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                ¿Está seguro de que desea eliminar este feriado?
+                ¿Está seguro de que desea eliminar este asueto?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -191,6 +191,19 @@
 
     .page-title i {
         color: #48BDA3;
+    }
+
+    .modal {
+        z-index: 1065 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1060 !important;
+    }
+
+    .modal-elegante-content {
+        position: relative;
+        pointer-events: auto;
     }
     </style>
 
@@ -234,21 +247,21 @@
                     const fecha = document.getElementById('Fecha');
 
                     if (!descripcion.value.trim()) {
-                        alert('Por favor, ingrese la descripción del feriado.');
+                        alert('Por favor, ingrese la descripción del asueto.');
                         descripcion.focus();
                         event.preventDefault();
                         return;
                     }
 
                     if (!tipoFeriado.value) {
-                        alert('Por favor, seleccione un tipo de feriado.');
+                        alert('Por favor, seleccione un tipo de asueto.');
                         tipoFeriado.focus();
                         event.preventDefault();
                         return;
                     }
 
                     if (!fecha.value) {
-                        alert('Por favor, ingrese la fecha del feriado.');
+                        alert('Por favor, ingrese la fecha del asueto.');
                         fecha.focus();
                         event.preventDefault();
                     }
@@ -258,7 +271,7 @@
 
         function abrirModalFeriadoVariable() {
             limpiarFormularioVariable();
-            document.getElementById("modalFeriadoVariableLabel").innerHTML = '<i class="fas fa-calendar-check me-2"></i> Agregar Feriado Variable';
+            document.getElementById("modalFeriadoVariableLabel").innerHTML = '<i class="fas fa-calendar-check me-2"></i> Agregar Asueto Variable';
 
             if (modalFeriadoVariable) {
                 modalFeriadoVariable.show();
@@ -267,7 +280,7 @@
 
         function editarFeriadoVariable(id, Fecha, Descripcion, TipoFeriadoId, ProporcionDia) {
             limpiarFormularioVariable();
-            document.getElementById("modalFeriadoVariableLabel").innerHTML = '<i class="fas fa-edit me-2"></i>Editar Feriado Variable';
+            document.getElementById("modalFeriadoVariableLabel").innerHTML = '<i class="fas fa-edit me-2"></i>Editar Asueto Variable';
 
             document.getElementById("Id").value = id;
             document.getElementById("Fecha").value = Fecha;

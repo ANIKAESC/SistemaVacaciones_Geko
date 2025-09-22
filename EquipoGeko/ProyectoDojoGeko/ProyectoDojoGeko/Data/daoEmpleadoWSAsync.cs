@@ -133,6 +133,23 @@ namespace ProyectoDojoGeko.Data
         }
 
 
+        // Método para verificar si un DPI ya existe
+        public async Task<bool> DpiExisteAsync(string dpi)
+        {
+            string query = "SELECT COUNT(1) FROM Empleados WHERE DPI = @DPI";
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DPI", dpi);
+                    int count = (int)await cmd.ExecuteScalarAsync();
+                    return count > 0;
+                }
+            }
+        }
+
+
         // Método para agregar un nuevo empleado
         public async Task<int> InsertarEmpleadoAsync(EmpleadoViewModel empleado)
         {

@@ -107,9 +107,6 @@ namespace ProyectoDojoGeko.Controllers
         {
             try
             {
-                // Obtenemos los estados usando el servicio
-                ViewBag.Estados = await _estadoService.ObtenerEstadosActivosAsync();
-
                 // Obtenemos los paises usando el servicio
                 ViewBag.Paises = await _CountryService.ObtenerPaises();
 
@@ -132,14 +129,33 @@ namespace ProyectoDojoGeko.Controllers
         {
             try
             {
+                // Validar si el DPI ya existe
+                if (await _daoEmpleado.DpiExisteAsync(empleado.DPI))
+                {
+                    ModelState.AddModelError("DPI", "El número de DPI ya se encuentra registrado.");
+                }
+
+                // --- Validación de Fecha de Nacimiento ---
+                var today = DateTime.Today;
+                var edad = today.Year - empleado.FechaNacimiento.Year;
+                if (empleado.FechaNacimiento.Date > today.AddYears(-edad)) edad--;
+
+                if (empleado.FechaNacimiento.Date > today)
+                {
+                    ModelState.AddModelError("FechaNacimiento", "La fecha de nacimiento no puede ser una fecha futura.");
+                }
+                else if (edad < 18)
+                {
+                    ModelState.AddModelError("FechaNacimiento", "El empleado debe ser mayor de 18 años.");
+                }
+
                 // Verifica si el modelo del empleado es válido antes de proceder
                 if (!ModelState.IsValid)
                 {
                     // Devolvemos el error a Logs
                     await RegistrarError("crear empleado - datos inválidos", new Exception("Validación de modelo fallida"));
-                    // Obtenemos los estados usando el servicio
-                    ViewBag.Estados = await _estadoService.ObtenerEstadosActivosAsync();
-                    //
+                    // Recargamos los países para que no falle la vista
+                    ViewBag.Paises = await _CountryService.ObtenerPaises();
                     return View(empleado);
                 }
 
@@ -164,7 +180,7 @@ namespace ProyectoDojoGeko.Controllers
                     FechaIngreso = empleado.FechaIngreso,
                     FechaNacimiento = empleado.FechaNacimiento,
                     Genero = empleado.Genero,
-                    Estado = empleado.Estado
+                    Estado = 1 // Se asigna el estado Pendiente por defecto
                 };
 
                 // Inserta el nuevo empleado en la base de datos de forma asíncrona
@@ -184,7 +200,6 @@ namespace ProyectoDojoGeko.Controllers
                 await RegistrarError("Error al crear empleado", ex);
 
                 // Pasamos los datos necesarios a la vista para que no falle
-                ViewBag.Estados = await _estadoService.ObtenerEstadosActivosAsync();
                 ViewBag.Paises = await _CountryService.ObtenerPaises();
                 TempData["ErrorMessage"] = "Hubo un error al crear el empleado. Por favor, intente de nuevo.";
 

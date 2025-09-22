@@ -13,15 +13,15 @@
         <div class="header-content">
             <h1 class="page-title">
                 <i class="fa-solid fa-calendar-days"></i>
-                Feriados Fijos
+                Asuetos Fijos
             </h1>
             <p class="page-subtitle">
-                Listado de todos los feriados fijos anuales añadidos al sistema.
+                Listado de todos los asuetos fijos anuales añadidos al sistema.
             </p>
         </div>
         <div class="header-actions">
             <button type="button" class="btn btn-agregarf" onclick="abrirModalFeriadoFijo()">
-                <i class="fas fa-plus me-1"></i> Nuevo feriado
+                <i class="fas fa-plus me-1"></i> Nuevo asueto
             </button>
         </div>
     </div>
@@ -95,7 +95,7 @@
         <div class="modal-content modal-elegante-content">
             <div class="modal-header modal-elegante-header">
                 <h5 class="modal-title" id="modalFeriadoFijoLabel">
-                    <i class="fas fa-calendar-plus me-2"></i> Nuevo Feriado Fijo
+                    <i class="fas fa-calendar-plus me-2"></i> Nuevo Asueto Fijo
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -108,7 +108,7 @@
                     <input type="hidden" id="Original_TipoFeriadoId" name="Original_TipoFeriadoId" />
 
                     <p class="text-muted mb-4">
-                        Completa la siguiente información del feriado fijo.
+                        Completa la siguiente información del asueto fijo.
                     </p>
 
                     <div class="row g-4">
@@ -184,7 +184,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                ¿Está seguro de que desea eliminar este feriado?
+                ¿Está seguro de que desea eliminar este asueto?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -208,6 +208,17 @@
   .page-title i {
    color: #4B94C4;
   }
+  .modal
+    {
+        z-index: 1065 !important;
+    }
+    .modal-backdrop {
+        z-index: 1060 !important;
+    }
+    .modal-elegante-content {
+        position: relative;
+        pointer-events: auto;
+    }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -242,14 +253,14 @@
                     const mes = document.getElementById('Mes');
 
                     if (!descripcion.value.trim()) {
-                        alert('Por favor, ingrese la descripción del feriado.');
+                        alert('Por favor, ingrese la descripción del asueto.');
                         descripcion.focus();
                         event.preventDefault();
                         return;
                     }
 
                     if (!tipoFeriado.value) {
-                        alert('Por favor, seleccione un tipo de feriado.');
+                        alert('Por favor, seleccione un tipo de asueto.');
                         tipoFeriado.focus();
                         event.preventDefault();
                         return;
@@ -281,7 +292,7 @@
         // Función para abrir modal de agregar
         function abrirModalFeriadoFijo() {
             limpiarFormularioFijo();
-            document.getElementById("modalFeriadoFijoLabel").innerHTML = '<i class="fas fa-calendar-check me-2"></i> Agregar Feriado Fijo';
+            document.getElementById("modalFeriadoFijoLabel").innerHTML = '<i class="fas fa-calendar-check me-2"></i> Agregar Asueto Fijo';
 
             if (modalFeriadoFijo) modalFeriadoFijo.show();
         }
@@ -290,7 +301,7 @@
         function editarFeriadoFijo(dia, mes, tipoFeriadoId, descripcion, proporcion) {
             limpiarFormularioFijo();
 
-            document.getElementById("modalFeriadoFijoLabel").innerHTML = '<i class="fas fa-edit me-2"></i> Editar Feriado Fijo';
+            document.getElementById("modalFeriadoFijoLabel").innerHTML = '<i class="fas fa-edit me-2"></i> Editar Asueto Fijo';
 
             document.getElementById("Dia").value = dia;
             document.getElementById("Mes").value = mes;
@@ -350,7 +361,7 @@
                 }
             })
             .catch(() => {
-                mostrarNotificacion('Error de red al eliminar feriado', 'error');
+                mostrarNotificacion('Error de red al eliminar asueto', 'error');
             });
         }
 

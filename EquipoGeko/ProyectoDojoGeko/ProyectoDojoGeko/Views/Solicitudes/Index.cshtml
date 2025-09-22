@@ -5,7 +5,7 @@
     // Si hay un CodigoSistema en sesión, usar el layout del sistema
     // De lo contrario, usar el layout por defecto
     var codigoSistema = Context.Session.GetString("SistemaActual");
-    Layout = (codigoSistema != null || codigoSistema != "") ?
+    Layout = (!string.IsNullOrEmpty(codigoSistema)) ?
         "~/Views/Shared/_DashboardLayoutSistema.cshtml" :
         "~/Views/Shared/_DashboardLayout.cshtml";
 
@@ -20,6 +20,14 @@
 }
 
 <div class="solicitudes-container">
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="alert">@TempData["Success"]</div>
+    }
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">
