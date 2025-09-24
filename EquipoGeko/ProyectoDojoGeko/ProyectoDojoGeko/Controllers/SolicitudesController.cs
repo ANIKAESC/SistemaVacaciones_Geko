@@ -459,6 +459,41 @@ namespace ProyectoDojoGeko.Controllers
                     totalDiasHabiles += CalcularDiasHabiles(detalle.FechaInicio, detalle.FechaFin, feriados);
                 }
 
+                // Validar que el empleado tenga suficientes días disponibles
+                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
+                if (idEmpleado.HasValue)
+                {
+                    var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado.Value);
+                    if (empleado != null)
+                    {
+                        if (totalDiasHabiles > empleado.DiasVacacionesAcumulados)
+                        {
+                            var mensajeError = $"No tienes suficientes días disponibles. Solicitaste {totalDiasHabiles} días pero solo tienes {empleado.DiasVacacionesAcumulados} días disponibles.";
+                            TempData["ErrorMessage"] = mensajeError;
+                            TempData.Keep("ErrorMessage"); // Mantener el mensaje para la próxima solicitud
+                            await _bitacoraService.RegistrarBitacoraAsync("Validación de días", $"Intento de solicitud con {totalDiasHabiles} días cuando solo tiene {empleado.DiasVacacionesAcumulados} disponibles");
+                            ModelState.AddModelError("", mensajeError); // Asegurar que el error se muestre en la validación del modelo
+                            return View(solicitud);
+                        }
+                    }
+                    else
+                    {
+                        var errorMsg = "No se pudo verificar los días disponibles. Por favor, intente nuevamente.";
+                        TempData["ErrorMessage"] = errorMsg;
+                        TempData.Keep("ErrorMessage");
+                        ModelState.AddModelError("", errorMsg);
+                        return View(solicitud);
+                    }
+                }
+                else
+                {
+                    var errorMsg = "No se pudo identificar al empleado. Por favor, inicie sesión nuevamente.";
+                    TempData["ErrorMessage"] = errorMsg;
+                    TempData.Keep("ErrorMessage");
+                    ModelState.AddModelError("", errorMsg);
+                    return View(solicitud);
+                }
+
                 solicitud.Encabezado.DiasSolicitadosTotal = totalDiasHabiles;
 
                 solicitud.Encabezado.NombreEmpleado = HttpContext.Session.GetString("NombreCompletoEmpleado") ?? "Desconocido";

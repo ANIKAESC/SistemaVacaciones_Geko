@@ -187,6 +187,7 @@
 </div>
 @section Styles {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -435,6 +436,35 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+    <script>
+        // Mostrar errores de validación con SweetAlert2
+        $(document).ready(function() {
+            console.log('Document ready - Verificando mensajes de error...');
+            var errorMessage = '@Html.Raw(TempData["ErrorMessage"])';
+            console.log('Mensaje de error:', errorMessage);
+            
+            if (errorMessage && errorMessage !== '') {
+                console.log('Mostrando alerta de error...');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMessage,
+                    confirmButtonColor: '#0039A6',
+                    confirmButtonText: 'Aceptar'
+                }).then((result) => {
+                    console.log('Alerta cerrada');
+                });
+            }
+            
+            // Limpiar el mensaje después de mostrarlo para que no se muestre en recargas
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>@(TempData["ErrorMessage"] = null);</text>
+            }
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Obtenemos los feriados desde el ViewBag y los convertimos a un objeto JavaScript
