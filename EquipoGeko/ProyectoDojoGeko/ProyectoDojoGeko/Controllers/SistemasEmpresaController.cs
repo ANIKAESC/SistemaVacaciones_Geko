@@ -51,7 +51,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador","RRHH")]
         public async Task<IActionResult> Index()
         {
             try
@@ -74,7 +74,7 @@ namespace ProyectoDojoGeko.Controllers
 
         // Vista para crear una nueva relación de sistema a empresa
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<IActionResult> Crear()
         {
             // Obtenemos las listas desde los DAOs
@@ -125,7 +125,7 @@ namespace ProyectoDojoGeko.Controllers
 
         // Acción para crear una nueva relación de sistema a empresa
         [HttpPost]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<IActionResult> Crear(SistemasEmpresaFormViewModel model)
         {
             try

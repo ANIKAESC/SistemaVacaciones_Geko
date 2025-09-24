@@ -49,7 +49,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador","RRHH")]
         public async Task<IActionResult> Index()
         {
             try
@@ -71,7 +71,7 @@ namespace ProyectoDojoGeko.Controllers
 
         // Crear un nuevo módulo (GET)
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador","RRHH", "Editor,")]
         public async Task<IActionResult> Crear()
         {
             try
@@ -96,7 +96,7 @@ namespace ProyectoDojoGeko.Controllers
 
         // Crear un nuevo módulo (POST)
         [HttpPost]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<ActionResult> Crear(ModuloViewModel modulo)
         {
             try
@@ -128,4 +128,4 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
     }
-}
+}   

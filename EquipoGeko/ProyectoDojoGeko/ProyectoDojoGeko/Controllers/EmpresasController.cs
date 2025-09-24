@@ -49,7 +49,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador","RRHH")]
         // Acción para mostrar la lista de empresas
         public async Task<IActionResult> Index()
         {
@@ -74,7 +74,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         // Acción para mostrar la vista de creación de una nueva empresa
         public async Task<IActionResult> Crear()
         {
@@ -96,7 +96,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpPost]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         [ValidateAntiForgeryToken]
         // Acción para crear una nueva empresa
         public async Task<IActionResult> Crear(EmpresaViewModel empresa)
@@ -157,7 +157,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         // Acción para mostrar la vista de edición de una empresa existente
         public async Task<IActionResult> Editar(int id)
         {
@@ -190,7 +190,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpPost]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         [ValidateAntiForgeryToken]
         // Acción para actualizar una empresa existente
         public async Task<IActionResult> Editar(EmpresaViewModel empresa)
@@ -252,7 +252,7 @@ namespace ProyectoDojoGeko.Controllers
 
         [HttpGet]
         // Acción para mostrar los detalles de una empresa específica
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<IActionResult> Detalle(int id)
         {
             // Intenta obtener los detalles de la empresa por ID y registrar la acción en la bitácora
@@ -278,7 +278,7 @@ namespace ProyectoDojoGeko.Controllers
 
         [HttpGet]
         // Acción para listar una empresa específica por ID
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<IActionResult> Listar(int id)
         {
             // Intenta obtener la empresa por ID y registrar la acción en la bitácora
@@ -302,7 +302,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpPost]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         [ValidateAntiForgeryToken]
         // Acción para eliminar una empresa existente
         public async Task<IActionResult> Eliminar(int id)
