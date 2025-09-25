@@ -22,7 +22,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador","RRHH")]
         public async Task<IActionResult> Index(int idSistema)
         {
             var modulosSistema = await _daoModuloSistema.ObtenerModulosPorSistemaAsync(idSistema);
@@ -30,7 +30,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<IActionResult> Crear()
         {
             ViewBag.Modulos = await _daoModulo.ObtenerModulosAsync();
@@ -41,7 +41,7 @@ namespace ProyectoDojoGeko.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<IActionResult> Crear(ModuloSistemaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -56,7 +56,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor","RRHH")]
         public async Task<IActionResult> ObtenerModulosNoAsignados(int idSistema)
         {
             var modulos = await _daoModulo.ObtenerModulosNoAsignadosAsync(idSistema);
