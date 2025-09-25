@@ -57,6 +57,33 @@ namespace ProyectoDojoGeko.Data
             }
         }
 
+        // Obtener el equipo asociado a un empleado
+        public async Task<EmpleadoEquipoViewModel> ObtenerEquipoAsync(int idEmpleado)
+        {
+            EmpleadoEquipoViewModel empleadoEquipo = null;
+            string procedure = "sp_ObtenerEquipoPorEmpleado";
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand(procedure, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            empleadoEquipo = new EmpleadoEquipoViewModel
+                            {
+                                IdEquipo = reader.GetInt32(reader.GetOrdinal("IdEquipo"))
+                            };
+                        }
+                    }
+                }
+            }
+            return empleadoEquipo;
+        }
+
         // Listar empleados por equipo
         public async Task<List<EmpleadoViewModel>> ListarEmpleadosPorEquipoAsync(int idEquipo)
         {
@@ -87,6 +114,7 @@ namespace ProyectoDojoGeko.Data
             }
             return empleados;
         }
+
 
         // Actualizar días de vacaciones acumulados para un empleado
         public async Task<bool> ActualizarEmpleadoAsync(EmpleadoViewModel empleado)

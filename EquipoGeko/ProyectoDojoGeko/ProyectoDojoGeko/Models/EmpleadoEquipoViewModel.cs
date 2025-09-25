@@ -2,5 +2,6 @@
 {
     public class EmpleadoEquipoViewModel
     {
+        public int? IdEquipo { get; set; }
     }
 }

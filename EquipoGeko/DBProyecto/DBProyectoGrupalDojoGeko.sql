@@ -2235,7 +2235,6 @@ BEGIN
 END
 GO
 
-
 -- --------------------- Tabla Intermedia: EquiposProyecto ---------------------
 -- Relaciona los equipos con los proyectos
 CREATE TABLE EquiposProyecto (
@@ -2365,7 +2364,101 @@ BEGIN
 END;
 GO
 
--- --------------------- SPs para EquiposProyecto ---------------------
+-- Obtener equipo por medio del IdEmpleado
+CREATE PROCEDURE sp_ObtenerEquipoPorEmpleado
+	@IdEmpleado INT
+AS
+BEGIN
+	SELECT ee.FK_IdEquipo FROM EmpleadosEquipo ee WHERE ee.FK_IdEmpleado = @IdEmpleado;
+END;
+GO
+
+/*
+CREATE OR ALTER PROCEDURE sp_ObtenerCompanerosDeEquipos
+    @IdEmpleado INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Obtener los equipos a los que pertenece el empleado
+    DECLARE @Equipos TABLE (IdEquipo INT);
+    
+    INSERT INTO @Equipos (IdEquipo)
+    SELECT ee.FK_IdEquipo
+    FROM EmpleadosEquipo ee
+    WHERE ee.FK_IdEmpleado = @IdEmpleado
+    
+    -- Si el empleado no está en ningún equipo, retornar vacío
+    IF NOT EXISTS (SELECT 1 FROM @Equipos)
+        RETURN;
+    
+    -- Obtener todos los compañeros de equipo (incluyendo al empleado actual)
+    SELECT 
+        e.IdEmpleado,
+        e.NombresEmpleado,
+        e.ApellidosEmpleado,
+        COALESCE(
+            NULLIF(
+                STRING_AGG(
+                    CASE 
+                        WHEN r.NombreRol IN ('TeamLider', 'SubLider', 'Empleado') 
+                        THEN r.NombreRol 
+                        ELSE NULL 
+                    END, 
+                    ', '
+                ),
+                ''
+            ),
+            'Sin rol'
+        ) AS Roles,
+        CASE WHEN e.IdEmpleado = @IdEmpleado THEN 1 ELSE 0 END AS EsUsuarioActual
+    FROM Empleados e
+    INNER JOIN EmpleadosEquipo ee ON e.IdEmpleado = ee.FK_IdEmpleado
+    INNER JOIN @Equipos eq ON ee.FK_IdEquipo = eq.IdEquipo
+    -- Unión con la tabla de usuarios para obtener roles (LEFT JOIN para incluir empleados sin usuario)
+    LEFT JOIN Usuarios u ON e.IdEmpleado = u.FK_IdEmpleado
+    LEFT JOIN UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
+    LEFT JOIN Roles r ON ur.FK_IdRol = r.IdRol
+        AND r.NombreRol IN ('TeamLider', 'SubLider', 'Empleado')
+    WHERE e.FK_IdEstado = 1  -- Solo empleados activos
+    GROUP BY 
+        e.IdEmpleado,
+        e.NombresEmpleado,
+        e.ApellidosEmpleado,
+        e.CorreoInstitucional,
+        e.Puesto
+    ORDER BY 
+        -- Ordenar primero al empleado actual, luego por rol
+        CASE WHEN e.IdEmpleado = @IdEmpleado THEN 0 ELSE 1 END,
+        -- Luego por rol (TeamLider, SubLider, etc.)
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM Usuarios u2 
+                INNER JOIN UsuariosRol ur2 ON u2.IdUsuario = ur2.FK_IdUsuario
+                INNER JOIN Roles r2 ON ur2.FK_IdRol = r2.IdRol
+                WHERE u2.FK_IdEmpleado = e.IdEmpleado
+                AND r2.NombreRol = 'TeamLider'
+            ) THEN 1
+            WHEN EXISTS (
+                SELECT 1 
+                FROM Usuarios u2 
+                INNER JOIN UsuariosRol ur2 ON u2.IdUsuario = ur2.FK_IdUsuario
+                INNER JOIN Roles r2 ON ur2.FK_IdRol = r2.IdRol
+                WHERE u2.FK_IdEmpleado = e.IdEmpleado
+                AND r2.NombreRol = 'SubLider'
+            ) THEN 2
+            ELSE 3
+        END,
+        e.ApellidosEmpleado,
+        e.NombresEmpleado;
+END;
+GO
+
+EXEC sp_ObtenerCompanerosDeEquipo 1;
+GO
+*/
+-- --------------------- SPs para EquiposProyecto (Proyecto == HUB) ---------------------
 
 -- Asignar equipo a proyecto
 CREATE PROCEDURE sp_AsignarEquipoAProyecto
@@ -2461,11 +2554,12 @@ VALUES ('Guatemala','1234567890123', 'Juan', 'Pérez', 'juanperez@gmail.com', 'j
 GO
 
 -- Insertar empleados
-EXEC sp_InsertarEmpleado @TipoContrato='Planilla', @Pais='Guatemala', @Departamento='Guatemala', @Municipio='Guatemala', @Direccion='Zona 10', @Puesto='System Administrator', @Codigo='EMP002', @DPI='1000000001', @Pasaporte='P10001', @NombresEmpleado='Ana', @ApellidosEmpleado='González', @CorreoPersonal='ana.gonzalez@gmail.com', @CorreoInstitucional='ana.gonzalez@geko.com', @FechaIngreso='2023-01-01', @DiasVacacionesAcumulados=0.00, @FechaNacimiento='1990-01-01', @Telefono='12345678', @NIT='10000001', @Genero='Femenino', @Salario=5000, @FK_IdEstado=1;
+/*EXEC sp_InsertarEmpleado @TipoContrato='Planilla', @Pais='Guatemala', @Departamento='Guatemala', @Municipio='Guatemala', @Direccion='Zona 10', @Puesto='System Administrator', @Codigo='EMP002', @DPI='1000000001', @Pasaporte='P10001', @NombresEmpleado='Ana', @ApellidosEmpleado='González', @CorreoPersonal='ana.gonzalez@gmail.com', @CorreoInstitucional='ana.gonzalez@geko.com', @FechaIngreso='2023-01-01', @DiasVacacionesAcumulados=0.00, @FechaNacimiento='1990-01-01', @Telefono='12345678', @NIT='10000001', @Genero='Femenino', @Salario=5000, @FK_IdEstado=1;
 EXEC sp_InsertarEmpleado @TipoContrato='Planilla', @Pais='Guatemala', @Departamento='Guatemala', @Municipio='Guatemala', @Direccion='Zona 11', @Puesto='Team Leader', @Codigo='EMP003', @DPI='1000000002', @Pasaporte='P10002', @NombresEmpleado='Luis', @ApellidosEmpleado='Martínez', @CorreoPersonal='luis.martinez@gmail.com', @CorreoInstitucional='luis.martinez@geko.com', @FechaIngreso='2023-01-01', @DiasVacacionesAcumulados=0.00, @FechaNacimiento='1988-05-15', @Telefono='22334455', @NIT='10000002', @Genero='Masculino', @Salario=4000, @FK_IdEstado=1;
 EXEC sp_InsertarEmpleado @TipoContrato='Planilla', @Pais='Guatemala', @Departamento='Guatemala', @Municipio='Guatemala', @Direccion='Zona 12', @Puesto='Desarrollador', @Codigo='EMP004', @DPI='1000000003', @Pasaporte='P10003', @NombresEmpleado='María', @ApellidosEmpleado='López', @CorreoPersonal='maria.lopez@gmail.com', @CorreoInstitucional='maria.lopez@geko.com', @FechaIngreso='2023-01-01', @DiasVacacionesAcumulados=0.00, @FechaNacimiento='1992-03-10', @Telefono='33445566', @NIT='10000003', @Genero='Femenino', @Salario=3500, @FK_IdEstado=1;
 EXEC sp_InsertarEmpleado @TipoContrato='Planilla', @Pais='Guatemala', @Departamento='Guatemala', @Municipio='Guatemala', @Direccion='Zona 13', @Puesto='Desarrollador', @Codigo='EMP005', @DPI='1000000004', @Pasaporte='P10004', @NombresEmpleado='Pedro', @ApellidosEmpleado='Ramírez', @CorreoPersonal='pedro.ramirez@gmail.com', @CorreoInstitucional='pedro.ramirez@geko.com', @FechaIngreso='2023-01-01', @DiasVacacionesAcumulados=0.00, @FechaNacimiento='1995-07-20', @Telefono='44556677', @NIT='10000004', @Genero='Masculino', @Salario=3000, @FK_IdEstado=1;
 EXEC sp_InsertarEmpleado @TipoContrato='Facturado', @Pais='Guatemala', @Departamento='Guatemala', @Municipio='Guatemala', @Direccion='Zona 14', @Puesto='Gerente Operativo de Recursos Humanos', @Codigo='EMP006', @DPI='1000000005', @Pasaporte='P10005', @NombresEmpleado='Sofía', @ApellidosEmpleado='Herrera', @CorreoPersonal='sofia.herrera@gmail.com', @CorreoInstitucional='sofia.herrera@geko.com', @FechaIngreso='2023-01-01', @DiasVacacionesAcumulados=0.00, @FechaNacimiento='1991-11-30', @Telefono='55667788', @NIT='10000005', @Genero='Femenino', @Salario=4500, @FK_IdEstado=1;
+*/
 GO
 
 
@@ -2476,16 +2570,16 @@ UPDATE Usuarios SET FK_IdEstado = 1 WHERE IdUsuario = 1;
 GO
 
 -- Insertar usuarios (obtén el IdEmpleado generado para cada uno)
-EXEC sp_InsertarUsuario @Username='superadmin', @Contrasenia='12345678', @FK_IdEstado=1, @FK_IdEmpleado=3, @FechaExpiracionContrasenia=NULL;
+/*EXEC sp_InsertarUsuario @Username='superadmin', @Contrasenia='12345678', @FK_IdEstado=1, @FK_IdEmpleado=3, @FechaExpiracionContrasenia=NULL;
 EXEC sp_InsertarUsuario @Username='teamlider', @Contrasenia='12345678', @FK_IdEstado=1, @FK_IdEmpleado=4, @FechaExpiracionContrasenia=NULL;
 EXEC sp_InsertarUsuario @Username='subteamlider', @Contrasenia='12345678', @FK_IdEstado=1, @FK_IdEmpleado=5, @FechaExpiracionContrasenia=NULL;
 EXEC sp_InsertarUsuario @Username='empleado', @Contrasenia='12345678', @FK_IdEstado=1, @FK_IdEmpleado=6, @FechaExpiracionContrasenia=NULL;
-EXEC sp_InsertarUsuario @Username='rrhh', @Contrasenia='12345678', @FK_IdEstado=1, @FK_IdEmpleado=7, @FechaExpiracionContrasenia=NULL;
+EXEC sp_InsertarUsuario @Username='rrhh', @Contrasenia='12345678', @FK_IdEstado=1, @FK_IdEmpleado=7, @FechaExpiracionContrasenia=NULL;*/
 GO
 
 -- Inserciones de prueba para la asignación de Empleados y Empresa
 INSERT INTO EmpleadosEmpresa (FK_IdEmpresa, FK_IdEmpleado) 
-VALUES (1,1), (1,4), (1,6);
+VALUES (1,1)/*, (1,4), (1,6)*/;
 GO
 select * from empleados
 -- 1 Insertar el encabezado para la solicitud inicial
@@ -2534,15 +2628,15 @@ GO
 
  -- Inserciones de prueba para la tabla Usuarios Rol
 INSERT INTO UsuariosRol (FK_IdUsuario, FK_IdRol)
-VALUES( 1, 1);
-GO
+VALUES(1, 1), (1,6);
+GO 
 
 -- Asignar roles a usuarios (ajusta los IDs de usuario y rol según corresponda)
-EXEC sp_InsertarUsuariosRol @FK_IdUsuario=2, @FK_IdRol=1; -- SuperAdmin
-EXEC sp_InsertarUsuariosRol @FK_IdUsuario=3, @FK_IdRol=4; -- TeamLider
+EXEC sp_InsertarUsuariosRol @FK_IdUsuario=1, @FK_IdRol=1; -- SuperAdmin
+/*EXEC sp_InsertarUsuariosRol @FK_IdUsuario=3, @FK_IdRol=4; -- TeamLider
 EXEC sp_InsertarUsuariosRol @FK_IdUsuario=4, @FK_IdRol=5; -- SubTeamLider
 EXEC sp_InsertarUsuariosRol @FK_IdUsuario=5, @FK_IdRol=6; -- Empleado
-EXEC sp_InsertarUsuariosRol @FK_IdUsuario=6, @FK_IdRol=7; -- RRHH
+EXEC sp_InsertarUsuariosRol @FK_IdUsuario=6, @FK_IdRol=7; -- RRHH*/
 GO
 
 SELECT * FROM Estados;

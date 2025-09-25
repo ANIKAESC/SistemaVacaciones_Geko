@@ -239,6 +239,50 @@ namespace ProyectoDojoGeko.Data
 
         }
 
+        // Obtenemos a todos los compañeros (empleados) que tiene un empleado por medio de su propio IdEmpleado
+        // para buscar a los autorizadores
+        /*public async Task<List<AutorizadorViewModel>> ObtenerAutorizadoresPorEmpleadoAsync(int idEmpleado)
+        {
+            var autorizadores = new List<AutorizadorViewModel>();
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                using var procedure = new SqlCommand("sp_ObtenerCompanerosDeEquipo", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                procedure.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
+
+                await connection.OpenAsync();
+                using SqlDataReader reader = await procedure.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    string roles = reader["Roles"]?.ToString() ?? "Sin rol";
+
+                    // Solo incluir si es TeamLider o SubLider
+                    if (roles.Contains("TeamLider") || roles.Contains("SubLider"))
+                    {
+                        autorizadores.Add(new AutorizadorViewModel
+                        {
+                            IdEmpleado = Convert.ToInt32(reader["IdEmpleado"]),
+                            Nombres = reader["NombresEmpleado"].ToString() ?? "",
+                            Apellidos = reader["ApellidosEmpleado"].ToString() ?? "",
+                            Correo = reader["CorreoInstitucional"].ToString() ?? "",
+                            Puesto = reader["Puesto"].ToString() ?? "",
+                            Roles = roles,
+                            EsUsuarioActual = Convert.ToBoolean(reader["EsUsuarioActual"])
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener los autorizadores. Por favor, intente nuevamente más tarde.", ex);
+            }
+            return autorizadores;
+        }*/
+
 
         //JuniorDev | Método para obtener encabezado de solicitud por autorizador (IdAutorizador)
         public async Task<List<SolicitudEncabezadoViewModel>> ObtenerSolicitudEncabezadoAutorizadorAsync(int? IdAutorizador = null)

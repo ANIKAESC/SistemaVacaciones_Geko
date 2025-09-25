@@ -165,6 +165,22 @@ namespace ProyectoDojoGeko.Controllers
                     return View("Crear", model); 
                 }
 
+                // Validar si el empleado ya tiene un usuario
+                bool empleadoTieneUsuario = await _daoUsuarioWS.EmpleadoTieneUsuarioAsync(model.Usuario.FK_IdEmpleado);
+                if (empleadoTieneUsuario)
+                {
+                    var usuarioSesion = HttpContext.Session.GetString("Usuario");
+                    await _loggingService.RegistrarLogAsync(new LogViewModel
+                    {
+                        Accion = "Error Crear Usuario",
+                        Descripcion = $"Intento de crear usuario para empleado que ya tiene usuario. Empleado ID: {model.Usuario.FK_IdEmpleado}, Solicitado por: {usuarioSesion}",
+                        Estado = false
+                    });
+
+                    ModelState.AddModelError("", "El empleado seleccionado ya tiene un usuario asociado.");
+                    return View("Crear", model);
+                }
+
                 // Extraemos datos de la sesión para registrar eventos  
                 var idUsuarioSesion = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
                 var usuarioActual = HttpContext.Session.GetString("Usuario") ?? "Sistema";

@@ -512,7 +512,7 @@
 								</a>
 								<ul class="submenu">
 
-									@if (mostrarRRHH)
+									@*@if (mostrarRRHH)
 									{
 										<li class="submenu-item @(currentController == "solicitudes" ? "active" : "")">
 											<a href="@Url.Action("TodasLasSolicitudes", "Solicitudes")" class="submenu-link">
@@ -520,8 +520,7 @@
 												<span>Listar todas las Solicitudes</span>
 											</a>
 										</li>
-									}
-
+									}*@
 
 									<li class="submenu-item @(currentController == "solicitudes" ? "active" : "")">
 										<a href="@Url.Action("Index", "Solicitudes")" class="submenu-link">

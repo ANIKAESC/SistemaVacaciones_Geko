@@ -156,6 +156,34 @@ namespace ProyectoDojoGeko.Data
             return usuarios;
         }
 
+        // Método para verificar si un empleado ya tiene un usuario asociado
+        public async Task<bool> EmpleadoTieneUsuarioAsync(int idEmpleado)
+        {
+            try
+            {
+                // Consulta SQL para contar usuarios asociados al empleado sin importar su estado
+                string query = "SELECT COUNT(1) FROM Usuarios WHERE FK_IdEmpleado = @IdEmpleado";
+
+                using (SqlConnection conn = new SqlConnection(_connectionString))
+                {
+                    await conn.OpenAsync();
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
+                        int count = (int)await cmd.ExecuteScalarAsync();
+                        return count > 0;
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                // Registrar el error y asumir que el empleado no tiene usuario para no bloquear el flujo
+                Console.WriteLine("Error al verificar si el empleado tiene usuario. ID: {IdEmpleado}", idEmpleado);
+                return false;
+            }
+        }
+
         // Método para insertar un nuevo usuario
         public async Task<(int IdUsuario, string Contrasenia)> InsertarUsuarioAsync(UsuarioViewModel usuario)
         {

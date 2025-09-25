@@ -62,7 +62,7 @@ namespace ProyectoDojoGeko.Models
         public int Estado { get; set; }
 
         [Column("FK_IdAutorizador")]
-        public int? IdAutorizador { get; set; }
+        public int? IdAutorizador { get; set; } // Aquí colocamos el ID del empleado con rol de TeamLider o SubLider para asociarle la solicitud
 
         [Column("FechaAutorizacion")]
         public DateTime? FechaAutorizacion { get; set; }

@@ -13,10 +13,10 @@
         <div class="header-content">
             <h1 class="page-title">
                 <i class="fas fa-@(Model.IdProyecto == 0 ? "plus" : "edit")"></i>
-                @(Model.IdProyecto == 0 ? "Crear" : "Editar") Proyecto
+                @(Model.IdProyecto == 0 ? "Crear" : "Editar") HUB
             </h1>
             <p class="page-subtitle">
-                @(Model.IdProyecto == 0 ? "Complete los datos del nuevo proyecto" : "Actualice los datos del proyecto")
+                @(Model.IdProyecto == 0 ? "Complete los datos del nuevo HUB" : "Actualice los datos del HUB")
             </p>
         </div>
         <div class="header-actions">
@@ -61,7 +61,7 @@
                             <span class="required">*</span>
                         </label>
                         <div class="input-container">
-                            <input asp-for="Nombre" class="form-control" placeholder="Nombre del proyecto" />
+                            <input asp-for="Nombre" class="form-control" placeholder="Nombre del HUB" />
                             <span asp-validation-for="Nombre" class="validation-message"></span>
                         </div>
                     </div>
@@ -73,7 +73,7 @@
                             <span>Descripción</span>
                         </label>
                         <div class="input-container">
-                            <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripción del proyecto"></textarea>
+                            <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripción del HUB"></textarea>
                             <span asp-validation-for="Descripcion" class="validation-message"></span>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                 </button>
                 <button type="submit" class="btn-submit">
                     <i class="fas fa-save"></i>
-                    @(Model.IdProyecto == 0 ? "Crear Proyecto" : "Actualizar Proyecto")
+                    @(Model.IdProyecto == 0 ? "Crear HUB" : "Actualizar HUB")
                 </button>
             </div>
         </form>
