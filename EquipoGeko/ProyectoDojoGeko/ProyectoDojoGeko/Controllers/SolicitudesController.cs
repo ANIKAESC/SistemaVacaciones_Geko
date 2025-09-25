@@ -8,6 +8,8 @@ using ProyectoDojoGeko.Models;
 using ProyectoDojoGeko.Services;
 using ProyectoDojoGeko.Services.Interfaces;
 using ProyectoDojoGeko.Helper.Solicitudes;
+using ClosedXML.Excel;
+using Microsoft.Extensions.Configuration;
 
 namespace ProyectoDojoGeko.Controllers
 {
@@ -329,6 +331,93 @@ namespace ProyectoDojoGeko.Controllers
 
             }
 
+        }
+
+        // Vista principal para ver todas las solicitudes
+        [HttpGet]
+        [AuthorizeRole("SuperAdministrador", "RRHH")]
+        public async Task<IActionResult> TodasLasSolicitudes()
+        {
+            try
+            {
+                // Obtener todas las solicitudes
+                var solicitudes = await _daoSolicitud.ObtenerTodasLasSolicitudesAsync();
+                
+                // Obtener la lista de estados para mostrar los nombres
+                var estados = await _estadoService.ObtenerEstadosActivosSolicitudesAsync();
+                ViewBag.Estados = estados;
+                
+                return View(solicitudes);
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("obtener todas las solicitudes", ex);
+                return BadRequest("Paso algún error :c");
+            }
+        }
+
+        // Carga masiva de solicitudes desde Excel
+        [HttpPost]
+        [AuthorizeRole("SuperAdministrador", "RRHH")]
+        public async Task<IActionResult> CargarExcel(IFormFile archivoExcel)
+        {
+            if (archivoExcel == null || archivoExcel.Length == 0)
+                return BadRequest("Debe subir un archivo Excel válido");
+
+            var solicitudes = new List<SolicitudViewModel>();
+
+            using (var stream = archivoExcel.OpenReadStream())
+            using (var workbook = new XLWorkbook(stream))
+            {
+                var wsEnc = workbook.Worksheet("SolicitudEncabezado");
+                var wsDet = workbook.Worksheet("SolicitudDetalle");
+
+                // Leer encabezados
+                var encabezados = wsEnc.RangeUsed().RowsUsed().Skip(1); // omitir fila encabezado
+                foreach (var row in encabezados)
+                {
+                    var solicitud = new SolicitudViewModel
+                    {
+                        Encabezado = new SolicitudEncabezadoViewModel
+                        {
+                            IdEmpleado = row.Cell(2).GetValue<int>(),
+                            NombreEmpleado = row.Cell(3).GetValue<string>(),
+                            DiasSolicitadosTotal = row.Cell(4).GetValue<decimal>(),
+                            FechaIngresoSolicitud = row.Cell(5).GetDateTime(),
+                            SolicitudLider = row.Cell(6).GetValue<string>(),
+                            Observaciones = row.Cell(7).GetValue<string>(),
+                            Estado = row.Cell(8).GetValue<int>()
+                        },
+                        Detalles = new List<SolicitudDetalleViewModel>()
+                    };
+
+                    // Relacionar con los detalles (buscar por IdSolicitud)
+                    int idSolicitudExcel = row.Cell(1).GetValue<int>();
+
+                    var detalles = wsDet.RangeUsed().RowsUsed().Skip(1)
+                        .Where(r => r.Cell(2).GetValue<int>() == idSolicitudExcel);
+
+                    foreach (var d in detalles)
+                    {
+                        solicitud.Detalles.Add(new SolicitudDetalleViewModel
+                        {
+                            FechaInicio = d.Cell(3).GetDateTime(),
+                            FechaFin = d.Cell(4).GetDateTime(),
+                            DiasHabilesTomados = d.Cell(5).GetValue<decimal>()
+                        });
+                    }
+
+                    solicitudes.Add(solicitud);
+                }
+            }
+
+            // Guardar en BD
+            foreach (var sol in solicitudes)
+            {
+                await _daoSolicitud.InsertarSolicitudAsync(sol);
+            }
+
+            return Ok($"{solicitudes.Count} solicitudes procesadas y guardadas correctamente.");
         }
 
 

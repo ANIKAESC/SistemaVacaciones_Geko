@@ -321,23 +321,23 @@
 			<nav class="sidebar-nav">
 				<ul class="nav-list">
 
-				<!-- Botón de Regresar al Dashboard Principal -->
-				<li class="nav-item">
-					<a href="@Url.Action("Dashboard", "Dashboard")" class="nav-link">
-						<i class="fas fa-arrow-left"></i>
-						<span>Regresar al Dashboard</span>
-					</a>
-				</li>
+					<!-- Botón de Regresar al Dashboard Principal -->
+					<li class="nav-item">
+						<a href="@Url.Action("Dashboard", "Dashboard")" class="nav-link">
+							<i class="fas fa-arrow-left"></i>
+							<span>Regresar al Dashboard</span>
+						</a>
+					</li>
 
-				<!-- No toquen esta mierda, gracias -->
-				@{
-					var sistemaActual = Context.Session.GetString("SistemaActual") ?? "Seguridad";
+					<!-- No toquen esta mierda, gracias -->
+					@{
+						var sistemaActual = Context.Session.GetString("SistemaActual") ?? "Seguridad";
 					}
 
 					@if (sistemaActual == "Seguridad")
 					{
 
-						
+
 
 						// --- Todos los módulos del sistema de seguridad (igual que tu menú original) ---
 						@if (mostrarDashboard)
@@ -511,10 +511,22 @@
 									<i class="fas fa-chevron-down submenu-arrow"></i>
 								</a>
 								<ul class="submenu">
+
+									@if (mostrarRRHH)
+									{
+										<li class="submenu-item @(currentController == "solicitudes" ? "active" : "")">
+											<a href="@Url.Action("TodasLasSolicitudes", "Solicitudes")" class="submenu-link">
+												<i class="fas fa-building"></i>
+												<span>Listar todas las Solicitudes</span>
+											</a>
+										</li>
+									}
+
+
 									<li class="submenu-item @(currentController == "solicitudes" ? "active" : "")">
 										<a href="@Url.Action("Index", "Solicitudes")" class="submenu-link">
 											<i class="fas fa-building"></i>
-											<span>Listar Solicitudes</span>
+											<span>Mis Solicitudes</span>
 										</a>
 									</li>
 									<li class="submenu-item">

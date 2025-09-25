@@ -1899,8 +1899,6 @@ BEGIN
 END;
 GO
 
-
-
 -- Sin filtro para RRHH o Administración
 CREATE PROCEDURE sp_ListarSolicitudEncabezado 
 AS 
@@ -2178,8 +2176,8 @@ GO
 CREATE TABLE EmpleadosEquipo (
     IdEmpleadoEquipo INT IDENTITY(1,1) PRIMARY KEY,
     FK_IdEquipo INT NOT NULL,
-    FK_IdEmpleado INT NOT NULL
-    --FK_IdRol INT NOT NULL -- Usamos la FK de la tabla Roles
+    FK_IdEmpleado INT NOT NULL,
+    -- FK_IdRol INT NOT NULL -- Usamos la FK de la tabla Roles
     /*CONSTRAINT FK_EmpleadosEquipo_Equipos
         FOREIGN KEY (FK_IdEquipo)
             REFERENCES Equipos (IdEquipo),
@@ -2345,12 +2343,12 @@ GO
 -- Asignar empleado a equipo con un rol existente
 CREATE PROCEDURE sp_AsignarEmpleadoAEquipo
     @FK_IdEquipo INT,
-    @FK_IdEmpleado INT,
-    @FK_IdRol INT -- Parámetro actualizado para usar FK_IdRol
+    @FK_IdEmpleado INT
+    --@FK_IdRol INT -- Parámetro actualizado para usar FK_IdRol
 AS
 BEGIN
-    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado, FK_IdRol)
-    VALUES (@FK_IdEquipo, @FK_IdEmpleado, @FK_IdRol);
+    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado)
+    VALUES (@FK_IdEquipo, @FK_IdEmpleado);
 END;
 GO
 

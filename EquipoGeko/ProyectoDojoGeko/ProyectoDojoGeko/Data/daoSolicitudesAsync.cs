@@ -164,6 +164,81 @@ namespace ProyectoDojoGeko.Data
 
         #region Métodos GET de encabezado de solicitud
 
+        public async Task<List<SolicitudViewModel>> ObtenerTodasLasSolicitudesAsync()
+        {
+            var solicitudes = new List<SolicitudViewModel>();
+
+            try {
+
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    // 1. Obtener todos los encabezados
+                    using (var command = new SqlCommand("sp_ListarSolicitudEncabezado", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var solicitud = new SolicitudViewModel
+                                {
+                                    Encabezado = new SolicitudEncabezadoViewModel
+                                    {
+                                        IdSolicitud = Convert.ToInt32(reader["IdSolicitud"]),
+                                        IdEmpleado = reader["IdEmpleado"] != DBNull.Value ? Convert.ToInt32(reader["IdEmpleado"]) : 0,
+                                        NombreEmpleado = null,
+                                        DiasSolicitadosTotal = (decimal)reader["DiasSolicitadosTotal"],
+                                        FechaIngresoSolicitud = (DateTime)reader["FechaIngresoSolicitud"],
+                                        Estado = Convert.ToInt32(reader["Estado"])
+                                    },
+                                    Detalles = new List<SolicitudDetalleViewModel>()
+                                };
+                                solicitudes.Add(solicitud);
+                            }
+                        }
+                    }
+
+                    // 2. Obtener detalles para cada solicitud
+                    foreach (var solicitud in solicitudes)
+                    {
+                        using (var cmdDetalle = new SqlCommand("sp_ObtenerDetallesPorSolicitud", connection))
+                        {
+                            cmdDetalle.CommandType = CommandType.StoredProcedure;
+                            cmdDetalle.Parameters.AddWithValue("@IdSolicitud", solicitud.Encabezado.IdSolicitud);
+
+                            using (var readerDetalle = await cmdDetalle.ExecuteReaderAsync())
+                            {
+                                while (await readerDetalle.ReadAsync())
+                                {
+                                    solicitud.Detalles.Add(new SolicitudDetalleViewModel
+                                    {
+                                        IdSolicitudDetalle = (int)readerDetalle["IdSolicitudDetalle"],
+                                        FechaInicio = (DateTime)readerDetalle["FechaInicio"],
+                                        FechaFin = (DateTime)readerDetalle["FechaFin"],
+                                        DiasHabilesTomados = (decimal)readerDetalle["DiasHabilesTomados"]
+                                    });
+                                }
+                            }
+                        }
+
+
+                    }
+                }
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+
+            return solicitudes;
+
+        }
+
 
         //JuniorDev | Método para obtener encabezado de solicitud por autorizador (IdAutorizador)
         public async Task<List<SolicitudEncabezadoViewModel>> ObtenerSolicitudEncabezadoAutorizadorAsync(int? IdAutorizador = null)
