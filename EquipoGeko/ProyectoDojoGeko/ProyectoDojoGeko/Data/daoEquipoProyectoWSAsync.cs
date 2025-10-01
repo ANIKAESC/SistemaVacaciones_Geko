@@ -68,6 +68,7 @@ namespace ProyectoDojoGeko.Data
                 }
             }
         }
+
         public async Task<ProyectoViewModel?> ObtenerProyectoPorIdAsync(int id)
         {
             ProyectoViewModel? proyecto = null;

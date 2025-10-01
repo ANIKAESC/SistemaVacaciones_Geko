@@ -70,6 +70,9 @@ namespace ProyectoDojoGeko.Controllers
 
             try
             {
+
+                proyecto.FechaInicio = proyecto.FechaInicio?.ToLocalTime(); // Convertir a hora local
+
                 await _daoProyectoEquipo.InsertarProyectoAsync(proyecto);
                 
                 // Registrar cambio

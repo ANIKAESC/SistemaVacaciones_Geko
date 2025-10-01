@@ -897,11 +897,12 @@ BEGIN
     DECLARE @DiasAcumulados DECIMAL(5, 2);
     DECLARE @MesesTrabajados INT;
     
-    -- Calcular meses trabajados desde la fecha de ingreso
-    SET @MesesTrabajados = DATEDIFF(MONTH, @FechaIngreso, GETDATE());
+    -- Calcular meses COMPLETOS trabajados
+    SET @MesesTrabajados = DATEDIFF(MONTH, @FechaIngreso, GETDATE()) -
+        CASE WHEN DAY(@FechaIngreso) > DAY(GETDATE()) THEN 1 ELSE 0 END;
     
-    -- Si es negativo (fecha futura), retornar 0
-    IF @MesesTrabajados < 0
+    -- Validaciones adicionales
+    IF @MesesTrabajados < 0 OR @FechaIngreso > GETDATE()
         SET @MesesTrabajados = 0;
     
     -- Calcular días acumulados: 1.25 días por mes
@@ -911,17 +912,23 @@ BEGIN
 END;
 GO
 
+
 -- Procedimiento para actualizar días de vacaciones de todos los empleados
 CREATE PROCEDURE sp_ActualizarDiasVacacionesEmpleados
 AS
 BEGIN
     SET NOCOUNT ON;
+
+	DECLARE @fcha DATE = CONVERT(DATE, '2021-06-15');
+
     
     UPDATE Empleados
-    SET DiasVacacionesAcumulados = dbo.fn_CalcularDiasVacacionesAcumulados(FechaIngreso)
+    SET DiasVacacionesAcumulados = dbo.fn_CalcularDiasVacacionesAcumulados(@fcha)
     WHERE FK_IdEstado = 1; -- Solo empleados activos
 END;
 GO
+
+SELECT * FROM Empleados;
 
 -----------------------@José----------------------------------------------------
 -- Tabla de Usuarios
