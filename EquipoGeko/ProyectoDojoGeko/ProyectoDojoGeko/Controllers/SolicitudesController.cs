@@ -589,60 +589,60 @@ namespace ProyectoDojoGeko.Controllers
 
                 // Buscamos el equipo del empleado para asignar el autorizador automáticamente
                 // Buscamos el equipo del empleado para asignar el autorizador automáticamente
-                var idEquipo = await _daoEmpleadoEquipo.ObtenerEquipoAsync(idEmpleado.Value);
+                //var idEquipo = await _daoEmpleadoEquipo.ObtenerEquipoAsync(idEmpleado.Value);
 
-                if (idEquipo != null)
-                {
-                    try
-                    {
-                        // Obtenemos todos los empleados del equipo con sus roles
-                        var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync((int)idEquipo.IdEquipo);
+                //if (idEquipo != null)
+                //{
+                //    try
+                //    {
+                //        // Obtenemos todos los empleados del equipo con sus roles
+                //        var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync((int)idEquipo.IdEquipo);
 
-                        if (empleadosEquipo == null || !empleadosEquipo.Any())
-                        {
-                            throw new Exception("No se encontraron empleados en el equipo.");
-                        }
+                //        if (empleadosEquipo == null || !empleadosEquipo.Any())
+                //        {
+                //            throw new Exception("No se encontraron empleados en el equipo.");
+                //        }
 
-                        // Buscamos primero un TeamLider
-                        var revisor = empleadosEquipo
-                            .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
-                            .FirstOrDefault(e =>
-                                e.Roles.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
+                //        // Buscamos primero un TeamLider
+                //        var revisor = empleadosEquipo
+                //            .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
+                //            .FirstOrDefault(e =>
+                //                e.Roles.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
 
-                        // Si no hay TeamLider, buscamos un SubTeamLider
-                        revisor ??= empleadosEquipo
-                            .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
-                            .FirstOrDefault(e =>
-                                e.Roles.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
+                //        // Si no hay TeamLider, buscamos un SubTeamLider
+                //        revisor ??= empleadosEquipo
+                //            .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
+                //            .FirstOrDefault(e =>
+                //                e.Roles.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
 
-                        // Si no hay ningún revisor válido, lanzamos error
-                        if (revisor == null)
-                        {
-                            throw new Exception("No se encontró un TeamLider o SubTeamLider en el equipo.");
-                        }
+                //        // Si no hay ningún revisor válido, lanzamos error
+                //        if (revisor == null)
+                //        {
+                //            throw new Exception("No se encontró un TeamLider o SubTeamLider en el equipo.");
+                //        }
 
-                        // Asignamos el ID del revisor
-                        solicitud.Encabezado.IdAutorizador = revisor.IdEmpleado;
+                //        // Asignamos el ID del revisor
+                //        solicitud.Encabezado.IdAutorizador = revisor.IdEmpleado;
 
-                    }
-                    catch (Exception ex)
-                    {
-                        await _loggingService.RegistrarLogAsync(new LogViewModel
-                        {
-                            Accion = "Error Asignación Revisor",
-                            Descripcion = $"Error asignando revisor automáticamente: {ex.Message}",
-                            Estado = false
-                        });
-                        return View(solicitud);
-                    }
-                }
-                else
-                {
-                    var errorMsg = "No se pudo encontrar el equipo del empleado. Por favor, contacte a RRHH.";
-                    TempData["ErrorMessage"] = errorMsg;
-                    ModelState.AddModelError("", errorMsg);
-                    return View(solicitud);
-                }
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        await _loggingService.RegistrarLogAsync(new LogViewModel
+                //        {
+                //            Accion = "Error Asignación Revisor",
+                //            Descripcion = $"Error asignando revisor automáticamente: {ex.Message}",
+                //            Estado = false
+                //        });
+                //        return View(solicitud);
+                //    }
+                //}
+                //else
+                //{
+                //    var errorMsg = "No se pudo encontrar el equipo del empleado. Por favor, contacte a RRHH.";
+                //    TempData["ErrorMessage"] = errorMsg;
+                //    ModelState.AddModelError("", errorMsg);
+                //    return View(solicitud);
+                //}
 
                 solicitud.Encabezado.DiasSolicitadosTotal = totalDiasHabiles;
                 solicitud.Encabezado.NombreEmpleado = HttpContext.Session.GetString("NombreCompletoEmpleado") ?? "Desconocido";
