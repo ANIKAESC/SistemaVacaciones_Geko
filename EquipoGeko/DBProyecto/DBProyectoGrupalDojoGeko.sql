@@ -2221,7 +2221,7 @@ BEGIN
         INNER JOIN 
             Roles r ON ur.FK_IdRol = r.IdRol
         WHERE 
-            ee.FK_IdEquipo = 1
+            ee.FK_IdEquipo = @IdEquipo
         GROUP BY -- Agrupamos para evitar roles duplicados por empleado
             e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado, r.NombreRol
     )
@@ -2241,6 +2241,7 @@ BEGIN
         IdEmpleado, NombresEmpleado, ApellidosEmpleado;
 END
 GO
+
 
 -- --------------------- Tabla Intermedia: EquiposProyecto ---------------------
 -- Relaciona los equipos con los proyectos

@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Microsoft.Data.SqlClient;
 using ProyectoDojoGeko.Models;
 
@@ -75,7 +75,7 @@ namespace ProyectoDojoGeko.Data
                         {
                             empleadoEquipo = new EmpleadoEquipoViewModel
                             {
-                                IdEquipo = reader.GetInt32(reader.GetOrdinal("IdEquipo"))
+                                IdEquipo = reader.GetInt32(reader.GetOrdinal("Fk_IdEquipo"))
                             };
                         }
                     }
