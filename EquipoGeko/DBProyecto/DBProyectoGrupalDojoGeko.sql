@@ -691,6 +691,7 @@ CREATE TABLE Empleados (
 	CorreoInstitucional NVARCHAR (50),
 	FechaIngreso DATETIME DEFAULT CURRENT_TIMESTAMP,
 	DiasVacacionesAcumulados DECIMAL(4, 2) DEFAULT 0,
+	DiasTomadosHistoricos DECIMAL (4, 2) DEFAULT 0,
 	FechaNacimiento DATE,
 	Telefono VARCHAR(20),
 	NIT VARCHAR(15),
@@ -722,6 +723,7 @@ CREATE PROCEDURE sp_InsertarEmpleado
     @CorreoInstitucional NVARCHAR(50),
     @FechaIngreso DATETIME = NULL,
 	@DiasVacacionesAcumulados DECIMAL(4, 2),
+	@DiasTomadosHistoricos DECIMAL(4, 2),
     @FechaNacimiento DATE,
     @Telefono VARCHAR(20),
     @NIT VARCHAR(15) = NULL,
@@ -748,6 +750,7 @@ BEGIN
         CorreoInstitucional,
         FechaIngreso,
 		DiasVacacionesAcumulados,
+		DiasTomadosHistoricos,
         FechaNacimiento,
         Telefono,
         NIT,
@@ -771,6 +774,7 @@ BEGIN
         @CorreoInstitucional,
         @FechaIngreso,
 		@DiasVacacionesAcumulados,
+		@DiasTomadosHistoricos,
         @FechaNacimiento,
         @Telefono,
         @NIT,
@@ -806,6 +810,7 @@ EXEC sp_InsertarEmpleado
     @CorreoInstitucional = 'adminprueba@geko.com',
     @FechaIngreso = '2023-01-01',
 	@DiasVacacionesAcumulados = 0.00,
+	@DiasTomadosHistoricos = 0.00,
     @FechaNacimiento = '2000-05-05',
     @Telefono = '12121212',
     @NIT = '1234567891011',
@@ -919,11 +924,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-	DECLARE @fcha DATE = CONVERT(DATE, '2021-06-15');
+	--DECLARE @fcha DATE = CONVERT(DATE, '2021-06-15');
 
     
     UPDATE Empleados
-    SET DiasVacacionesAcumulados = dbo.fn_CalcularDiasVacacionesAcumulados(@fcha)
+    SET DiasVacacionesAcumulados = dbo.fn_CalcularDiasVacacionesAcumulados(FechaIngreso)
     WHERE FK_IdEstado = 1; -- Solo empleados activos
 END;
 GO

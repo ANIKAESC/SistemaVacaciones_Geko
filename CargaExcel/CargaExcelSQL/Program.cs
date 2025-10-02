@@ -11,9 +11,9 @@ class Program
     {
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-        string excelPath = @"C:\Users\erici\OneDrive\Escritorio\Empleados.xlsx";
+        string excelPath = @"C:\Users\Diego\Desktop\Empleados.xlsx";
         // Cambiar a la cadena de conexión del server
-        string connectionString = "Server=BARRERAS;Database=DBProyectoGrupalDojoGeko;Trusted_Connection=True;TrustServerCertificate=True;";
+        string connectionString = "Server=DESKTOP-LPDU6QD\\SQLEXPRESS;Database=DBProyectoGrupalDojoGeko;Trusted_Connection=True;TrustServerCertificate=True;";
 
         using var stream = File.Open(excelPath, FileMode.Open, FileAccess.Read);
         using var reader = ExcelReaderFactory.CreateReader(stream);
@@ -40,12 +40,13 @@ class Program
             string correoInstitucional = row[12]?.ToString();   // CorreoInstitucional
             string fechaIngresoStr = row[13]?.ToString();       // FechaIngreso
             string vacacionesStr = row[14]?.ToString();         // DiasVacacionesAcumulados
-            string fechaNacimientoStr = row[15]?.ToString();    // FechaNacimiento
-            string telefono = row[16]?.ToString();              // Telefono
-            string nit = row[17]?.ToString();                   // NIT
-            string genero = row[18]?.ToString();                // Genero
-            string salarioStr = row[19]?.ToString();            // Salario
-            string estadoStr = row[20]?.ToString();             // FK_IdEstado
+            string DiasTomadosHistoricos = row[15]?.ToString();   //DiasTomadosHistoricos
+            string fechaNacimientoStr = row[16]?.ToString();    // FechaNacimiento
+            string telefono = row[17]?.ToString();              // Telefono
+            string nit = row[18]?.ToString();                   // NIT
+            string genero = row[19]?.ToString();                // Genero
+            string salarioStr = row[20]?.ToString();            // Salario
+            string estadoStr = row[21]?.ToString();             // FK_IdEstado
 
             // Validaciones obligatorias
             if (string.IsNullOrWhiteSpace(pais) ||
@@ -58,48 +59,48 @@ class Program
                 continue;
             }
 
-            // TipoContrato
-            if (!string.IsNullOrWhiteSpace(tipoContrato) &&
-                tipoContrato != "Planilla" && tipoContrato != "Facturado")
-            {
-                Console.WriteLine($"Fila {i + 1}: tipo de contrato inválido.");
-                continue;
-            }
+            //// TipoContrato
+            //if (!string.IsNullOrWhiteSpace(tipoContrato) &&
+            //    tipoContrato != "Planilla" && tipoContrato != "Facturado")
+            //{
+            //    Console.WriteLine($"Fila {i + 1}: tipo de contrato inválido.");
+            //    continue;
+            //}
 
-            // Teléfono (8 dígitos)
-            if (!Regex.IsMatch(telefono ?? "", @"^\d{8}$"))
-            {
-                Console.WriteLine($"Fila {i + 1}: teléfono inválido.");
-                continue;
-            }
+            //// Teléfono (8 dígitos)
+            //if (!Regex.IsMatch(telefono ?? "", @"^\d{8}$"))
+            //{
+            //    Console.WriteLine($"Fila {i + 1}: teléfono inválido.");
+            //    continue;
+            //}
 
-            // DPI (13 dígitos)
-            if (!string.IsNullOrWhiteSpace(dpi) && !Regex.IsMatch(dpi, @"^\d{13}$"))
-            {
-                Console.WriteLine($"Fila {i + 1}: DPI inválido.");
-                continue;
-            }
+            //// DPI (13 dígitos)
+            //if (!string.IsNullOrWhiteSpace(dpi) && !Regex.IsMatch(dpi, @"^\d{13}$"))
+            //{
+            //    Console.WriteLine($"Fila {i + 1}: DPI inválido.");
+            //    continue;
+            //}
 
-            // Pasaporte (alfanumérico)
-            if (!string.IsNullOrWhiteSpace(pasaporte) && !Regex.IsMatch(pasaporte, @"^[A-Za-z0-9]+$"))
-            {
-                Console.WriteLine($"Fila {i + 1}: pasaporte inválido.");
-                continue;
-            }
+            //// Pasaporte (alfanumérico)
+            //if (!string.IsNullOrWhiteSpace(pasaporte) && !Regex.IsMatch(pasaporte, @"^[A-Za-z0-9]+$"))
+            //{
+            //    Console.WriteLine($"Fila {i + 1}: pasaporte inválido.");
+            //    continue;
+            //}
 
-            // NIT (9 o 11 dígitos)
-            if (!string.IsNullOrWhiteSpace(nit) && !Regex.IsMatch(nit, @"^\d{9}$|^\d{11}$"))
-            {
-                Console.WriteLine($"Fila {i + 1}: NIT inválido.");
-                continue;
-            }
+            //// NIT (9 o 11 dígitos)
+            //if (!string.IsNullOrWhiteSpace(nit) && !Regex.IsMatch(nit, @"^\d{9}$|^\d{11}$"))
+            //{
+            //    Console.WriteLine($"Fila {i + 1}: NIT inválido.");
+            //    continue;
+            //}
 
-            // Género
-            if (!string.IsNullOrWhiteSpace(genero) && genero != "Masculino" && genero != "Femenino")
-            {
-                Console.WriteLine($"Fila {i + 1}: género inválido.");
-                continue;
-            }
+            //// Género
+            //if (!string.IsNullOrWhiteSpace(genero) && genero != "Masculino" && genero != "Femenino")
+            //{
+            //    Console.WriteLine($"Fila {i + 1}: género inválido.");
+            //    continue;
+            //}
 
             // Salario
             if (!decimal.TryParse(salarioStr, out decimal salario) || salario < 0)
@@ -163,6 +164,7 @@ class Program
             cmd.Parameters.AddWithValue("@CorreoInstitucional", correoInstitucional);
             cmd.Parameters.AddWithValue("@FechaIngreso", fechaIngreso);
             cmd.Parameters.AddWithValue("@DiasVacacionesAcumulados", diasVacaciones);
+            cmd.Parameters.AddWithValue("@DiasTomadosHistoricos", DiasTomadosHistoricos);
             cmd.Parameters.AddWithValue("@FechaNacimiento", fechaNacimiento);
             cmd.Parameters.AddWithValue("@Telefono", telefono);
             cmd.Parameters.AddWithValue("@NIT", string.IsNullOrWhiteSpace(nit) ? DBNull.Value : nit);
@@ -181,6 +183,25 @@ class Program
             }
         }
 
-        Console.WriteLine("Proceso finalizado.");
+        Console.WriteLine("Carga masiva finalizada. Ejecutando actualización de días acumulados...");
+
+        using (var conn = new SqlConnection(connectionString))
+        {
+            conn.Open();
+            using var cmd = new SqlCommand("sp_ActualizarDiasAcumuladosEmpleados", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            try
+            {
+                cmd.ExecuteNonQuery();
+                Console.WriteLine("Días acumulados actualizados correctamente.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al actualizar días acumulados: {ex.Message}");
+            }
+        }
+
+        Console.WriteLine("Proceso completo finalizado ");
     }
 }
