@@ -933,8 +933,6 @@ BEGIN
 END;
 GO
 
-SELECT * FROM Empleados;
-
 -----------------------@José----------------------------------------------------
 -- Tabla de Usuarios
 CREATE TABLE Usuarios(
