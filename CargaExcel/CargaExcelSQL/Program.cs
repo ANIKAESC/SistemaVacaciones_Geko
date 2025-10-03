@@ -24,86 +24,86 @@ class Program
         {
             var row = table.Rows[i];
 
-            // Extracción de datos desde columnas 0 a 20
-            string tipoContrato = row[0]?.ToString();           // TipoContrato
-            string pais = row[1]?.ToString();                   // Pais
-            string departamento = row[2]?.ToString();           // Departamento
-            string municipio = row[3]?.ToString();              // Municipio
-            string direccion = row[4]?.ToString();              // Direccion
-            string puesto = row[5]?.ToString();                 // Puesto
-            string codigo = row[6]?.ToString();                 // Codigo
-            string dpi = row[7]?.ToString();                    // DPI
-            string pasaporte = row[8]?.ToString();              // Pasaporte
-            string nombres = row[9]?.ToString();                // NombresEmpleado
-            string apellidos = row[10]?.ToString();             // ApellidosEmpleado
-            string correoPersonal = row[11]?.ToString();        // CorreoPersonal
-            string correoInstitucional = row[12]?.ToString();   // CorreoInstitucional
-            string fechaIngresoStr = row[13]?.ToString();       // FechaIngreso
-            string vacacionesStr = row[14]?.ToString();         // DiasVacacionesAcumulados
-            string DiasTomadosHistoricos = row[15]?.ToString();   //DiasTomadosHistoricos
-            string fechaNacimientoStr = row[16]?.ToString();    // FechaNacimiento
-            string telefono = row[17]?.ToString();              // Telefono
-            string nit = row[18]?.ToString();                   // NIT
-            string genero = row[19]?.ToString();                // Genero
-            string salarioStr = row[20]?.ToString();            // Salario
-            string estadoStr = row[21]?.ToString();             // FK_IdEstado
+            // Extracción de datos desde columnas 0 a 21
+            string tipoContrato = row[0]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");           // TipoContrato
+            string pais = row[1]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");                   // Pais
+            string departamento = row[2]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");           // Departamento
+            string municipio = row[3]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");              // Municipio
+            string direccion = row[4]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");               // Direccion
+            string puesto = row[5]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");                  // Puesto
+            string codigo = row[6]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");                  // Codigo
+            string dpi = row[7]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");                     // DPI
+            string pasaporte = row[8]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");               // Pasaporte
+            string nombres = row[9]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");                 // NombresEmpleado
+            string apellidos = row[10]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");             // ApellidosEmpleado
+            string correoPersonal = row[11]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");         // CorreoPersonal
+            string correoInstitucional = row[12]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");    // CorreoInstitucional
+            string fechaIngresoStr = row[13]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");        // FechaIngreso
+            string vacacionesStr = row[14]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");          // DiasVacacionesAcumulados
+            string DiasTomadosHistoricos = row[15]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");  // DiasTomadosHistoricos
+            string fechaNacimientoStr = row[16]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");     // FechaNacimiento
+            string telefono = row[17]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");               // Telefono
+            string nit = row[18]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");                    // NIT
+            string genero = row[19]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");                 // Genero
+            string salarioStr = row[20]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "")  ;            // Salario
+            string estadoStr = row[21]?.ToString().Trim().Replace("'", "").Replace("\\", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");              // FK_IdEstado
 
-            // Validaciones obligatorias
+            // Validaciones obligatorias (Codigo removido, correoPersonal removido)
             if (string.IsNullOrWhiteSpace(pais) ||
                 string.IsNullOrWhiteSpace(nombres) ||
                 string.IsNullOrWhiteSpace(apellidos) ||
-                string.IsNullOrWhiteSpace(correoPersonal) ||
                 string.IsNullOrWhiteSpace(correoInstitucional))
             {
                 Console.WriteLine($"Fila {i + 1}: campos obligatorios vacíos.");
                 continue;
             }
 
-            //// TipoContrato
-            //if (!string.IsNullOrWhiteSpace(tipoContrato) &&
-            //    tipoContrato != "Planilla" && tipoContrato != "Facturado")
-            //{
-            //    Console.WriteLine($"Fila {i + 1}: tipo de contrato inválido.");
-            //    continue;
-            //}
+            // Al menos uno de DPI o Pasaporte debe estar presente
+            if (string.IsNullOrWhiteSpace(dpi) && string.IsNullOrWhiteSpace(pasaporte))
+            {
+                Console.WriteLine($"Fila {i + 1}: debe tener DPI o Pasaporte.");
+                continue;
+            }
 
-            //// Teléfono (8 dígitos)
-            //if (!Regex.IsMatch(telefono ?? "", @"^\d{8}$"))
-            //{
-            //    Console.WriteLine($"Fila {i + 1}: teléfono inválido.");
-            //    continue;
-            //}
+            // DPI (hasta 14 caracteres numéricos)
+            if (!string.IsNullOrWhiteSpace(dpi) && !Regex.IsMatch(dpi, @"^\d{1,14}$"))
+            {
+                Console.WriteLine($"Fila {i + 1}: DPI inválido (debe ser numérico y máximo 14 caracteres).");
+                continue;
+            }
 
-            //// DPI (13 dígitos)
-            //if (!string.IsNullOrWhiteSpace(dpi) && !Regex.IsMatch(dpi, @"^\d{13}$"))
-            //{
-            //    Console.WriteLine($"Fila {i + 1}: DPI inválido.");
-            //    continue;
-            //}
+            // Pasaporte (alfanumérico)
+            if (!string.IsNullOrWhiteSpace(pasaporte) && !Regex.IsMatch(pasaporte, @"^[A-Za-z0-9]+$"))
+            {
+                Console.WriteLine($"Fila {i + 1}: pasaporte inválido (debe ser alfanumérico).");
+                continue;
+            }
 
-            //// Pasaporte (alfanumérico)
-            //if (!string.IsNullOrWhiteSpace(pasaporte) && !Regex.IsMatch(pasaporte, @"^[A-Za-z0-9]+$"))
-            //{
-            //    Console.WriteLine($"Fila {i + 1}: pasaporte inválido.");
-            //    continue;
-            //}
+            // Teléfono (opcional, pero si se proporciona debe ser válido - 8 dígitos)
+            if (!string.IsNullOrWhiteSpace(telefono) && !Regex.IsMatch(telefono, @"^\d{8}$"))
+            {
+                Console.WriteLine($"Fila {i + 1}: teléfono inválido (debe ser 8 dígitos).");
+                continue;
+            }
 
-            //// NIT (9 o 11 dígitos)
-            //if (!string.IsNullOrWhiteSpace(nit) && !Regex.IsMatch(nit, @"^\d{9}$|^\d{11}$"))
-            //{
-            //    Console.WriteLine($"Fila {i + 1}: NIT inválido.");
-            //    continue;
-            //}
+            // NIT (opcional, pero si se proporciona debe ser válido - 6 a 11 dígitos)
+            if (!string.IsNullOrWhiteSpace(nit) && !Regex.IsMatch(nit, @"^\d{6,11}$"))
+            {
+                Console.WriteLine($"Fila {i + 1}: NIT inválido (debe tener entre 6 y 11 dígitos).");
+                continue;
+            }
 
-            //// Género
-            //if (!string.IsNullOrWhiteSpace(genero) && genero != "Masculino" && genero != "Femenino")
-            //{
-            //    Console.WriteLine($"Fila {i + 1}: género inválido.");
-            //    continue;
-            //}
+            // Género (opcional, pero si se proporciona debe ser válido)
+            if (!string.IsNullOrWhiteSpace(genero) && genero != "Masculino" && genero != "Femenino")
+            {
+                Console.WriteLine($"Fila {i + 1}: género inválido (debe ser Masculino o Femenino).");
+                continue;
+            }
+
+          
 
             // Salario
-            if (!decimal.TryParse(salarioStr, out decimal salario) || salario < 0)
+            if (!decimal.TryParse(salarioStr.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal salario) || salario < 0)
             {
                 Console.WriteLine($"Fila {i + 1}: salario inválido.");
                 continue;
@@ -128,18 +128,29 @@ class Program
                 continue;
             }
 
-            //fecha de ingreso:
+            // Fecha de nacimiento
             if (!DateTime.TryParse(fechaNacimientoStr, out DateTime fechaNacimiento))
             {
                 Console.WriteLine($"Fila {i + 1}: fecha de nacimiento inválida.");
                 continue;
             }
 
+          
+
             // Días de vacaciones acumulados
-            if (!decimal.TryParse(vacacionesStr, out decimal diasVacaciones) || diasVacaciones < 0)
+            if (!decimal.TryParse(vacacionesStr.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal diasVacaciones) || diasVacaciones < 0)
             {
                 Console.WriteLine($"Fila {i + 1}: días de vacaciones inválidos.");
                 continue;
+            }
+
+
+           
+
+            // Validación y conversión de DiasTomadosHistoricos
+            if (!decimal.TryParse(DiasTomadosHistoricos.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal diasTomados))
+            {
+                diasTomados = 0; // Valor por defecto si no se puede convertir
             }
 
             // Ejecución del SP
@@ -160,13 +171,13 @@ class Program
             cmd.Parameters.AddWithValue("@Pasaporte", string.IsNullOrWhiteSpace(pasaporte) ? DBNull.Value : pasaporte);
             cmd.Parameters.AddWithValue("@NombresEmpleado", nombres);
             cmd.Parameters.AddWithValue("@ApellidosEmpleado", apellidos);
-            cmd.Parameters.AddWithValue("@CorreoPersonal", correoPersonal);
+            cmd.Parameters.AddWithValue("@CorreoPersonal", string.IsNullOrWhiteSpace(correoPersonal) ? DBNull.Value : correoPersonal);
             cmd.Parameters.AddWithValue("@CorreoInstitucional", correoInstitucional);
             cmd.Parameters.AddWithValue("@FechaIngreso", fechaIngreso);
             cmd.Parameters.AddWithValue("@DiasVacacionesAcumulados", diasVacaciones);
-            cmd.Parameters.AddWithValue("@DiasTomadosHistoricos", DiasTomadosHistoricos);
+            cmd.Parameters.AddWithValue("@DiasTomadosHistoricos", diasTomados);
             cmd.Parameters.AddWithValue("@FechaNacimiento", fechaNacimiento);
-            cmd.Parameters.AddWithValue("@Telefono", telefono);
+            cmd.Parameters.AddWithValue("@Telefono", string.IsNullOrWhiteSpace(telefono) ? DBNull.Value : telefono);
             cmd.Parameters.AddWithValue("@NIT", string.IsNullOrWhiteSpace(nit) ? DBNull.Value : nit);
             cmd.Parameters.AddWithValue("@Genero", string.IsNullOrWhiteSpace(genero) ? DBNull.Value : genero);
             cmd.Parameters.AddWithValue("@Salario", salario);

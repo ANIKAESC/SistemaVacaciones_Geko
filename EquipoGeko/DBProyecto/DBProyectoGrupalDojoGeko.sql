@@ -690,8 +690,8 @@ CREATE TABLE Empleados (
 	CorreoPersonal NVARCHAR (50),
 	CorreoInstitucional NVARCHAR (50),
 	FechaIngreso DATETIME DEFAULT CURRENT_TIMESTAMP,
-	DiasVacacionesAcumulados DECIMAL(4, 2) DEFAULT 0,
-	DiasTomadosHistoricos DECIMAL (4, 2) DEFAULT 0,
+	DiasVacacionesAcumulados DECIMAL(10, 2) DEFAULT 0,
+	DiasTomadosHistoricos DECIMAL (10, 2) DEFAULT 0,
 	FechaNacimiento DATE,
 	Telefono VARCHAR(20),
 	NIT VARCHAR(15),
@@ -722,8 +722,8 @@ CREATE PROCEDURE sp_InsertarEmpleado
     @CorreoPersonal NVARCHAR(50),
     @CorreoInstitucional NVARCHAR(50),
     @FechaIngreso DATETIME = NULL,
-	@DiasVacacionesAcumulados DECIMAL(4, 2),
-	@DiasTomadosHistoricos DECIMAL(4, 2),
+	@DiasVacacionesAcumulados DECIMAL(10, 2),
+	@DiasTomadosHistoricos DECIMAL(10, 2),
     @FechaNacimiento DATE,
     @Telefono VARCHAR(20),
     @NIT VARCHAR(15) = NULL,
@@ -3091,3 +3091,4 @@ EXEC sp_InsertarSemanaSanta @AnioInicio = 2024, @AnioFin = 2030, @Usr = 'System'
 GO
 
 PRINT 'Script de base de datos actualizado y ejecutado correctamente.';
+
