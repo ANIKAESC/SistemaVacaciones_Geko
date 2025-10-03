@@ -131,7 +131,7 @@ class Program
         }
     }
 
-    static void Main()
+    static async Task Main()
     {
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
@@ -319,7 +319,7 @@ class Program
 
                 // Creamos la URL de cambio de contraseña
                 var idUsuario = i + 1; // Obtener el ID del usuario 
-                var baseUrl = "https://localhost:7261"; // Asegúrate de que esta sea la URL base correcta de tu aplicación
+                var baseUrl = "https://localhost:7261"; 
                 var urlCambioPassword = $"{baseUrl}/Login/IndexCambioContrasenia/{idUsuario}";
 
                 await emailService.EnviarCorreoBienvenidaAsync(nombreCompleto, correoInstitucional, urlCambioPassword, contrasena);
