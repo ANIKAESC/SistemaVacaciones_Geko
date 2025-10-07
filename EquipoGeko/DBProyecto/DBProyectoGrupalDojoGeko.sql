@@ -2751,7 +2751,7 @@ GO
 
 --Notificaciones para recursos humanos
 ---ErickDev----
-Create PROCEDURE sp_ObtenerAlertasEmpleadosVacaciones_Completo
+CREATE OR ALTER PROCEDURE sp_ObtenerAlertasEmpleadosVacaciones_Completo
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -2765,19 +2765,19 @@ BEGIN
             e.FechaIngreso,
             e.FK_IdEstado,
             
-            -- 1. CALCULAR años trabajados (con decimales para precisión)
+            -- 1. CALCULAR años trabajados (con decimales)
             CAST(DATEDIFF(DAY, e.FechaIngreso, GETDATE()) AS DECIMAL(10,2)) / 365.25 AS AniosTrabajados,
             
             -- 2. CALCULAR días acumulados total (años * 15 días por año)
             (CAST(DATEDIFF(DAY, e.FechaIngreso, GETDATE()) AS DECIMAL(10,2)) / 365.25) * 15 AS DiasAcumuladosTotal,
             
-            -- 3. CALCULAR días ya tomados (suma de solicitudes aprobadas/vigentes/finalizadas)
+            -- 3. CALCULAR días ya tomados (solicitudes aprobadas/vigentes/finalizadas + históricos)
             ISNULL((
                 SELECT SUM(se.DiasSolicitadosTotal)
                 FROM SolicitudEncabezado se
                 WHERE se.FK_IdEmpleado = e.IdEmpleado
-                AND se.FK_IdEstadoSolicitud IN (2, 3, 5) -- 2=Autorizada, 3=Vigente, 5=Finalizada
-            ), 0) AS DiasYaTomados
+                AND se.FK_IdEstadoSolicitud IN (2, 3, 5)
+            ), 0) + ISNULL(e.DiasTomadosHistoricos, 0) AS DiasYaTomados
             
         FROM Empleados e
         WHERE e.FK_IdEstado = 1 -- Solo empleados activos
@@ -2786,9 +2786,19 @@ BEGIN
     
     CalculoFinal AS (
         SELECT 
-            *,
-            -- 4. CALCULAR días disponibles (acumulados - tomados)
-            DiasAcumuladosTotal - DiasYaTomados AS DiasDisponibles
+            IdEmpleado,
+            NombresEmpleado,
+            ApellidosEmpleado,
+            Codigo,
+            FechaIngreso,
+            AniosTrabajados,
+            ROUND(DiasAcumuladosTotal, 0) AS DiasAcumuladosTotal, --  Redondeado
+            ROUND(DiasYaTomados, 0) AS DiasYaTomados,             --  Redondeado
+            CASE 
+                WHEN ROUND(DiasAcumuladosTotal - DiasYaTomados, 0) < 0 
+                    THEN 0 
+                ELSE ROUND(DiasAcumuladosTotal - DiasYaTomados, 0) 
+            END AS DiasDisponibles                              --  Redondeado y protegido de negativos
         FROM CalculoVacacionesCompleto
     )
     
@@ -2800,12 +2810,12 @@ BEGIN
         Codigo,
         FechaIngreso,
         CAST(AniosTrabajados AS DECIMAL(10,1)) AS AniosTrabajados,
-        CAST(DiasAcumuladosTotal AS DECIMAL(10,1)) AS DiasAcumuladosTotal,
-        CAST(DiasYaTomados AS DECIMAL(10,1)) AS DiasYaTomados,
-        CAST(DiasDisponibles AS DECIMAL(10,1)) AS DiasDisponibles,
+        DiasAcumuladosTotal,
+        DiasYaTomados,
+        DiasDisponibles,
         'Empleado con más de 14 días de vacaciones disponibles' AS TipoNotificacion
     FROM CalculoFinal
-    WHERE DiasDisponibles > 14.0 -- ALERTA cuando tenga más de 14 días disponibles
+    WHERE DiasDisponibles > 14
     
     UNION ALL
     
