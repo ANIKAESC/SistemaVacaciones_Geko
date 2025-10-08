@@ -25,7 +25,7 @@ VALUES
 ('Technology Product Performance S.A.', 'TECPRO'),
 ('Easy Go S.A.', 'EASYGO'),
 ('Oasis Digital', 'OASIS'),
-('Grupo Digital de Guatemala', 'GRUDIGUA');
+('Grupo Digital de Guatemala','GRUDIGUA');
 
 -- ==========================================
 -- RELACIONES ENTRE EMPRESAS Y PROYECTOS
@@ -93,9 +93,8 @@ FROM Empresas e, Proyectos p
 WHERE e.Nombre = 'Oasis Digital SC'
   AND p.Nombre IN (
     'Prometheus',
-    'TOM'
-  );
-
+	'TOM');
+GO
 
 SELECT 
     ep.IdEmpresaProyecto,
@@ -104,4 +103,29 @@ SELECT
 FROM EmpresasProyecto ep
 INNER JOIN Empresas e ON e.IdEmpresa = ep.FK_IdEmpresa
 INNER JOIN Proyectos p ON p.IdProyecto = ep.FK_IdProyecto
-ORDER BY e.Nombre, p.Nombre;
+ORDER BY e.Nombre,p.Nombre;
+GO
+
+-- Listar todos los proyectos (Hubs) por empresa para RRHH
+CREATE PROCEDURE sp_ListarProyectosPorEmpresa
+    @IdEmpresa INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        p.IdProyecto,
+        p.Nombre,
+        p.Descripcion,
+        p.FechaInicio,
+        p.FK_IdEstado
+    FROM 
+        Proyectos p 
+    INNER JOIN 
+        EmpresasProyecto ep ON p.IdProyecto = ep.FK_IdProyecto 
+    WHERE 
+        ep.FK_IdEmpresa = @IdEmpresa;
+    
+    RETURN 0;
+END;
+GO

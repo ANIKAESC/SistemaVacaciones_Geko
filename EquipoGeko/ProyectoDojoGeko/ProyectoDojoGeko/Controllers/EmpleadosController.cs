@@ -59,7 +59,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador", "RRHH")]
         public async Task<IActionResult> Index()
         {
             try
@@ -102,7 +102,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "RRHH")]
         public async Task<IActionResult> Crear()
         {
             try
@@ -124,7 +124,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpPost]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "RRHH")]
         public async Task<IActionResult> Crear(CrearEmpleadoRequest empleado)
         {
             try
@@ -208,7 +208,7 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
 
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "RRHH")]
         [HttpGet]
         public async Task<IActionResult> Editar(int id)
         {
@@ -256,7 +256,7 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
 
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "RRHH")]
         [HttpPost]
         public async Task<IActionResult> Editar(ActualizarEmpleadoRequest empleado)
         {
@@ -312,7 +312,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador", "RRHH")]
         public async Task<IActionResult> Detalles(int id)
         {
             try
@@ -335,7 +335,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "RRHH")]
         public async Task<IActionResult> ELIMINAR(int id)
         {
             try
@@ -359,7 +359,7 @@ namespace ProyectoDojoGeko.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor")]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "RRHH")]
         public async Task<IActionResult> ELIMINAR(int id, IFormCollection collection)
         {
             try

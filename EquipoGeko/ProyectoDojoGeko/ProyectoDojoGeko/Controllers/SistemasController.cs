@@ -71,6 +71,7 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpPost]
+        [AuthorizeRole("SuperAdministrador", "Administrador", "Editor", "Visualizador", "RRHH")]
         public IActionResult SeleccionarSistema(string claveSistema)
         {
             HttpContext.Session.SetString("SistemaActual", claveSistema);

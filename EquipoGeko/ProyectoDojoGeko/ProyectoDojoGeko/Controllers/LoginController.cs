@@ -225,12 +225,12 @@ namespace ProyectoDojoGeko.Controllers
                     int idUsuario = 1;
                     int idRol = 1;
                     int idSistema = 0;
-                    int idEmpresa = 1; // Asignamos un ID de empresa para la prueba
+                    int idEmpresa = 2; // Asignamos un ID de empresa para la prueba
                     string rolX = "Empleado";
-                    string rolY = "TeamLider";
+                    //string rolY = "TeamLider";
                     string rolZ = "RRHH";
 
-                    List<string> roles = new List<string> { rolX, rolY, rolZ};
+                    List<string> roles = new List<string> { rolX,  rolZ};
 
                     var tokenModel = jwtHelper.GenerarToken(idUsuario, usuario, idRol, rolX);
 

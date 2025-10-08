@@ -364,36 +364,36 @@
         background-color: #e9ecef;
         color: #495057;
         }
-        
+
         /* Estilos para el botón de regreso */
         .back-to-dashboard {
-            padding: 15px 20px;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+        padding: 15px 20px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
         }
-        
+
         .btn-back {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            background-color: #6B1FFF;
-            color: white;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background-color: #6B1FFF;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
         }
-        
+
         .btn-back i {
-            margin-right: 8px;
+        margin-right: 8px;
         }
-        
+
         .btn-back:hover {
-            background-color: #5a16d9;
-            color: white;
-            text-decoration: none;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        background-color: #5a16d9;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -403,6 +403,8 @@
 
         // Obtener los roles del usuario desde la sesión
         var rolesString = Context.Session.GetString("Roles") ?? "";
+
+        // Desestructuramos los roles separados por comas y en una lista
         var userRoles = rolesString.Split(',').Where(r => !string.IsNullOrEmpty(r)).ToList();
 
         // Calcular permisos basados en los roles
@@ -411,7 +413,7 @@
         bool RRHH = userRoles.Contains("RRHH");
         bool puedeHacerTodo = userRoles.Contains("SuperAdministrador");
         bool puedeAutorizar = userRoles.Any(r => new[] { "SuperAdministrador", "Administrador", "TeamLider", "Autorizador"}.Contains(r));
-        bool puedeCrear = userRoles.Any(r => new[] { "SuperAdministrador", "Administrador", "Editor", "RRHH" }.Contains(r));
+        bool puedeCrear = userRoles.Any(r => new[] { "SuperAdministrador", "Administrador", "Editor", "RRHH"}.Contains(r));
         bool puedeEditar = userRoles.Any(r => new[] { "SuperAdministrador", "Administrador", "Editor" }.Contains(r));
         bool puedeEliminar = userRoles.Any(r => new[] { "SuperAdministrador", "Administrador" }.Contains(r));
         bool reportes = userRoles.Contains("Visualizador");
@@ -492,6 +494,7 @@
 
                     @if (puedeCrear)
                     {
+
                         <!-- Empresas -->
                         <li class="nav-item @(currentController == "empresas" ? "empresas-active show" : "")">
                             <a href="javascript:void(0)" class="nav-link submenu-toggle">

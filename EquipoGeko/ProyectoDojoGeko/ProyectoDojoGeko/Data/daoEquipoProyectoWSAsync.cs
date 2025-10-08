@@ -48,6 +48,40 @@ namespace ProyectoDojoGeko.Data
             return proyectos;
         }
 
+        // Obtener proyectos por ID de empresa
+        public async Task<List<ProyectoViewModel>> ObtenerProyectosPorEmpresaAsync(int idEmpresa)
+        {
+            var proyectos = new List<ProyectoViewModel>();
+            string procedure = "sp_ListarProyectosPorEmpresa";
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand(procedure, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            proyectos.Add(new ProyectoViewModel
+                            {
+                                IdProyecto = reader.GetInt32(reader.GetOrdinal("IdProyecto")),
+                                Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                                Descripcion = reader.IsDBNull(reader.GetOrdinal("Descripcion")) ? "" : reader.GetString(reader.GetOrdinal("Descripcion")),
+                                FechaInicio = reader.IsDBNull(reader.GetOrdinal("FechaInicio")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaInicio")),
+                                FK_IdEstado = reader.GetInt32(reader.GetOrdinal("FK_IdEstado"))
+                            });
+                        }
+                    }
+                }
+            }
+
+            return proyectos;
+        }
+
 
         // Insertar un proyecto
         public async Task<int> InsertarProyectoAsync(ProyectoViewModel proyecto)

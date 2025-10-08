@@ -26,15 +26,47 @@ namespace ProyectoDojoGeko.Controllers
         // ========================== PROYECTOS ==========================
 
     #region PROYECTOS
+
         [HttpGet]
         public async Task<ActionResult> Index()
         {
             try
             {
-                var proyectos = await _daoProyectoEquipo.ObtenerProyectosAsync();
-                if (proyectos == null) return NotFound();
 
-                await _bitacoraService.RegistrarBitacoraAsync("Vista ProyectoEquipo", "Se accedió a la vista proyectoEquipo");
+                // Obtenemos los roles del usuario actual
+                var roles = HttpContext.Session.GetString("Roles");
+
+                // Declaramos proyectos para poder usarlo fuera del if
+                List<ProyectoViewModel> proyectos;
+
+                // Buscamos si tiene el rol RRHH para así cambiar la data que va a visualizar
+                if (roles.Contains("RRHH"))
+                {
+
+                    // En caso de ser RRHH, filtramos por empresa
+                    int idEmpresa = HttpContext.Session.GetInt32("IdEmpresa") ?? 0;
+                    if (idEmpresa <= 0)
+                    {
+                        return BadRequest("No se pudo determinar la empresa del usuario");
+                    }
+                    proyectos = await _daoProyectoEquipo.ObtenerProyectosPorEmpresaAsync(idEmpresa);
+                }
+                else
+                {
+                    proyectos = await _daoProyectoEquipo.ObtenerProyectosAsync();
+                }
+
+                // Si no hay proyectos, retornamos una lista vacía para evitar errores en la vista
+                if (proyectos == null || !proyectos.Any())
+                {
+                    return View(new List<ProyectoViewModel>());
+                }
+
+                await _bitacoraService.RegistrarBitacoraAsync(
+                    "Vista ProyectoEquipo(HubEquipo en el front)",
+                    "Se accedió a la vista proyectoEquipo"
+                );
+
                 return View(proyectos);
             }
             catch (Exception ex)
