@@ -45,13 +45,13 @@ namespace ProyectoDojoGeko.Controllers
             _daoRolPermisos = daoRolPermisos;
             _loggingService = loggingService;
         }
-        [HttpGet]
         public IActionResult Index() => View();
 
         [HttpGet]
         public IActionResult IndexCambioContrasenia() => View();
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginRequest request)
         {
             if (!ModelState.IsValid)
@@ -62,141 +62,124 @@ namespace ProyectoDojoGeko.Controllers
 
             try
             {
-                // Validamos el usuario y la clave usando el DAO de tokens
+                // Validar usuario y contraseña
                 var usuarioValido = _daoTokenUsuario.ValidarUsuario(request.Usuario, request.Password);
 
-                // Si el usuario es válido, generamos un token JWT y lo guardamos
-                if (usuarioValido != null)
+                if (usuarioValido == null)
                 {
-                    // Obtenemos la información completa del usuario para verificar su estado
-                    var usuarioCompleto = await _daoUsuario.ObtenerUsuarioPorIdAsync(usuarioValido.IdUsuario);
-
-                    // Verificamos si el usuario está activo (FK_IdEstado = 1)
-                    if (usuarioCompleto.FK_IdEstado != 1)
-                    {
-                        // Si el estado no es 'Activo', mostramos un mensaje adecuado
-                        ViewBag.Mensaje = "Tu cuenta está pendiente de aprobación o ha sido desactivada.";
-                        return RedirectToAction("Index", "Login");
-                    }
-
-                    // Verificamos si el usuario está activo
-                    var jwtHelper = new JwtHelper();
-
-                    // Vamos a trear el rol del usuario para verificar si está activo
-                    var rolesUsuario = await _daoRolUsuario.ObtenerUsuariosRolPorIdUsuarioAsync(usuarioValido.IdUsuario);
-
-                    // Verificamos si la lista no está vacía
-                    if (rolesUsuario is null)
-                    {
-                        // Si no se encuentra el rol, mostramos un mensaje de error
-                        ViewBag.Mensaje = "Usuario no tiene rol asignado o no está activo.";
-                        return RedirectToAction("Index", "Login");
-                    }
-
-                    // Obtenemos todos los roles del usuario
-                    var rolesDelUsuario = new List<string>();
-                    var idSistema = 0;
-                    var nombreRol = "";
-
-                    // Procesamos cada rol del usuario
-                    foreach (var rolUsuario in rolesUsuario)
-                    {
-                        var idRol = rolUsuario.FK_IdRol;
-
-                        /*
-                            // Obtenemos el sistema por el ID del rol
-                            var sistemaRol = await _daoRolPermisos.ObtenerRolPermisosPorIdRolAsync(idRol);
-
-                            // Verificamos si el sistemaRol es nulo
-                            if (sistemaRol is null || !sistemaRol.Any())
-                            {
-                                continue; // Saltamos este rol si no tiene sistema asociado
-                            }
-
-                            // Obtenemos el ID del sistema (usamos el primer sistema del rol)
-                            var sis = sistemaRol.FirstOrDefault();
-                            idSistema = sis.FK_IdSistema; // Guardamos el ID del sistema
-                        */
-
-                        // Obtenemos el nombre del rol
-                        var rol = await _daoRol.ObtenerRolPorIdAsync(idRol);
-                        if (rol != null)
-                        {
-                            rolesDelUsuario.Add(rol.NombreRol);
-                            // Guardamos el primer rol como rol principal (para compatibilidad)
-                            if (string.IsNullOrEmpty(nombreRol))
-                            {
-                                nombreRol = rol.NombreRol;
-                            }
-
-                        }
-                    }
-
-                    // Verificamos si el usuario tiene al menos un rol válido
-                    if (rolesDelUsuario.Count == 0)
-                    {
-                        // Si no se encontraron roles válidos, mostramos un mensaje de error
-                        ViewBag.Mensaje = "El usuario no tiene roles asignados o no están activos.";
-                        return RedirectToAction("Index", "Login");
-                    }
-
-                    // Generamos el token JWT para el usuario
-                    var tokenModel = jwtHelper.GenerarToken(usuarioValido.IdUsuario, usuarioValido.Username, rolesUsuario.FirstOrDefault().FK_IdRol, nombreRol);
-
-                    // Guardamos el token en la base de datos
-                    _daoTokenUsuario.GuardarToken(tokenModel);
-
-                    // Obtenemos los datos del empleado asociado al usuario
-                    var empleados = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(usuarioValido.FK_IdEmpleado);
-
-                    // Obtenemos la relación entre el empleado y la empresa
-                    var empleadoEmpresa = await _daoEmpleadoEmpresaDepartamento.ObtenerEmpleadoPorIdAsync(empleados.IdEmpleado);
-
-                    // Obtenemos el nombre completo del empleado
-                    var nombreCompletoEmpleado = $"{empleados.NombresEmpleado} {empleados.ApellidosEmpleado}";
-
-                    // Guardamos el tipo de contrato, código del empleado y el nombre completo en la sesión
-                    HttpContext.Session.SetString("TipoContrato", empleados.TipoContrato);
-                    HttpContext.Session.SetInt32("IdEmpleado", empleados.IdEmpleado);
-                    HttpContext.Session.SetString("CodigoEmpleado", empleados.CodigoEmpleado);
-                    HttpContext.Session.SetString("NombreCompletoEmpleado", nombreCompletoEmpleado);
-
-                    // Guardamos el token y la información del usuario en la sesión
-                    HttpContext.Session.SetString("Token", tokenModel.Token);
-                    HttpContext.Session.SetInt32("IdUsuario", usuarioValido.IdUsuario);
-                    HttpContext.Session.SetString("Usuario", usuarioValido.Username);
-
-                    // Guardamos el rol principal (para compatibilidad)
-                    HttpContext.Session.SetString("Rol", nombreRol);
-
-                    // Guardamos todos los roles como una lista separada por comas
-                    HttpContext.Session.SetString("Roles", string.Join(",", rolesDelUsuario));
-
-                    // Guardamos el ID del sistema
-                    HttpContext.Session.SetInt32("IdSistema", idSistema);
-
-                    // Guardamos el ID de la empresa
-                    HttpContext.Session.SetInt32("IdEmpresa", empleadoEmpresa.FK_IdEmpresa);
-
-                    // Insertamos en la bítacora el inicio de sesión exitoso
-                    await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
-                    {
-                        Accion = "Login",
-                        Descripcion = $"Inicio de sesión exitoso para el usuario {usuarioValido.Username}.",
-                        FK_IdUsuario = usuarioValido.IdUsuario,
-                        FK_IdSistema = idSistema
-                    });
-
-                    // Redirigimos a la acción a Dashboard
-                    return RedirectToAction("Dashboard", "Dashboard"); // En caso de éxito
-                }
-                else
-                {
-                    // Si el usuario no es válido, mostramos un mensaje de error
-                    ViewBag.Mensaje = "Usuario o clave incorrectos.";
-                    // Retornamos la vista de inicio de sesión con el mensaje de error
+                    ViewBag.Mensaje = "Usuario o contraseña incorrectos.";
                     return RedirectToAction("Index", "Login");
                 }
+
+                // Obtener información del usuario
+                var usuario = await _daoUsuario.ObtenerUsuarioPorIdAsync(usuarioValido.IdUsuario);
+                if (usuario == null)
+                {
+                    ViewBag.Mensaje = "Usuario no encontrado.";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Verificar si el usuario está activo
+                if (usuario.FK_IdEstado != 1) // Asumiendo que 1 es el estado activo
+                {
+                    ViewBag.Mensaje = "Su cuenta no está activa. Por favor, contacte al administrador.";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Obtener roles del usuario
+                var rolesUsuario = await _daoRolUsuario.ObtenerUsuariosRolPorIdUsuarioAsync(usuarioValido.IdUsuario);
+                if (rolesUsuario == null || !rolesUsuario.Any())
+                {
+                    ViewBag.Mensaje = "El usuario no tiene roles asignados.";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Obtener información del empleado
+                var empleados = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(usuarioValido.FK_IdEmpleado);
+                if (empleados == null)
+                {
+                    ViewBag.Mensaje = "No se encontró información del empleado.";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Generar token JWT
+                var jwtHelper = new JwtHelper();
+                var rolPrincipal = await _daoRol.ObtenerRolPorIdAsync(rolesUsuario.First().FK_IdRol);
+                var tokenModel = jwtHelper.GenerarToken(
+                    usuarioValido.IdUsuario, 
+                    usuarioValido.Username, 
+                    rolesUsuario.First().FK_IdRol, 
+                    rolPrincipal?.NombreRol ?? "Usuario");
+
+                if (tokenModel == null)
+                {
+                    ViewBag.Mensaje = "Error al generar el token de autenticación.";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Guardar token en la base de datos
+                _daoTokenUsuario.RevocarToken(usuarioValido.IdUsuario);
+                _daoTokenUsuario.GuardarToken(new TokenUsuarioViewModel
+                {
+                    FK_IdUsuario = usuarioValido.IdUsuario,
+                    Token = tokenModel.Token,
+                    FechaCreacion = tokenModel.FechaCreacion,
+                    TiempoExpira = tokenModel.TiempoExpira
+                });
+
+                // Configurar datos de sesión
+                var nombreCompletoEmpleado = $"{empleados.NombresEmpleado} {empleados.ApellidosEmpleado}";
+                var roles = new List<string>();
+                
+                foreach (var rol in rolesUsuario)
+                {
+                    var r = await _daoRol.ObtenerRolPorIdAsync(rol.FK_IdRol);
+                    if (r != null)
+                    {
+                        roles.Add(r.NombreRol);
+                    }
+                }
+
+                // Obtener la empresa del empleado
+                int idEmpresa = 0;
+                try
+                {
+                    // Obtener la relación empleado-empresa
+                    var empleadoEmpresa = await _daoEmpleadoEmpresaDepartamento.ObtenerEmpleadoPorIdAsync(empleados.IdEmpleado);
+                    if (empleadoEmpresa != null)
+                    {
+                        idEmpresa = empleadoEmpresa.FK_IdEmpresa;
+                    }
+                }
+                catch
+                {
+                    // Si hay un error, usar 0 como valor por defecto
+                    idEmpresa = 0;
+                }
+
+                // Configurar la sesión
+                HttpContext.Session.SetString("TipoContrato", empleados.TipoContrato);
+                HttpContext.Session.SetInt32("IdEmpleado", empleados.IdEmpleado);
+                HttpContext.Session.SetString("CodigoEmpleado", empleados.CodigoEmpleado);
+                HttpContext.Session.SetString("NombreCompletoEmpleado", nombreCompletoEmpleado);
+                HttpContext.Session.SetString("Token", tokenModel.Token);
+                HttpContext.Session.SetInt32("IdUsuario", usuarioValido.IdUsuario);
+                HttpContext.Session.SetString("Usuario", usuarioValido.Username);
+                HttpContext.Session.SetString("Rol", rolPrincipal?.NombreRol ?? "Usuario");
+                HttpContext.Session.SetString("Roles", string.Join(",", roles));
+                HttpContext.Session.SetInt32("IdSistema", 1); // Ajustar según sea necesario
+                HttpContext.Session.SetInt32("IdEmpresa", idEmpresa);
+
+                // Registrar en bitácora
+                await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
+                {
+                    Accion = "Login",
+                    Descripcion = $"Inicio de sesión exitoso para el usuario {usuarioValido.Username}.",
+                    FK_IdUsuario = usuarioValido.IdUsuario,
+                    FK_IdSistema = 1 // Ajustar según sea necesario
+                });
+
+                return RedirectToAction("Dashboard", "Dashboard");
             }
             catch (Exception e)
             {
@@ -212,101 +195,6 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> LoginPrueba(string usuario, string password)
-        {
-            try
-            {
-                usuario = "AdminDev";
-
-                if (usuario == "AdminDev" && password == "12345678")
-                {
-                    var jwtHelper = new JwtHelper();
-                    int idUsuario = 1;
-                    int idRol = 1;
-                    int idSistema = 0;
-                    int idEmpresa = 2; // Asignamos un ID de empresa para la prueba
-                    string rolX = "Empleado";
-                    //string rolY = "TeamLider";
-                    string rolZ = "RRHH";
-
-                    List<string> roles = new List<string> { rolX,  rolZ};
-
-                    var tokenModel = jwtHelper.GenerarToken(idUsuario, usuario, idRol, rolX);
-
-                    if (tokenModel != null)
-                    {
-                        _daoTokenUsuario.RevocarToken(idUsuario);
-
-                        _daoTokenUsuario.GuardarToken(new TokenUsuarioViewModel
-                        {
-                            FK_IdUsuario = idUsuario,
-                            Token = tokenModel.Token,
-                            FechaCreacion = tokenModel.FechaCreacion,
-                            TiempoExpira = tokenModel.TiempoExpira
-                        });
-
-                        // Obtenemos los datos del empleado asociado al usuario
-                        var empleados = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(1);
-
-                        // Vemos la relación entre el empleado y la empresa
-                        // var empleadoEmpresa = await _daoEmpleadoEmpresaDepartamento.ObtenerEmpleadoEmpresaPorIdAsync(idEmpresa);
-
-                        // Obtenemos el nombre completo del empleado
-                        var nombreCompletoEmpleado = $"{empleados.NombresEmpleado} {empleados.ApellidosEmpleado}";
-
-                        // Guardamos el tipo de contrato, código del empleado y el nombre completo en la sesión
-                        HttpContext.Session.SetString("TipoContrato", empleados.TipoContrato);
-                        HttpContext.Session.SetInt32("IdEmpleado", empleados.IdEmpleado);
-                        HttpContext.Session.SetString("CodigoEmpleado", empleados.CodigoEmpleado);
-                        HttpContext.Session.SetString("NombreCompletoEmpleado", nombreCompletoEmpleado);
-
-                        HttpContext.Session.SetString("Token", tokenModel.Token);
-                        HttpContext.Session.SetInt32("IdUsuario", idUsuario);
-                        HttpContext.Session.SetString("Usuario", usuario);
-                        HttpContext.Session.SetString("Rol", rolX);
-                        HttpContext.Session.SetString("Roles", string.Join(",", roles));
-                        HttpContext.Session.SetInt32("IdSistema", idSistema);
-                        HttpContext.Session.SetInt32("IdEmpresa", idEmpresa);
-
-                        var hash = BCrypt.Net.BCrypt.HashPassword(password);
-                        _daoTokenUsuario.GuardarContrasenia(idUsuario, hash);
-
-                        await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
-                        {
-                            Accion = "Login Prueba",
-                            Descripcion = $"Inicio de sesión de prueba exitoso para el usuario {usuario}.",
-                            FK_IdUsuario = idUsuario,
-                            FK_IdSistema = idSistema
-                        });
-
-                        return RedirectToAction("Dashboard", "Dashboard");
-                    }
-                    else
-                    {
-                        ViewBag.Mensaje = "No se pudo generar el token.";
-                        return View("Index");
-                    }
-                }
-                else
-                {
-                    ViewBag.Mensaje = "Usuario o contraseña incorrectos.";
-                    return View("Index");
-                }
-            }
-            catch (Exception e)
-            {
-                await _loggingService.RegistrarLogAsync(new LogViewModel
-                {
-                    Accion = "Error LoginPrueba",
-                    Descripcion = $"Error en login de prueba para usuario {usuario}: {e.Message}",
-                    Estado = false
-                });
-
-                ViewBag.Mensaje = "Error al procesar la solicitud. Por favor, inténtelo de nuevo.";
-                return View("Index");
-            }
-        }
 
         [HttpPost]
         public async Task<IActionResult> LoginCambioContrasenia(string usuario, string password)

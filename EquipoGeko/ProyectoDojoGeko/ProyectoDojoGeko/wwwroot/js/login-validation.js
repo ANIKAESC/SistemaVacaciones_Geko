@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("loginForm");
 
     form.addEventListener("submit", function (e) {
@@ -205,38 +205,45 @@ document.addEventListener("DOMContentLoaded", () => {
   })
   
   // Función para alternar visibilidad de contraseña
-  function togglePassword() {
-    const passwordInput = document.getElementById("password")
-    const toggleIcon = document.getElementById("toggleIcon")
-  
-    if (passwordInput.type === "password") {
-      passwordInput.type = "text"
-      toggleIcon.classList.remove("bi-eye")
-      toggleIcon.classList.add("bi-eye-slash")
-    } else {
-      passwordInput.type = "password"
-      toggleIcon.classList.remove("bi-eye-slash")
-      toggleIcon.classList.add("bi-eye")
+  document.addEventListener('DOMContentLoaded', function() {
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+    
+    if (togglePassword) {
+      togglePassword.addEventListener('click', function (e) {
+        // Alternar el tipo de input
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        
+        // Alternar el ícono
+        const icon = this.querySelector('i');
+        if (type === 'password') {
+          icon.classList.remove('bi-eye-slash');
+          icon.classList.add('bi-eye');
+        } else {
+          icon.classList.remove('bi-eye');
+          icon.classList.add('bi-eye-slash');
+        }
+      });
     }
-  }
+  });
   
   // Funciones para enlaces (placeholder)
   function forgotPassword() {
-    alert("Funcionalidad de recuperación de contraseña - Próximamente disponible")
+    alert("Funcionalidad de recuperación de contraseña - Próximamente disponible");
   }
   
   function register() {
-    alert("Funcionalidad de registro - Próximamente disponible")
+    alert("Funcionalidad de registro - Próximamente disponible");
   }
   
   function privacyPolicy() {
-    alert("Política de privacidad - Próximamente disponible")
+    alert("Política de privacidad - Próximamente disponible");
   }
   
   // Función para manejar errores de red
   window.addEventListener("beforeunload", () => {
     const loginButton = document.getElementById("loginButton")
-    const loginText = document.querySelector(".login-text")
     const loginSpinner = document.querySelector(".login-spinner")
   
     if (loginButton && loginButton.disabled) {
