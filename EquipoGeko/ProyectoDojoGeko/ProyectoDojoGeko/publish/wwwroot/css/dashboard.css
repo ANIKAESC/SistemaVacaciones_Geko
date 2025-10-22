@@ -222,7 +222,7 @@ body {
 
 /* Contenido principal */
 .main-content {
-    flex: 1;
+    /*flex: 1;*/
     margin-left: var(--sidebar-width);
     min-height: 100vh;
     background: var(--gray-50);

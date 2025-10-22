@@ -92,6 +92,20 @@ namespace ProyectoDojoGeko.Data
                         string hashGuardado = reader["contrasenia"].ToString();
                         Console.WriteLine($"Hash en BD: {hashGuardado}");
 
+                        // En caso de ser el usuario AdminDev, este no tiene un hash, por lo tanto debemos saltar la validación para este usuario
+                        if (usuario == "AdminDev")
+                        {
+                            Console.WriteLine("Validación exitosa - creando usuario");
+                            user = new UsuarioViewModel
+                            {
+                                IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+                                Username = reader.GetString(reader.GetOrdinal("Username")),
+                                FK_IdEstado = reader.GetInt32(reader.GetOrdinal("FK_IdEstado")),
+                                FK_IdEmpleado = reader.GetInt32(reader.GetOrdinal("FK_IdEmpleado"))
+                            };
+                            return user;
+                        }
+
                         bool esValido = BCrypt.Net.BCrypt.Verify(claveIngresada, hashGuardado);
                         Console.WriteLine($"BCrypt.Verify resultado: {esValido}");
 

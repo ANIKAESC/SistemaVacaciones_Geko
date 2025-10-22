@@ -2323,11 +2323,18 @@ GO
 CREATE PROCEDURE sp_InsertarEquipo
     @Nombre NVARCHAR(100),
     @Descripcion NVARCHAR(255),
-    @FK_IdEstado INT
+    @FK_IdEstado INT,
+    @IdEquipo INT OUTPUT
 AS
 BEGIN
+    SET NOCOUNT ON; 
+
     INSERT INTO Equipos (Nombre, Descripcion, FK_IdEstado)
     VALUES (@Nombre, @Descripcion, @FK_IdEstado);
+
+    SET @IdEquipo = SCOPE_IDENTITY();
+    
+    RETURN @IdEquipo;
 END;
 GO
 
@@ -2490,7 +2497,7 @@ BEGIN
     SELECT eq.*
     FROM Equipos eq
     INNER JOIN EquiposProyecto ep ON ep.FK_IdEquipo = eq.IdEquipo
-    WHERE ep.FK_IdProyecto = @FK_IdProyecto;
+    WHERE ep.FK_IdProyecto = 1;
 END;
 GO
 

@@ -222,7 +222,18 @@ namespace ProyectoDojoGeko.Data
                     cmd.Parameters.AddWithValue("@Descripcion", equipo.Descripcion ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@FK_IdEstado", equipo.FK_IdEstado);
 
-                    return await cmd.ExecuteNonQueryAsync();
+                    // Agregar parámetro de salida para el ID
+                    SqlParameter outputIdParam = new SqlParameter("@IdEquipo", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(outputIdParam);
+
+                    await cmd.ExecuteNonQueryAsync();
+
+
+                    // Devolver el ID generado
+                    return (int)outputIdParam.Value;
                 }
             }
         }
