@@ -723,7 +723,7 @@ CREATE PROCEDURE sp_InsertarEmpleado
     @CorreoInstitucional NVARCHAR(50),
     @FechaIngreso DATETIME = NULL,
 	@DiasVacacionesAcumulados DECIMAL(10, 2),
-	@DiasTomadosHistoricos DECIMAL(10, 2) = 0.00,  
+	@DiasTomadosHistoricos DECIMAL(10, 2)= 0.00,
     @FechaNacimiento DATE,
     @Telefono VARCHAR(20),
     @NIT VARCHAR(15) = NULL,
