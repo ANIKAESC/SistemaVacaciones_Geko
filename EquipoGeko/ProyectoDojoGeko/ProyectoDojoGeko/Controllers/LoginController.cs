@@ -179,7 +179,18 @@ namespace ProyectoDojoGeko.Controllers
                     FK_IdSistema = 1 // Ajustar según sea necesario
                 });
 
+                // Enviamos a la página principal
                 return RedirectToAction("Dashboard", "Dashboard");
+
+                // Ahora enviamos a una nueva landing-page para identificar qué es lo que desea visualizar
+                // Sí es RRHH, la redirigimos siempre a Sistemas para saber qué gestión realizar
+                /*if (rolPrincipal.NombreRol == "RRHH" || roles.Contains("RRHH"))
+                {
+                    return RedirectToAction("Dashboard", "Dashboard");
+                } else {
+                    return RedirectToAction("Dashboard", "Dashboard");
+                }*/
+                
             }
             catch (Exception e)
             {

@@ -9,7 +9,9 @@ namespace ProyectoDojoGeko.Dtos.Equipos.Responses
         public int IdEmpleado { get; set; }
         public string NombresEmpleado { get; set; }
         public string ApellidosEmpleado { get; set; }
-        public string Roles { get; set; } // "TeamLider, SubLider, etc."
+
+        // Los roles pueden ir vacios si el empleado no tiene ningun rol asignado en el equipo
+        public string? Rol { get; set; } // "TeamLider, SubLider, etc."
         public string NombreCompleto => $"{NombresEmpleado} {ApellidosEmpleado}";
     }
 }

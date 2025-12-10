@@ -378,7 +378,7 @@ namespace ProyectoDojoGeko.Data
                                 IdEmpleado = reader.GetInt32(reader.GetOrdinal("IdEmpleado")),
                                 NombresEmpleado = reader.GetString(reader.GetOrdinal("NombresEmpleado")),
                                 ApellidosEmpleado = reader.GetString(reader.GetOrdinal("ApellidosEmpleado")),
-                                Roles = reader.IsDBNull(reader.GetOrdinal("Roles")) ? "Empleado" : reader.GetString(reader.GetOrdinal("Roles"))
+                                Rol = reader.IsDBNull(reader.GetOrdinal("Roles")) ? "Empleado" : reader.GetString(reader.GetOrdinal("Roles"))
                             });
                         }
                     }

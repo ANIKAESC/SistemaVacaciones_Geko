@@ -74,7 +74,19 @@
                             </div>
                             <div class="empleado-info">
                                 <h4>@empleado.NombresEmpleado @empleado.ApellidosEmpleado</h4>
-                                <p>@(empleado.Roles ?? "Empleado")</p>
+                                <p>@(empleado.Rol ?? "Empleado")</p>
+                            </div>
+                            <div class="remove-employee">
+                                <form method="post"
+                                      action="@Url.Action("RemoverMiembro", "ProyectoEquipo")">
+                                      <!-- onsubmit="return confirm('¿Está seguro que desea remover a empleado.NombresEmpleado empleado.ApellidosEmpleado del equipo?');" -->
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idEquipo" value="@Model.IdEquipo" />
+                                    <input type="hidden" name="idEmpleado" value="@empleado.IdEmpleado" />
+                                    <button type="submit" class="btn-view-employee btn-danger">
+                                        <i class="fas fa-user-minus"></i> Remover del equipo
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     }

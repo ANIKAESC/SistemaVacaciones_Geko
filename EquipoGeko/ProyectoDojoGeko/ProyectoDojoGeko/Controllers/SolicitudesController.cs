@@ -613,13 +613,13 @@ namespace ProyectoDojoGeko.Controllers
                         var revisor = empleadosEquipo
                             .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
                             .FirstOrDefault(e =>
-                                e.Roles.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
+                                e.Rol.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
 
                         // Si no hay TeamLider, buscamos un SubTeamLider
                         revisor ??= empleadosEquipo
                             .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
                             .FirstOrDefault(e =>
-                                e.Roles.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
+                                e.Rol.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
 
                         // Si no hay ningún revisor válido, lanzamos error
                         if (revisor == null)

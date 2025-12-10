@@ -123,6 +123,7 @@ namespace ProyectoDojoGeko.Controllers
 
 
         [HttpGet]
+        [AuthorizeRole("RRHH", "SuperAdministrador", "Administrador")]
         public async Task<IActionResult> EditarProyecto(int id)
         {
             var proyecto = await _daoProyectoEquipo.ObtenerProyectoPorIdAsync(id);
@@ -298,6 +299,23 @@ namespace ProyectoDojoGeko.Controllers
             return View(equipo);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> EditarEquipo(EquipoViewModel equipo)
+        {
+            if (!ModelState.IsValid) return View(equipo);
+
+            try
+            {
+                await _daoProyectoEquipo.ActualizarEquipoAsync(equipo);
+                return RedirectToAction("EditarEquipo", "ProyectoEquipo", new { id = equipo.IdEquipo });
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Error al editar el equipo: {ex.Message}");
+                return View(equipo);
+            }
+        }
+
         [HttpGet]
         public async Task<IActionResult> DetalleEquipo(int id)
         {
@@ -316,35 +334,22 @@ namespace ProyectoDojoGeko.Controllers
 
             // Obtener empleados asignados a este equipo
             var empleadosAsignados = await _daoEmpleadoEquipo.ListarEmpleadosPorEquipoAsync(id);
-            ViewBag.Empleados = empleadosAsignados;
 
             // Obtener todos los empleados y filtrar los NO asignados
             var todosEmpleados = await _daoEmpleado.ObtenerEmpleadoAsync();
             var empleadosNoAsignados = todosEmpleados.Where(e => !empleadosAsignados.Any(a => a.IdEmpleado == e.IdEmpleado)).ToList();
             ViewBag.EmpleadosNoAsignados = empleadosNoAsignados;
 
-             // Obtener empleados con sus roles
+            // Obtener empleados con sus roles
             var empleadosConRoles = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(id);
+            
+            // Cambiamos esta linea ya que está mal planteado y se va a cambiar la lógica que se usa actualmente
             ViewBag.Empleados = empleadosConRoles;
 
+            // Mostramos todos los empleados asignados al equipo
+            //ViewBag.Empleados = empleadosAsignados;
+
             return View("DetalleEquipo", equipo);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> EditarEquipo(EquipoViewModel equipo)
-        {
-            if (!ModelState.IsValid) return View(equipo);
-
-            try
-            {
-                await _daoProyectoEquipo.ActualizarEquipoAsync(equipo);
-                return RedirectToAction("Equipos");
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", $"Error al editar el equipo: {ex.Message}");
-                return View(equipo);
-            }
         }
 
         [HttpPost]
@@ -389,12 +394,12 @@ namespace ProyectoDojoGeko.Controllers
             return RedirectToAction("DetalleEquipo", new { id = idEquipo });
         }
 
-        [HttpPost]
+        [HttpPost]  
         public async Task<IActionResult> RemoverMiembro(int idEquipo, int idEmpleado)
         {
             await _daoEmpleadoEquipo.RemoverEmpleadoDeEquipoAsync(idEmpleado, idEquipo);
             await _bitacoraService.RegistrarBitacoraAsync("RemoverMiembro", $"Se removió el empleado {idEmpleado} del equipo {idEquipo}");
-            return RedirectToAction("GestionarMiembros", new { id = idEquipo });
+            return RedirectToAction("DetalleEquipo", new { id = idEquipo });
         }
 
         #endregion
@@ -422,12 +427,12 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EquipoViewModel>>> GetEquiposPorProyecto(int idProyecto)
+        public async Task<ActionResult<IEnumerable<EquipoViewModel>>> ObtenerEquiposPorProyecto(int idProyecto)
         {
             try
             {
                 if (idProyecto <= 0)
-                    return BadRequest("El ID del proyecto debe ser válido");
+                    return BadRequest("El ID del HUB debe ser válido");
 
                 var equipos = await _daoProyectoEquipo.ObtenerEquiposPorProyectoAsync(idProyecto);
                 return Ok(equipos);

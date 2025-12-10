@@ -2187,7 +2187,9 @@ CREATE TABLE EmpleadosEquipo (
     IdEmpleadoEquipo INT IDENTITY(1,1) PRIMARY KEY,
     FK_IdEquipo INT NOT NULL,
     FK_IdEmpleado INT NOT NULL,
-    -- FK_IdRol INT NOT NULL -- Usamos la FK de la tabla Roles
+    FK_IdRol INT-- Usamos la FK de la tabla Roles
+    CONSTRAINT CHK_RolValido 
+        CHECK (FK_IdRol IN (4, 5, 6))
     /*CONSTRAINT FK_EmpleadosEquipo_Equipos
         FOREIGN KEY (FK_IdEquipo)
             REFERENCES Equipos (IdEquipo),
@@ -2218,13 +2220,9 @@ BEGIN
         INNER JOIN 
             Empleados e ON ee.FK_IdEmpleado = e.IdEmpleado
         INNER JOIN 
-            Usuarios u ON e.IdEmpleado = u.FK_IdEmpleado
-        INNER JOIN 
-            UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
-        INNER JOIN 
-            Roles r ON ur.FK_IdRol = r.IdRol
+            Roles r ON ee.FK_IdRol = r.IdRol
         WHERE 
-            ee.FK_IdEquipo = @IdEquipo
+            ee.FK_IdEquipo = 1
         GROUP BY -- Agrupamos para evitar roles duplicados por empleado
             e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado, r.NombreRol
     )
@@ -2235,8 +2233,8 @@ BEGIN
         -- Usamos STRING_AGG con un CASE para filtrar solo los roles deseados
         STRING_AGG(
             CASE 
-                WHEN NombreRol IN ('TeamLider', 'SubLider') THEN NombreRol
-                ELSE NULL 
+                WHEN NombreRol IN ('TeamLider', 'SubLider', 'Empleado') THEN NombreRol
+                ELSE NULL
             END, ', ') AS Roles
     FROM 
         EmpleadoRoles
@@ -2338,6 +2336,26 @@ BEGIN
 END;
 GO
 
+-- Editar Equipo
+CREATE PROCEDURE sp_ActualizarEquipo
+    @IdEquipo INT,
+    @Nombre NVARCHAR(100),
+    @Descripcion NVARCHAR(255),
+    @FK_IdEstado INT
+AS
+BEGIN
+    SET NOCOUNT ON; 
+
+    UPDATE Equipos  
+    SET
+        Nombre = @Nombre,
+        Descripcion = @Descripcion,
+        FK_IdEstado = @FK_IdEstado
+    WHERE IdEquipo = @IdEquipo;
+    
+END;
+GO
+
 -- Listar todos los equipos
 CREATE PROCEDURE sp_ListarEquipos
 AS
@@ -2360,12 +2378,12 @@ GO
 -- Asignar empleado a equipo con un rol existente
 CREATE PROCEDURE sp_AsignarEmpleadoAEquipo
     @FK_IdEquipo INT,
-    @FK_IdEmpleado INT
-    --@FK_IdRol INT -- Parámetro actualizado para usar FK_IdRol
+    @FK_IdEmpleado INT,
+    @FK_IdRol INT = 6 -- Parámetro actualizado para usar FK_IdRol
 AS
 BEGIN
-    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado)
-    VALUES (@FK_IdEquipo, @FK_IdEmpleado);
+    INSERT INTO EmpleadosEquipo (FK_IdEquipo, FK_IdEmpleado, FK_IdRol)
+    VALUES (@FK_IdEquipo, @FK_IdEmpleado, @FK_IdRol);
 END;
 GO
 
@@ -2374,11 +2392,34 @@ CREATE PROCEDURE sp_ListarEmpleadosPorEquipo
     @IdEquipo INT
 AS
 BEGIN
-    SELECT e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado
+    SELECT e.IdEmpleado, e.NombresEmpleado, e.ApellidosEmpleado, r.NombreRol
     FROM Empleados e
     INNER JOIN EmpleadosEquipo ee ON ee.FK_IdEmpleado = e.IdEmpleado
-    --INNER JOIN Roles r ON r.IdRol = ee.FK_IdRol -- Join actualizado a la tabla Roles
+    INNER JOIN Roles r ON r.IdRol = ee.FK_IdRol -- Join actualizado a la tabla Roles
     WHERE ee.FK_IdEquipo = @IdEquipo;
+END;
+GO
+
+-- Eliminar empleado del equipo 
+CREATE OR ALTER PROCEDURE sp_RemoverEmpleadoDeEquipo
+    @FK_IdEmpleado INT,
+    @FK_IdEquipo INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF EXISTS (SELECT 1 FROM EmpleadosEquipo 
+               WHERE FK_IdEmpleado = @FK_IdEmpleado 
+               AND FK_IdEquipo = @FK_IdEquipo)
+    BEGIN
+        DELETE FROM EmpleadosEquipo 
+        WHERE FK_IdEmpleado = @FK_IdEmpleado 
+        AND FK_IdEquipo = @FK_IdEquipo;
+        
+        RETURN 1; -- Confirma
+    END
+    
+    RETURN 0; -- Error
 END;
 GO
 
@@ -2704,7 +2745,7 @@ JOIN Usuarios u ON u.FK_IdEmpleado = e.IdEmpleado
 JOIN UsuariosRol ur ON ur.FK_IdUsuario = u.IdUsuario 
 JOIN Roles r ON r.IdRol = ur.FK_IdRol
 WHERE ee.FK_IdEquipo = 1
-AND r.NombreRol IN ('TeamLider', 'SubLider')
+AND r.NombreRol IN ('TeamLider', 'SubLider', 'Empleado')
 GO
 
 /*ErickDev*/

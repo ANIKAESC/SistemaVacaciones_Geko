@@ -1,6 +1,7 @@
-using System.Data;
 using Microsoft.Data.SqlClient;
+using ProyectoDojoGeko.Dtos.Equipos.Responses;
 using ProyectoDojoGeko.Models;
+using System.Data;
 
 namespace ProyectoDojoGeko.Data
 {
@@ -85,9 +86,9 @@ namespace ProyectoDojoGeko.Data
         }
 
         // Listar empleados por equipo
-        public async Task<List<EmpleadoViewModel>> ListarEmpleadosPorEquipoAsync(int idEquipo)
+        public async Task<List<EmpleadosEquipoResponse>> ListarEmpleadosPorEquipoAsync(int idEquipo)
         {
-            var empleados = new List<EmpleadoViewModel>();
+            var empleados = new List<EmpleadosEquipoResponse>();
             string procedure = "sp_ListarEmpleadosPorEquipo";
 
             using (SqlConnection conn = new SqlConnection(_connectionString))
@@ -102,11 +103,12 @@ namespace ProyectoDojoGeko.Data
                     {
                         while (await reader.ReadAsync())
                         {
-                            empleados.Add(new EmpleadoViewModel
+                            empleados.Add(new EmpleadosEquipoResponse
                             {
                                 IdEmpleado = reader.GetInt32(reader.GetOrdinal("IdEmpleado")),
                                 NombresEmpleado = reader.GetString(reader.GetOrdinal("NombresEmpleado")),
                                 ApellidosEmpleado = reader.GetString(reader.GetOrdinal("ApellidosEmpleado")),
+                                Rol = reader.IsDBNull(reader.GetOrdinal("NombreRol")) ? "Empleado" : reader.GetString(reader.GetOrdinal("NombreRol"))
                             });
                         }
                     }
