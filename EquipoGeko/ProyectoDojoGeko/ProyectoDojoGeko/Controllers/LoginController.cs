@@ -45,6 +45,8 @@ namespace ProyectoDojoGeko.Controllers
             _daoRolPermisos = daoRolPermisos;
             _loggingService = loggingService;
         }
+
+        [HttpGet]
         public IActionResult Index() => View();
 
         [HttpGet]
@@ -206,6 +208,104 @@ namespace ProyectoDojoGeko.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> LoginPrueba(string usuario, string password)
+        {
+            try
+            {
+                usuario = "AdminDev";
+                password = "12345678";
+
+                if (usuario == "AdminDev" && password == "12345678")
+                {
+                    var jwtHelper = new JwtHelper();
+                    int idUsuario = 1;
+                    int idRol = 1;
+                    int idSistema = 0;
+                    int idEmpresa = 1; // Asignamos un ID de empresa para la prueba
+                    string rolX = "Empleado";
+                    string rolY = "TeamLider";
+                    string rolZ = "RRHH";
+
+                    List<string> roles = new List<string> { rolX, rolY, rolZ };
+
+                    var tokenModel = jwtHelper.GenerarToken(idUsuario, usuario, idRol, rolX);
+
+                    if (tokenModel != null)
+                    {
+                        _daoTokenUsuario.RevocarToken(idUsuario);
+
+                        _daoTokenUsuario.GuardarToken(new TokenUsuarioViewModel
+                        {
+                            FK_IdUsuario = idUsuario,
+                            Token = tokenModel.Token,
+                            FechaCreacion = tokenModel.FechaCreacion,
+                            TiempoExpira = tokenModel.TiempoExpira
+                        });
+
+                        // Obtenemos los datos del empleado asociado al usuario
+                        var empleados = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(1);
+
+                        // Vemos la relación entre el empleado y la empresa
+                        // var empleadoEmpresa = await _daoEmpleadoEmpresaDepartamento.ObtenerEmpleadoEmpresaPorIdAsync(idEmpresa);
+
+                        // Obtenemos el nombre completo del empleado
+                        var nombreCompletoEmpleado = $"{empleados.NombresEmpleado} {empleados.ApellidosEmpleado}";
+
+                        // Guardamos el tipo de contrato, código del empleado y el nombre completo en la sesión
+                        HttpContext.Session.SetString("TipoContrato", empleados.TipoContrato);
+                        HttpContext.Session.SetInt32("IdEmpleado", empleados.IdEmpleado);
+                        HttpContext.Session.SetString("CodigoEmpleado", empleados.CodigoEmpleado);
+                        HttpContext.Session.SetString("NombreCompletoEmpleado", nombreCompletoEmpleado);
+
+                        HttpContext.Session.SetString("Token", tokenModel.Token);
+                        HttpContext.Session.SetInt32("IdUsuario", idUsuario);
+                        HttpContext.Session.SetString("Usuario", usuario);
+                        HttpContext.Session.SetString("Rol", rolX);
+                        HttpContext.Session.SetString("Roles", string.Join(",", roles));
+                        HttpContext.Session.SetInt32("IdSistema", idSistema);
+                        HttpContext.Session.SetInt32("IdEmpresa", idEmpresa);
+
+                        var hash = BCrypt.Net.BCrypt.HashPassword(password);
+                        _daoTokenUsuario.GuardarContrasenia(idUsuario, hash);
+
+                        await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
+                        {
+                            Accion = "Login Prueba",
+                            Descripcion = $"Inicio de sesión de prueba exitoso para el usuario {usuario}.",
+                            FK_IdUsuario = idUsuario,
+                            FK_IdSistema = idSistema
+                        });
+
+                        return RedirectToAction("Dashboard", "Dashboard");
+                    }
+                    else
+                    {
+                        ViewBag.Mensaje = "No se pudo generar el token.";
+                        return View("Index");
+                    }
+                }
+                else
+                {
+                    ViewBag.Mensaje = "Usuario o contraseña incorrectos.";
+                    return View("Index");
+                }
+            }
+            catch (Exception e)
+            {
+                await _loggingService.RegistrarLogAsync(new LogViewModel
+                {
+                    Accion = "Error LoginPrueba",
+                    Descripcion = $"Error en login de prueba para usuario {usuario}: {e.Message}",
+                    Estado = false
+                });
+
+                ViewBag.Mensaje = "Error al procesar la solicitud. Por favor, inténtelo de nuevo.";
+                return View("Index");
+            }
+        }
+
+
 
         [HttpPost]
         public async Task<IActionResult> LoginCambioContrasenia(string usuario, string password)
@@ -298,6 +398,7 @@ namespace ProyectoDojoGeko.Controllers
                 return View("IndexCambioContrasenia");
             }
         }
+
         [HttpPost]
         public async Task<IActionResult> SolicitarNuevaContrasenia(string username)
         {

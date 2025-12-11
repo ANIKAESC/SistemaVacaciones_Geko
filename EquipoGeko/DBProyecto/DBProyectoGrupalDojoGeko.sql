@@ -2400,6 +2400,19 @@ BEGIN
 END;
 GO
 
+-- Listar empleados de un equipo con su rol por medio del ID empleado
+CREATE PROCEDURE sp_ListarEmpleadosEquipoPorEmpleado
+    @IdEmpleado INT
+AS
+BEGIN
+    SELECT ee.FK_IdEquipo
+    FROM Empleados e
+    INNER JOIN EmpleadosEquipo ee ON ee.FK_IdEmpleado = e.IdEmpleado
+    INNER JOIN Roles r ON r.IdRol = ee.FK_IdRol -- Join actualizado a la tabla Roles
+    WHERE ee.FK_IdEmpleado = @IdEmpleado;
+END;
+GO
+
 -- Eliminar empleado del equipo 
 CREATE OR ALTER PROCEDURE sp_RemoverEmpleadoDeEquipo
     @FK_IdEmpleado INT,

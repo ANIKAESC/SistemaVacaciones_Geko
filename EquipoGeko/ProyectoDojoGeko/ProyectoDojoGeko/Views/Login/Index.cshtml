@@ -68,10 +68,19 @@
                                                 </span>
                                             </button>
                                         </div>
-
                                     </form>
+
+                                    <!-- Login de pruebas -->
+                                    <form method="post" asp-controller="Login" asp-action="LoginPrueba">
+                                        @Html.AntiForgeryToken()
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-link btn-sm">
+                                                Iniciar sesión como usuario de prueba
+                                            </button>
                                         </div>
-                                    </div>
+                                    </form>
+
+
                                 </div>
                             </div>
                         </div>

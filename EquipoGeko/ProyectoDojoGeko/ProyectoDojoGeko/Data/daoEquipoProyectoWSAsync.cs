@@ -355,6 +355,23 @@ namespace ProyectoDojoGeko.Data
             return equipos;
         }
 
+        // Listar equipo(s) según el empleado asignado
+        public async Task<int> ObtenerEquipoPorEmpleadoAsync(int id)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand("sp_ListarEmpleadosEquipoPorEmpleado", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IdEmpleado", id);
+
+                    return await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+
         // Listar empleados por equipo
         public async Task<List<EmpleadosEquipoResponse>> ObtenerEmpleadosConRolesPorEquipoAsync(int idEquipo)
         {

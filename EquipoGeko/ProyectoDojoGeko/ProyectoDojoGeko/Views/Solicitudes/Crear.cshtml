@@ -14,6 +14,10 @@
     var nombre = Context.Session.GetString("NombreCompletoEmpleado");
     var diasDisponibles = ViewBag.DiasDisponibles;
     var fecha = DateTime.UtcNow;
+
+    // Obtener listas de autorizadores
+    var empleadosAutorizaEquipo = ViewBag.EmpleadosAutorizaEquipo as List<SelectListItem> ?? new List<SelectListItem>();
+    var empleadosAutoriza = ViewBag.empleadosAutoriza as List<SelectListItem> ?? new List<SelectListItem>();
 }
 
 <div class="solicitudes-container">
@@ -69,8 +73,43 @@
             <div id="detallesContainer"></div>
 
 
+            <!-- Info adicional -->
             <div class="form-group" style="margin-top: 20px;">
-                <label class="form-label">Información de solicitud <span style="color: #c00;">*</span></label>
+                <label class="form-label" style="font-size:25px;">Información de solicitud <span style="color: #c00;">*</span></label>
+
+                <!-- Selector de "Autorizador" -->
+                <div class="form-field" style="margin-top: 20px;">
+                    <label for="Autorizador" class="form-label">
+                        Seleccionar autorizador <span style="color: #c00;">*</span>
+                    </label>
+                    <select asp-for="Encabezado.IdAutorizador" id="Autorizador" class="form-control" required>
+                        <option value="">Seleccione un autorizador</option>
+                        @if (empleadosAutorizaEquipo.Any())
+                        {
+                            foreach (var autoriza in empleadosAutorizaEquipo)
+                            {
+                                <option value="@autoriza.Value">@autoriza.Text</option>
+                            }
+                        }
+                        else if (empleadosAutoriza.Any())
+                        {
+                            foreach (var autoriza in empleadosAutoriza)
+                            {
+                                <option value="@autoriza.Value">@autoriza.Text</option>
+                            }
+                        }
+                        else
+                        {
+                            <option value="">No hay empleados disponibles para autorizar</option>
+                        }
+                    </select>
+                    @if (ViewBag.AdvertenciaEquipo != null)
+                    {
+                        <small class="text-warning">@ViewBag.AdvertenciaEquipo</small>
+                    }
+                </div>
+
+
                 <div class="form-row">
                     <div class="form-field">
                         <label for="SolicitadoLider" class="form-label">
@@ -94,20 +133,14 @@
                 </div>
             </div>
 
-
-
-
-
-
-
-                <!-- Observaciones -->
+            <!-- Observaciones -->
             <div class="form-group" style="margin-top: 20px;">
                 <label for="Observaciones" class="form-label">
                     Observaciones adicionales <span class="optional-badge">(Opcional)</span>
                 </label>
                 <textarea asp-for="Encabezado.Observaciones" id="Observaciones"
-                          class="form-control" rows="3"
-                          style="width: 100%; resize: vertical;"
+                          class="form-control" rows="5"
+                          style="width: 100%; resize: none; overflow-y: auto;"
                           placeholder="Ejemplo: Necesito estos días por motivos familiares..."></textarea>
             </div>
 

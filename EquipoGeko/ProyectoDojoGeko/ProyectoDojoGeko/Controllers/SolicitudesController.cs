@@ -450,6 +450,54 @@ namespace ProyectoDojoGeko.Controllers
                 // Mandamos los feriados a la vista para deshabilitarlos en el calendario
                 ViewBag.Feriados = await GetFeriadosConProporcion();
 
+                // Capturamos si el empleado está en algun equipo asignado
+                var encuentraEquipo = await _daoProyectoEquipo.ObtenerEquipoPorEmpleadoAsync(empleado.IdEmpleado);
+
+                // Obtenemos a los empleados completos para mostrarlos en un dropdown
+                var empleados = await _daoEmpleado.ObtenerEmpleadoAsync();
+
+                // Si no está en ningún equipo, mostramos advertencia
+                if (encuentraEquipo == null || encuentraEquipo <= 0)
+                {
+                    ViewBag.AdvertenciaEquipo = "No estás asignado a ningún equipo. Por favor, contacta a RRHH para asignarte un equipo y que tu solicitud pueda ser revisada por un autorizador. O bien, busca tu mismo a tu lider.";
+
+                    // Excluimos al mismo empleado que está creando la solicitud
+                    var empleadosLimpio = empleados
+                        .Where(e => e.IdEmpleado != empleado.IdEmpleado)
+                        .Select(e => new SelectListItem 
+                        {
+                            Value = e.IdEmpleado.ToString(),
+                            Text = $"{e.NombresEmpleado} {e.ApellidosEmpleado}"
+                        })
+                        .ToList();
+
+                    ViewBag.empleadosAutoriza = empleadosLimpio;
+                }
+                // Si está en un equipo, entonces buscamos a los integrantes del equipo
+                else 
+                {
+
+                    // Obtenemos a todos los empleados en su equipo
+                    var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(encuentraEquipo);
+
+                    // Excluimos a los que no tengan el rol de TeamLider o SubTeamLider
+                    var empleadosEquipoRol = empleadosEquipo.Where(e => e.Rol.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                    e.Rol.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    .ToList();
+
+                    // En caso de que el mismo empleado sea u tenga el rol de TeamLider o SubTeamLider, así también lo excluimos de la busqueda
+                    var empleadosEquipoLimpio = empleadosEquipoRol
+                        .Where(e => e.IdEmpleado != empleado.IdEmpleado)
+                        .Select(e => new SelectListItem 
+                        {
+                            Value = e.IdEmpleado.ToString(),
+                            Text = $"{e.NombresEmpleado} {e.ApellidosEmpleado} - {e.Rol}"
+                        })
+                        .ToList();
+
+                    ViewBag.EmpleadosAutorizaEquipo = empleadosEquipoLimpio;
+                }
+
                 await _bitacoraService.RegistrarBitacoraAsync("Vista Crear Solicitud", "Acceso a la vista de creación de solicitud.");
 
                 return View();
