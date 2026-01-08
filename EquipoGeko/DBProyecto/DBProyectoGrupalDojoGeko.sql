@@ -1857,6 +1857,24 @@ CREATE TABLE SolicitudEncabezado
 );
 GO
 
+-- Verificar si la columna TipoFormatoPdf existe
+IF NOT EXISTS (
+    SELECT 1 
+    FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_NAME = 'SolicitudEncabezado' 
+    AND COLUMN_NAME = 'TipoFormatoPdf'
+)
+BEGIN
+    ALTER TABLE SolicitudEncabezado
+    ADD TipoFormatoPdf INT NOT NULL DEFAULT 1;
+    
+    PRINT 'Columna TipoFormatoPdf agregada correctamente';
+END
+ELSE
+BEGIN
+    PRINT 'La columna TipoFormatoPdf ya existe';
+END
+
 ------------- PROCEDIMIENTOS ALMACENADOS
 
 -- SP Para autorizar solicitudes 
@@ -2007,6 +2025,47 @@ BEGIN
 		se.DocumentoFirmado,
         se.DocumentoContentType,
         es.IdEstadoSolicitud AS Estado
+    FROM SolicitudEncabezado se
+    INNER JOIN Empleados e ON se.FK_IdEmpleado = e.IdEmpleado
+    INNER JOIN EstadoSolicitud es ON se.FK_IdEstadoSolicitud = es.IdEstadoSolicitud
+    WHERE se.IdSolicitud = @IdSolicitud;
+
+    -- Segundo resultset: Detalle de la solicitud
+    SELECT 
+        sd.IdSolicitudDetalle,
+        sd.FechaInicio,
+        sd.FechaFin,
+        sd.DiasHabilesTomados
+    FROM SolicitudDetalle sd
+    WHERE sd.FK_IdSolicitud = @IdSolicitud;
+END
+GO
+
+
+-- Eliminar el SP existente
+DROP PROCEDURE IF EXISTS sp_ObtenerDetalleSolicitud;
+GO
+
+-- Crear el SP actualizado
+CREATE PROCEDURE sp_ObtenerDetalleSolicitud
+    @IdSolicitud INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Primer resultset: Encabezado de la solicitud (con datos básicos del empleado)
+    SELECT 
+        se.IdSolicitud,
+        se.FK_IdEmpleado AS IdEmpleado,
+        se.DiasSolicitadosTotal,
+        se.FechaIngresoSolicitud,
+        se.Observaciones,
+        se.DocumentoFirmado,
+        se.DocumentoContentType,
+        es.IdEstadoSolicitud AS Estado,
+        se.FK_IdAutorizador,           -- ⭐ AGREGADO
+        se.SolicitudLider,              -- ⭐ AGREGADO
+        se.MotivoRechazo                -- ⭐ AGREGADO
     FROM SolicitudEncabezado se
     INNER JOIN Empleados e ON se.FK_IdEmpleado = e.IdEmpleado
     INNER JOIN EstadoSolicitud es ON se.FK_IdEstadoSolicitud = es.IdEstadoSolicitud
@@ -3161,3 +3220,13 @@ GO
 
 PRINT 'Script de base de datos actualizado y ejecutado correctamente.';
 
+
+-- Verificar si el estado 6 existe
+SELECT * FROM EstadoSolicitud;
+
+-- Si no existe el estado 6, agregarlo
+IF NOT EXISTS (SELECT 1 FROM EstadoSolicitud WHERE IdEstadoSolicitud = 6)
+BEGIN
+    INSERT INTO EstadoSolicitud ( NombreEstado)
+    VALUES ('Rechazada');
+END

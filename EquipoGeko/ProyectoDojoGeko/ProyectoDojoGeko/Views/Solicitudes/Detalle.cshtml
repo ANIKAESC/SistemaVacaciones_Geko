@@ -1,8 +1,12 @@
 @model ProyectoDojoGeko.Models.SolicitudViewModel
 @{
-    ViewData["Title"] = "Detalle de la Solicitud - GEKO Sistemas de Seguridad";
+    var tituloEstado = Model.Encabezado.Estado == 6 ? "Solicitud Rechazada" : 
+                       Model.Encabezado.Estado == 2 ? "Solicitud Autorizada" : 
+                       "Detalle de Solicitud";
+    ViewData["Title"] = $"{tituloEstado} - GEKO Sistemas de Seguridad";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var empleado = ViewBag.Empleado;
+    var idAutorizador = Context.Session.GetInt32("IdEmpleado") ?? 0;
 }
 
 <link rel="stylesheet" href="~/css/empleado-detalle.css" />
@@ -13,12 +17,55 @@
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">
-                <i class="fas fa-id-card icon-naranja"></i>
-                Detalle de Solicitud
+                @if (Model.Encabezado.Estado == 6)
+                {
+                    <i class="fas fa-times-circle" style="color: #DC2626;"></i>
+                    <span>Solicitud Rechazada</span>
+                }
+                else if (Model.Encabezado.Estado == 2)
+                {
+                    <i class="fas fa-check-circle" style="color: #16A34A;"></i>
+                    <span>Solicitud Autorizada</span>
+                }
+                else
+                {
+                    <i class="fas fa-id-card icon-naranja"></i>
+                    <span>Detalle de Solicitud</span>
+                }
             </h1>
             <p class="page-subtitle">Información detallada sobre la solicitud de vacaciones</p>
         </div>
     </div>
+
+    @* Mensajes de éxito o error *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-bottom: 20px; background: #D1FAE5; border-left: 4px solid #10B981; color: #065F46; padding: 20px; font-size: 18px;">
+            <h4 style="margin: 0 0 10px 0; color: #065F46;">
+                <i class="fas fa-check-circle"></i> ¡Operación Exitosa!
+            </h4>
+            <p style="margin: 0; font-size: 16px;">@TempData["SuccessMessage"]</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["MensajeError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 20px; background: #FEE2E2; border-left: 4px solid #DC2626; color: #991B1B;">
+            <i class="fas fa-exclamation-circle"></i> @TempData["MensajeError"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    @* Alerta especial si la solicitud está rechazada *@
+    @if (Model.Encabezado.Estado == 6 && !string.IsNullOrEmpty(Model.Encabezado.MotivoRechazo))
+    {
+        <div class="alert alert-warning" role="alert" style="margin-bottom: 20px; background: #FEF3C7; border-left: 4px solid #F59E0B; color: #92400E;">
+            <h5 style="margin: 0 0 0.5rem 0; color: #92400E;">
+                <i class="fas fa-exclamation-triangle"></i> Esta solicitud fue rechazada
+            </h5>
+            <p style="margin: 0;">El autorizador ha rechazado tu solicitud. Revisa el motivo en la sección inferior.</p>
+        </div>
+    }
 
     <div class="empleado-card">
         <!-- Tarjeta de resumen -->
@@ -66,10 +113,10 @@
                     <div class="info-label"><i class="fas fa-briefcase icon-naranja"></i> Puesto</div>
                     <div class="info-value">@empleado?.Puesto</div>
                 </div>
-                <div class="info-item">
+@*                 <div class="info-item">
                     <div class="info-label"><i class="fas fa-calendar-plus icon-naranja"></i> Fecha de Ingreso</div>
                     <div class="info-value">@(empleado?.FechaIngreso?.ToString("dd/MM/yyyy") ?? "")</div>
-                </div>
+                </div> *@
                 <div class="info-item">
                     <div class="info-label"><i class="fas fa-envelope icon-naranja"></i> Correo</div>
                     <div class="info-value">@empleado?.CorreoInstitucional</div>
@@ -78,11 +125,11 @@
                     <div class="info-label"><i class="fas fa-phone icon-naranja"></i> Teléfono</div>
                     <div class="info-value">@empleado?.Telefono</div>
                 </div>
-                <div class="info-item">
+@*                 <div class="info-item">
                     <div class="info-label"><i class="fas fa-map-marker-alt icon-naranja"></i> Dirección</div>
                     <div class="info-value">@empleado?.Direccion</div>
                 </div>
-             
+              *@
                 <div class="info-item">
                     <div class="info-label"><i class="fas fa-id-card icon-naranja"></i> DPI</div>
                     <div class="info-value">@empleado?.DPI</div>
@@ -121,41 +168,95 @@
                 </table>
             </div>
         </div>
+
+        <!-- Vista Previa del PDF con Firma del Empleado -->
+        <div class="info-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-file-pdf icon-naranja"></i> Vista Previa del Documento con Firma del Empleado
+                </h3>
+            </div>
+            <div class="pdf-preview-container">
+                <iframe id="pdfPreview" 
+                        src="@Url.Action("VisualizarPDF", "Solicitudes", new { idSolicitud = Model.Encabezado.IdSolicitud })" 
+                        style="width: 100%; height: 800px; border: 2px solid #ddd; border-radius: 8px;">
+                </iframe>
+            </div>
+        </div>
     </div>
 
-    <!-- Acciones -->
+    <!-- Acciones de Autorización -->
     <div class="acciones-box">
-        <!-- Botón Ver PDF -->
-        @if (Model.Encabezado.DocumentoFirmadoData != null && Model.Encabezado.DocumentoFirmadoData.Length > 0)
+        @if (Model.Encabezado.Estado == 1)
         {
-            <button type="button" 
-                    class="btn btn-info boton-accion" 
-                    onclick="abrirModalDocumento(@Model.Encabezado.IdSolicitud)"
-                    title="Ver documento firmado">
-                <i class="fas fa-eye"></i> Ver Documento
-            </button>
+            <div class="acciones-titulo">
+                <i class="fas fa-tasks"></i> Acciones del Autorizador
+            </div>
+
+            <div class="firma-info-box">
+                <i class="fas fa-info-circle"></i>
+                <p>
+                    Al autorizar esta solicitud, su firma registrada se agregará automáticamente al documento.
+                    <a href="@Url.Action("MiFirma", "Firmas")" target="_blank" style="color: #2196F3; font-weight: bold;">
+                        <i class="fas fa-pen-fancy"></i> Gestionar mi firma
+                    </a>
+                </p>
+            </div>
+            
+            <div class="botones-container">
+                <form asp-action="AutorizarSolicitud" method="post" class="inline-form" onsubmit="return confirm('¿Está seguro de autorizar esta solicitud? Su firma se agregará automáticamente.');">
+                    <input type="hidden" name="idSolicitud" value="@Model.Encabezado.IdSolicitud" />
+                    <button type="submit" class="btn btn-success boton-accion-grande">
+                        <i class="fas fa-check-circle"></i> Autorizar Solicitud
+                    </button>
+                </form>
+
+                <form asp-action="Rechazar" method="post" class="inline-form" onsubmit="return confirmarRechazo(event);">
+                    <input type="hidden" name="idSolicitud" value="@Model.Encabezado.IdSolicitud" />
+                    <input type="hidden" name="idAutorizador" value="@idAutorizador" />
+                    <input type="hidden" name="observaciones" id="observacionesRechazo" value="" />
+                    <button type="submit" class="btn btn-danger boton-accion-grande">
+                        <i class="fas fa-times-circle"></i> Rechazar Solicitud
+                    </button>
+                </form>
+
+                <a href="@Url.Action("Autorizar", "Solicitudes")" class="btn btn-secondary boton-accion-grande">
+                    <i class="fas fa-arrow-left"></i> Volver a Lista
+                </a>
+            </div>
         }
-        
-        <!-- Botón Generar PDF -->
-        <button type="button" onclick="generarPDF()" class="btn btn-primary boton-accion" id="btn-pdf">
-            <i class="fas fa-file-pdf"></i> <span id="pdf-text">Generar PDF</span>
-        </button>
-
-        <form asp-action="AutorizarSolicitud" method="post" class="inline-form">
-            <input type="hidden" name="idSolicitud" value="@Model.Encabezado.IdSolicitud" />
-            <button type="submit" class="btn btn-success boton-accion">
-                <i class="fas fa-check"></i> Autorizar
-            </button>
-        </form>
-
-        <form asp-action="Rechazar" method="post" class="inline-form">
-            <input type="hidden" name="idSolicitud" value="@Model.Encabezado.IdSolicitud" />
-            <button type="submit" class="btn btn-danger boton-accion">
-                <i class="fas fa-times"></i> Rechazar
-            </button>
-        </form>
+        else
+        {
+            <div class="botones-container" style="justify-content: center;">
+                <a href="@Url.Action("Autorizar", "Solicitudes")" class="btn btn-secondary boton-accion-grande">
+                    <i class="fas fa-arrow-left"></i> Volver a Lista
+                </a>
+            </div>
+        }
     </div>
 </div>
+
+<!-- Sección de Observaciones/Motivo del Rechazo (fuera del PDF) -->
+@if (Model.Encabezado.Estado == 6 && !string.IsNullOrEmpty(Model.Encabezado.MotivoRechazo))
+{
+    <div class="empleado-detalle-container" style="margin-top: 20px;">
+        <div class="empleado-card" style="border-left: 4px solid #DC2626; background: linear-gradient(135deg, #FEE2E2, #FECACA);">
+            <div class="info-section">
+                <div class="section-header" style="border-bottom: 2px solid #DC2626;">
+                    <h3 class="section-title" style="color: #991B1B;">
+                        <i class="fas fa-exclamation-triangle" style="color: #DC2626;"></i> Motivo del Rechazo
+                    </h3>
+                </div>
+                <div style="padding: 20px; background: white; border-radius: 8px; margin-top: 15px;">
+                    <p style="margin: 0; color: #7F1D1D; font-size: 16px; line-height: 1.6;">
+                        <strong>Observaciones del autorizador:</strong><br>
+                        @Model.Encabezado.MotivoRechazo
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Modal para visualizar el documento -->
 <div id="verDocumentoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; padding:20px; box-sizing:border-box;">
@@ -187,15 +288,68 @@
 }
 
 <style>
+    .pdf-preview-container {
+        margin-top: 1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
     .acciones-box {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
         gap: 1.5rem;
         margin-top: 2rem;
-        padding: 1.5rem;
-        background-color: #f9f9f9;
-        border-top: 1px solid #ddd;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-top: 3px solid #002244;
         border-radius: 0 0 12px 12px;
+        box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
+    }
+
+    .acciones-titulo {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #002244;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .acciones-titulo i {
+        font-size: 1.5rem;
+    }
+
+    .firma-info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196F3;
+        padding: 1rem 1.5rem;
+        margin: 1rem 0;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .firma-info-box i {
+        font-size: 1.5rem;
+        color: #2196F3;
+    }
+
+    .firma-info-box p {
+        margin: 0;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .botones-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
     }
 
     .inline-form {
@@ -212,6 +366,26 @@
 
         .boton-accion i {
             margin-right: 8px;
+        }
+
+    .boton-accion-grande {
+        padding: 1rem 2.5rem;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 10px;
+        min-width: 220px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+        .boton-accion-grande:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .boton-accion-grande i {
+            margin-right: 10px;
+            font-size: 1.2rem;
         }
 
     .tabla-fechas-solicitadas td, .tabla-fechas-solicitadas th {
@@ -676,4 +850,33 @@
             }
         });
     });
+
+    // Función para confirmar rechazo con observaciones
+    function confirmarRechazo(event) {
+        event.preventDefault();
+        
+        const motivo = prompt('Por favor, ingrese el motivo del rechazo (opcional):');
+        
+        // Si el usuario cancela, no enviar el formulario
+        if (motivo === null) {
+            return false;
+        }
+        
+        // Confirmar la acción
+        if (confirm('¿Está seguro de que desea rechazar esta solicitud?')) {
+            // Agregar el motivo al campo oculto
+            document.getElementById('observacionesRechazo').value = motivo;
+            // Obtener el formulario y enviarlo
+            const form = event.target;
+            console.log('📤 Enviando formulario de rechazo...', {
+                idSolicitud: form.querySelector('[name="idSolicitud"]').value,
+                idAutorizador: form.querySelector('[name="idAutorizador"]').value,
+                observaciones: motivo
+            });
+            form.submit();
+            return true;
+        }
+        
+        return false;
+    }
 </script>

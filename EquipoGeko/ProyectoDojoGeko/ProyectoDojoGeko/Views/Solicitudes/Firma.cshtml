@@ -1,0 +1,10 @@
+﻿@model ProyectoDojoGeko.Models.SolicitudViewModel
+@{
+    ViewData["Title"] = "Firma - Geko Vacaciones";
+}
+
+<form asp - controller = "Firma" asp - action = "SubirFirma" method = "post" enctype = "multipart/form-data" >
+    @Html.AntiForgeryToken()
+      < input type = "file" name = "firma" accept = "image/png,image/jpeg" required />
+      < button type = "submit" > Guardar firma </ button >
+</form >

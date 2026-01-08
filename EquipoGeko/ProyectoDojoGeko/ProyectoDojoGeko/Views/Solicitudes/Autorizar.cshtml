@@ -1,4 +1,4 @@
-﻿@model List<ProyectoDojoGeko.Models.SolicitudEncabezadoViewModel>
+@model List<ProyectoDojoGeko.Models.SolicitudEncabezadoViewModel>
 
 @{
     ViewData["Title"] = "Autorización de Solicitudes";
@@ -18,54 +18,51 @@
     var estados = ViewBag.Estados as Dictionary<int, string> ?? new Dictionary<int, string>();
 }
 
-<div class="solicitudes-container azul">
+<div class="solicitudes-container">
 
-    <!-- Encabezado de la Página -->
+    <!-- Header -->
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">
-                <i class="fas fa-user-check"></i>
-                Solicitudes de Vacaciones
+                <i class="fa-solid fa-clipboard-list"></i>
+                Solicitudes de vacaciones
             </h1>
             <p class="page-subtitle">
-                Revisa todas las solicitudes de vacaciones ingresadas.
-            </p>
-            <p style="color: red;">
-                Solicitudes encontradas: @Model?.Count
+                Listado de solicitudes de vacaciones de los empleados.
             </p>
         </div>
     </div>
 
-    <hr class="section-divider" />
-
-    <!-- Tarjetas de estadísticas -->
-    <div class="stats-grid">
-        <div class="stat-card pendientes">
-            <div class="stat-icon">
-                <i class="fas fa-clipboard-list"></i>
+    <!-- Estadísticas -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="status-icon">
+                <i class="fa-solid fa-rectangle-list"></i>
             </div>
             <div class="stat-content">
                 <div class="stat-number">@totalSolicitudes</div>
-                <div class="stat-label">Solicitudes Registradas</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>+@totalSolicitudes este mes</span>
-                </div>
+                <div class="stat-label">Total Solicitudes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="status-icon pendiente">
+                <i class="fa-solid fa-stopwatch"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">@Model.Count(e => e.Estado == 2)</div>
+                <div class="stat-label">Estado Autorizada</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="status-icon vigente">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">@Model.Count(e => e.Estado == 3)</div>
+                <div class="stat-label">Estado Vigente</div>
             </div>
         </div>
     </div>
-
-    <hr class="section-divider" />
-
-    <!-- Información del usuario -->
-    <div class="form-card">
-        <div >
-            <span><b>Código empleado:</b> @codigoEmpleado</span>
-            <span><b>Nombre:</b> @nombreEmpleado</span>
-        </div>
-    </div>
-
-    <hr class="section-divider" />
 
     <!-- Tabla de solicitudes -->
     <div class="table-container">
@@ -91,12 +88,23 @@
                 {
                     foreach (var solicitud in todasLasSolicitudes)
                     {
+                        var nombreEstado = estados.ContainsKey(solicitud.Estado) ? estados[solicitud.Estado] : "Desconocido";
+                        var estadoBadgeClass = solicitud.Estado switch
+                        {
+                            1 => "badge-ingresada",      // Ingresada - Azul
+                            2 => "badge-autorizada",     // Autorizada - Verde
+                            3 => "badge-vigente",        // Vigente - Verde claro
+                            4 => "badge-finalizada",     // Finalizada - Gris
+                            5 => "badge-cancelada",      // Cancelada - Naranja
+                            6 => "badge-rechazada",      // Rechazada - Rojo
+                            _ => "badge-default"         // Desconocido
+                        };
                         <tr>
                             <td>@solicitud.IdSolicitud</td>
                             <td>@solicitud.NombreEmpleado</td>
                             <td>@solicitud.DiasSolicitadosTotal</td>
                             <td>
-                                @(estados.ContainsKey(solicitud.Estado) ? estados[solicitud.Estado] : "Desconocido")
+                                <span class="badge @estadoBadgeClass">@nombreEstado</span>
                             </td>
                             <td>
                                 <a href="@Url.Action("Detalle", "Solicitudes", new { id = solicitud.IdSolicitud })"
@@ -118,6 +126,25 @@
             </tbody>
         </table>
     </div>
+    <!-- Paginación -->
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> solicitudes
+        </div>
+        <div class="pagination-controls">
+            <button id="prev-page" class="pagination-btn" disabled>
+                <i class="fas fa-chevron-left"></i>
+                Anterior
+            </button>
+            <div class="pagination-pages" id="pagination-pages">
+                <button class="page-btn active">1</button>
+            </div>
+            <button id="next-page" class="pagination-btn" disabled>
+                Siguiente
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
 
 </div>
 
@@ -125,80 +152,372 @@
     <link rel="stylesheet" href="~/css/empresas.css" />
 
     <style>
-        /* Contenedor general con margen izquierdo */
+        :root {
+            --autorizador-primary: #4C1D95;
+            --autorizador-dark: #2E1065;
+            --autorizador-light: #6D28D9;
+            --soft-gray: #e9ecef;
+            --text-color: #343a40;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        /* Contenedor general */
         .solicitudes-container {
             padding: 2rem;
-            margin-left: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        /* Línea separadora */
-        .section-divider {
-            border: none;
-            height: 1px;
-            background-color: #a6b1bb;
-            margin: 2rem 0;
+        /* Header */
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
         }
 
-        .solicitudes-container.azul .solicitudes-header h2 {
-            font-size: 1.25rem;
-            color: #002244;
-            margin-bottom: 1rem;
+        .header-content {
+            max-width: 100%;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--autorizador-primary);
+            margin: 0 0 0.5rem 0;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
-        .solicitudes-container.azul .btn-detail {
-            background-color: #002244;
-            color: #fff;
-            padding: 0.35rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            text-decoration: none;
-            transition: background 0.3s;
-            display: inline-flex;
+        .page-title i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--autorizador-primary), var(--autorizador-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: #6c757d;
+            margin: 0;
+        }
+
+        /* Tarjetas de estadísticas */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
             align-items: center;
-            gap: 0.35rem;
+            gap: 1rem;
+            transition: all 0.3s ease;
         }
 
-            .solicitudes-container.azul .btn-detail:hover {
-                background-color: #001933;
-            }
-
-        .solicitudes-container.azul .stat-card.pendientes .stat-icon {
-            background: linear-gradient(135deg, #002f5f, #001933);
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(76, 29, 149, 0.15);
         }
 
-        .solicitudes-container.azul .stat-change.positive {
-            color: #002244;
-            font-weight: 500;
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--autorizador-primary), var(--autorizador-dark));
+            color: white;
+        }
+
+        .status-icon.pendiente {
+            background: linear-gradient(135deg, #F39C12, #d48806);
+        }
+
+        .status-icon.vigente {
+            background: linear-gradient(135deg, #28a745, #218838);
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--autorizador-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6c757d;
             margin-top: 0.25rem;
         }
 
-        .solicitudes-container.azul .page-title {
-            color: #002244;
+        /* Contenedor de tabla */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
-        .solicitudes-container.azul .page-subtitle {
-            color: #004080;
+        .solicitudes-header {
+            margin-bottom: 20px;
         }
 
-        .solicitudes-container .info-row {
+        .solicitudes-header h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--autorizador-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Tabla */
+        .empresas-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 15px;
+        }
+
+        .empresas-table thead {
+            background-color: var(--autorizador-primary) !important;
+        }
+
+        .empresas-table th {
+            color: white !important;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+            background-color: var(--autorizador-primary) !important;
+        }
+
+        .empresas-table th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .empresas-table th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        .empresas-table tbody tr {
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        .empresas-table tbody tr:hover {
+            background-color: #f5f3ff;
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(76, 29, 149, 0.1);
+        }
+
+        .empresas-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--soft-gray);
+            text-align: left;
+        }
+
+        .empresas-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Botón de detalle */
+        .btn-detail {
+            background-color: var(--autorizador-primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-detail:hover {
+            background-color: var(--autorizador-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 29, 149, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-detail i {
+            font-size: 14px;
+        }
+
+        /* Badges de estados con colores específicos */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-ingresada {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+        }
+
+        .badge-autorizada {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-vigente {
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            color: white;
+        }
+
+        .badge-finalizada {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        .badge-cancelada {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+
+        .badge-rechazada {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+        }
+
+        .badge-default {
+            background: linear-gradient(135deg, #9CA3AF, #6B7280);
+            color: white;
+        }
+
+        /* Paginación */
+        .pagination-container {
             display: flex;
             justify-content: space-between;
-            padding: 0.75rem 0 0.25rem;
+            align-items: center;
+            padding: 16px;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
         }
 
-            .solicitudes-container .info-row.compacto {
-                gap: 2rem;
-                font-size: 1rem;
-                line-height: 1.4rem;
+        .pagination-info {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+            .pagination-btn:hover:not(:disabled) {
+                background: var(--gray-100);
+                color: var(--gray-800);
             }
 
-        .empresas-table th,
-        .empresas-table td {
-            text-align: left;
-            padding: 0.75rem 1rem;
+            .pagination-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .pagination-pages {
+            display: flex;
+            gap: 4px;
+        }
+
+        .page-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-700);
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+            .page-btn:hover:not(.active) {
+                background: var(--gray-100);
+                color: var(--gray-800);
+            }
+
+            .page-btn.active {
+                background: var(--autorizador-primary);
+                color: var(--white);
+                border-color: var(--autorizador-primary);
+            }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .solicitudes-container {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-card > div {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .empresas-table {
+                min-width: 600px;
+            }
         }
     </style>
 }

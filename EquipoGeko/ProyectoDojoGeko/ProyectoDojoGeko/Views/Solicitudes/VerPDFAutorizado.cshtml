@@ -1,0 +1,152 @@
+@{
+    ViewData["Title"] = "Solicitud Autorizada";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var idSolicitud = ViewBag.IdSolicitud;
+    var nombreEmpleado = ViewBag.NombreEmpleado;
+}
+
+<div class="pdf-autorizado-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                Solicitud Autorizada Exitosamente
+            </h1>
+            <p class="page-subtitle">
+                Solicitud de <strong>@nombreEmpleado</strong> - N° @idSolicitud
+            </p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="pdf-card">
+        <div class="pdf-info">
+            <i class="fas fa-info-circle"></i>
+            <p>El documento ha sido autorizado y firmado. A continuación puede visualizar el PDF con ambas firmas.</p>
+        </div>
+
+        <div class="pdf-viewer-container">
+            <iframe id="pdfViewer" 
+                    src="@Url.Action("VisualizarPDF", "Solicitudes", new { idSolicitud = idSolicitud })" 
+                    style="width: 100%; height: 800px; border: 2px solid #28a745; border-radius: 8px;">
+            </iframe>
+        </div>
+
+        <div class="acciones-pdf">
+            <a href="@Url.Action("Autorizar", "Solicitudes")" class="btn btn-primary btn-lg">
+                <i class="fas fa-arrow-left"></i> Volver a Lista de Solicitudes
+            </a>
+            <a href="@Url.Action("DescargarPDF", "Solicitudes", new { idSolicitud = idSolicitud })" class="btn btn-success btn-lg">
+                <i class="fas fa-download"></i> Descargar PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pdf-autorizado-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        color: #002244;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-title i {
+        margin-right: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+
+    .alert {
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .alert i {
+        margin-right: 0.5rem;
+    }
+
+    .pdf-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+
+    .pdf-info {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .pdf-info i {
+        font-size: 1.5rem;
+        color: #28a745;
+    }
+
+    .pdf-info p {
+        margin: 0;
+        color: #155724;
+        line-height: 1.6;
+    }
+
+    .pdf-viewer-container {
+        margin-bottom: 2rem;
+    }
+
+    .acciones-pdf {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .acciones-pdf .btn {
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .acciones-pdf .btn i {
+        margin-right: 0.5rem;
+    }
+
+    .acciones-pdf .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+</style>

@@ -5,6 +5,7 @@ using ProyectoDojoGeko.Models;
 using ProyectoDojoGeko.Models.Usuario;
 using ProyectoDojoGeko.Services;
 using ProyectoDojoGeko.Services.Interfaces;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +26,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddSingleton<UsuarioViewModel>();
 
 // Configuración para el envío de correos electrónicos (Mailjet)
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("MailjetSettings"));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("MailSettings"));
 builder.Services.AddTransient<EmailService>();
 
 // Cadena de conexión
@@ -60,6 +61,7 @@ builder.Services.AddScoped<IConnectionService, ConnectionService>(_ => new Conne
 
 // Servicio de pdfSolicitudes:
 builder.Services.AddScoped<IPdfSolicitudService, PdfSolicitudService>();
+builder.Services.AddScoped<SignatureRepository>();
 
 // Inyección de helper SolicitudConverter
 builder.Services.AddScoped<ISolicitudConverter, SolicitudConverter>();
@@ -101,6 +103,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.AccessDeniedPath = "/Home/AccesoDenegado";
 });
+
+
+// Licencia para pdfs
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
 

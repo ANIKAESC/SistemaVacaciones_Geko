@@ -20,16 +20,22 @@ public class EmailService
     // Creamos la función asíncrona para enviar el correo electrónico utilizando MailKit
     public async Task EnviarCorreoConMailjetAsync(string usuario, string destino, string contrasenia, string urlCambioPassword)
     {
-        Console.WriteLine($"[LOG] Contraseña enviada por correo: [{contrasenia}]");
-        // Validar que el destino no sea nulo o vacío
-        var mensaje = new MimeMessage();
-        mensaje.From.Add(new MailboxAddress(_settings.FromName, _settings.FromEmail));
-        mensaje.To.Add(MailboxAddress.Parse(destino));
+        try
+        {
+            // Validar que el destino no sea nulo o vacío
+            if (string.IsNullOrEmpty(destino))
+            {
+                throw new ArgumentException("El correo de destino no puede estar vacío");
+            }
+            
+            var mensaje = new MimeMessage();
+            mensaje.From.Add(new MailboxAddress(_settings.FromName, _settings.FromEmail));
+            mensaje.To.Add(MailboxAddress.Parse(destino));
 
-        mensaje.Subject = "Bienvenido - Cambia tu contraseña";
+            mensaje.Subject = "Bienvenido - Cambia tu contraseña";
 
-        // Creamos el cuerpo del mensaje en HTML
-        var html = @"
+            // Creamos el cuerpo del mensaje en HTML
+            var html = @"
 <div style='
     max-width: 600px;
     margin: 40px auto;
@@ -108,19 +114,25 @@ public class EmailService
         var builder = new BodyBuilder { HtmlBody = html };
         mensaje.Body = builder.ToMessageBody();
 
-        // Configurar el cliente SMTP de Mailjet
-        using var smtp = new SmtpClient();
+            // Configurar el cliente SMTP de Mailjet
+            using var smtp = new SmtpClient();
 
-        // Conectar al servidor SMTP de Mailjet
-        await smtp.ConnectAsync("in-v3.mailjet.com", 587, SecureSocketOptions.StartTls);
+            // Conectar al servidor SMTP de Mailjet
+            await smtp.ConnectAsync("in-v3.mailjet.com", 587, SecureSocketOptions.StartTls);
 
-        // Autenticarse con las credenciales de Mailjet
-        await smtp.AuthenticateAsync(_settings.ApiKey, _settings.ApiSecret);
+            // Autenticarse con las credenciales de Mailjet
+            await smtp.AuthenticateAsync(_settings.ApiKey, _settings.ApiSecret);
 
-        // Enviar el mensaje
-        await smtp.SendAsync(mensaje);
+            // Enviar el mensaje
+            await smtp.SendAsync(mensaje);
 
-        // Desconectar del servidor SMTP
-        await smtp.DisconnectAsync(true);
+            // Desconectar del servidor SMTP
+            await smtp.DisconnectAsync(true);
+        }
+        catch (Exception)
+        {
+            // Re-lanzar la excepción para que sea manejada por el controlador
+            throw;
+        }
     }
 }

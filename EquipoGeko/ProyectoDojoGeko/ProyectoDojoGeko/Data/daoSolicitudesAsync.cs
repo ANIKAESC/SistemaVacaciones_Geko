@@ -82,12 +82,26 @@ namespace ProyectoDojoGeko.Data
                         (object)DBNull.Value : solicitud.Encabezado.Observaciones);
                     cmdEnc.Parameters.AddWithValue("@Estado", solicitud.Encabezado.Estado);
                     
-                    // Agregar parámetros del PDF
-                    cmdEnc.Parameters.AddWithValue("@DocumentoFirmado", 
-                        solicitud.Encabezado.DocumentoFirmadoData ?? (object)DBNull.Value);
-                    cmdEnc.Parameters.AddWithValue("@DocumentoContentType", 
-                        !string.IsNullOrEmpty(solicitud.Encabezado.DocumentoContentType) ? 
-                        solicitud.Encabezado.DocumentoContentType : (object)DBNull.Value);
+                    // Agregar parámetros del PDF firmado (actualmente no se usa, siempre NULL)
+                    var docFirmadoParam = new SqlParameter("@DocumentoFirmado", SqlDbType.VarBinary, -1);
+                    docFirmadoParam.Value = DBNull.Value; // Siempre NULL porque no se usa el upload manual
+                    cmdEnc.Parameters.Add(docFirmadoParam);
+                    
+                    var docContentTypeParam = new SqlParameter("@DocumentoContentType", SqlDbType.NVarChar, 100);
+                    docContentTypeParam.Value = DBNull.Value; // Siempre NULL porque no se usa el upload manual
+                    cmdEnc.Parameters.Add(docContentTypeParam);
+                    
+                    // Agregar tipo de formato PDF (1 = GDG, 2 = Digital Geko Corp)
+                    cmdEnc.Parameters.AddWithValue("@TipoFormatoPdf", solicitud.Encabezado.TipoFormatoPdf);
+                    
+                    // IdAutorizador ya viene como IdUsuario desde el controlador
+                    object idUsuarioAutorizador = DBNull.Value;
+                    if (solicitud.Encabezado.IdAutorizador.HasValue && solicitud.Encabezado.IdAutorizador.Value > 0)
+                    {
+                        idUsuarioAutorizador = solicitud.Encabezado.IdAutorizador.Value;
+                    }
+                    
+                    cmdEnc.Parameters.AddWithValue("@IdAutorizador", idUsuarioAutorizador);
 
                     // SP retorna el ID con SELECT SCOPE_IDENTITY()
                     idSolicitud = Convert.ToInt32(await cmdEnc.ExecuteScalarAsync());
@@ -398,6 +412,50 @@ namespace ProyectoDojoGeko.Data
                     {
                         if (await reader.ReadAsync())
                         {
+                            // Verificar si las columnas existen
+                            int? idAutorizador = null;
+                            string solicitudLider = null;
+                            string motivoRechazo = null;
+                            
+                            try
+                            {
+                                var ordinalAutorizador = reader.GetOrdinal("FK_IdAutorizador");
+                                if (!await reader.IsDBNullAsync(ordinalAutorizador))
+                                {
+                                    idAutorizador = reader.GetInt32(ordinalAutorizador);
+                                }
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                // Columna no existe, usar null
+                            }
+                            
+                            try
+                            {
+                                var ordinalSolicitudLider = reader.GetOrdinal("SolicitudLider");
+                                if (!await reader.IsDBNullAsync(ordinalSolicitudLider))
+                                {
+                                    solicitudLider = reader.GetString(ordinalSolicitudLider);
+                                }
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                // Columna no existe, usar null
+                            }
+                            
+                            try
+                            {
+                                var ordinalMotivoRechazo = reader.GetOrdinal("MotivoRechazo");
+                                if (!await reader.IsDBNullAsync(ordinalMotivoRechazo))
+                                {
+                                    motivoRechazo = reader.GetString(ordinalMotivoRechazo);
+                                }
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                // Columna no existe, usar null
+                            }
+
                             solicitud = new SolicitudViewModel
                             {
                                 Encabezado = new SolicitudEncabezadoViewModel
@@ -412,7 +470,10 @@ namespace ProyectoDojoGeko.Data
                                         ? await reader.GetFieldValueAsync<byte[]>(reader.GetOrdinal("DocumentoFirmado"))
                                         : null,
                                     DocumentoContentType = reader["DocumentoContentType"] != DBNull.Value ? reader["DocumentoContentType"].ToString() : null,
-                                    Estado = Convert.ToInt32(reader["Estado"]), // Ajustar según los estados que existan
+                                    Estado = Convert.ToInt32(reader["Estado"]),
+                                    IdAutorizador = idAutorizador,
+                                    SolicitudLider = solicitudLider,
+                                    MotivoRechazo = motivoRechazo,
                                 },
                                 Detalles = new List<SolicitudDetalleViewModel>()
                             };
@@ -555,33 +616,60 @@ namespace ProyectoDojoGeko.Data
             return solicitudes;
        }*/
 
+        // Método simplificado para actualizar solo el estado
+        public async Task<bool> ActualizarEstadoSolicitudAsync(int idSolicitud, int nuevoEstado)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                var query = @"UPDATE SolicitudEncabezado 
+                              SET FK_IdEstadoSolicitud = @NuevoEstado 
+                              WHERE IdSolicitud = @IdSolicitud";
+                
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+                command.Parameters.AddWithValue("@NuevoEstado", nuevoEstado);
+                
+                var rowsAffected = await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"✅ Estado actualizado. Solicitud: {idSolicitud}, Nuevo Estado: {nuevoEstado}, Filas afectadas: {rowsAffected}");
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al actualizar estado: {ex.Message}");
+                return false;
+            }
+        }
+
         public async Task<bool> ActualizarEstadoSolicitud(int idSolicitud, int nuevoEstado, int idAutorizador, string motivoRechazo = null)
         {
             try
             {
                 using var connection = new SqlConnection(_connectionString);
-                var query = "sp_ActualizarEstadoSolicitud";
-                using var procedure = new SqlCommand(query, connection)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                procedure.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
-                procedure.Parameters.AddWithValue("@NuevoEstado", nuevoEstado);
-                procedure.Parameters.AddWithValue("@IdAutorizador", idAutorizador);
-
-                if (!string.IsNullOrEmpty(motivoRechazo))
-                {
-                    procedure.Parameters.AddWithValue("@MotivoRechazo", motivoRechazo);
-                }
-
                 await connection.OpenAsync();
-                await procedure.ExecuteNonQueryAsync();
-                return true;
+                
+                var query = @"UPDATE SolicitudEncabezado 
+                              SET FK_IdEstadoSolicitud = @NuevoEstado,
+                                  FK_IdAutorizador = @IdAutorizador,
+                                  MotivoRechazo = @MotivoRechazo
+                              WHERE IdSolicitud = @IdSolicitud";
+                
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+                command.Parameters.AddWithValue("@NuevoEstado", nuevoEstado);
+                command.Parameters.AddWithValue("@IdAutorizador", idAutorizador);
+                command.Parameters.AddWithValue("@MotivoRechazo", motivoRechazo ?? (object)DBNull.Value);
+
+                var rowsAffected = await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"✅ Estado actualizado con autorizador. Solicitud: {idSolicitud}, Estado: {nuevoEstado}, Autorizador: {idAutorizador}, Filas: {rowsAffected}");
+                return rowsAffected > 0;
             }
             catch (Exception ex)
             {
-                Console.Write(ex.ToString());
+                Console.WriteLine($"❌ Error al actualizar estado con autorizador: {ex.Message}");
+                Console.WriteLine(ex.ToString());
                 return false;
             }
         }
@@ -605,6 +693,85 @@ namespace ProyectoDojoGeko.Data
             {
                 Console.Write(ex.ToString());
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza una solicitud existente (encabezado y detalles)
+        /// </summary>
+        public async Task<bool> ActualizarSolicitudAsync(SolicitudViewModel solicitud)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // 1. Actualizar el encabezado
+                using var cmdEnc = new SqlCommand(@"
+                    UPDATE SolicitudEncabezado
+                    SET 
+                        DiasSolicitadosTotal = @DiasSolicitadosTotal,
+                        Observaciones = @Observaciones,
+                        FK_IdAutorizador = @IdAutorizador,
+                        TipoFormatoPdf = @TipoFormatoPdf
+                    WHERE IdSolicitud = @IdSolicitud", connection, transaction);
+
+                cmdEnc.Parameters.AddWithValue("@IdSolicitud", solicitud.Encabezado.IdSolicitud);
+                cmdEnc.Parameters.AddWithValue("@DiasSolicitadosTotal", solicitud.Encabezado.DiasSolicitadosTotal);
+                cmdEnc.Parameters.AddWithValue("@Observaciones", solicitud.Encabezado.Observaciones ?? (object)DBNull.Value);
+                cmdEnc.Parameters.AddWithValue("@TipoFormatoPdf", solicitud.Encabezado.TipoFormatoPdf);
+
+                // Convertir IdEmpleado a IdUsuario para el autorizador (igual que en Insertar)
+                object idUsuarioAutorizador = DBNull.Value;
+                if (solicitud.Encabezado.IdAutorizador.HasValue && solicitud.Encabezado.IdAutorizador.Value > 0)
+                {
+                    using (var cmdUsuario = new SqlCommand(
+                        "SELECT IdUsuario FROM Usuarios WHERE FK_IdEmpleado = @IdEmpleado", connection, transaction))
+                    {
+                        cmdUsuario.Parameters.AddWithValue("@IdEmpleado", solicitud.Encabezado.IdAutorizador.Value);
+                        var resultado = await cmdUsuario.ExecuteScalarAsync();
+                        if (resultado != null)
+                        {
+                            idUsuarioAutorizador = resultado;
+                        }
+                    }
+                }
+                cmdEnc.Parameters.AddWithValue("@IdAutorizador", idUsuarioAutorizador);
+
+                await cmdEnc.ExecuteNonQueryAsync();
+
+                // 2. Eliminar los detalles antiguos
+                using var cmdDel = new SqlCommand(@"
+                    DELETE FROM SolicitudDetalle 
+                    WHERE FK_IdSolicitud = @IdSolicitud", connection, transaction);
+                cmdDel.Parameters.AddWithValue("@IdSolicitud", solicitud.Encabezado.IdSolicitud);
+                await cmdDel.ExecuteNonQueryAsync();
+
+                // 3. Insertar los nuevos detalles
+                foreach (var detalle in solicitud.Detalles)
+                {
+                    using var cmdDet = new SqlCommand(@"
+                        INSERT INTO SolicitudDetalle 
+                        (FK_IdSolicitud, FechaInicio, FechaFin, DiasHabilesTomados)
+                        VALUES (@IdSolicitud, @FechaInicio, @FechaFin, @DiasHabiles)", connection, transaction);
+
+                    cmdDet.Parameters.AddWithValue("@IdSolicitud", solicitud.Encabezado.IdSolicitud);
+                    cmdDet.Parameters.AddWithValue("@FechaInicio", detalle.FechaInicio);
+                    cmdDet.Parameters.AddWithValue("@FechaFin", detalle.FechaFin);
+                    cmdDet.Parameters.AddWithValue("@DiasHabiles", detalle.DiasHabilesTomados);
+
+                    await cmdDet.ExecuteNonQueryAsync();
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Error al actualizar solicitud: {ex.Message}");
+                throw;
             }
         }
     }

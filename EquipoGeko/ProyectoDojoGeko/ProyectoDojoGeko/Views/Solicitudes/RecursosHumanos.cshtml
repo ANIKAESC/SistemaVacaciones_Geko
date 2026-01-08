@@ -1,4 +1,4 @@
-﻿@model List<ProyectoDojoGeko.Models.SolicitudEncabezadoViewModel>
+@model List<ProyectoDojoGeko.Models.SolicitudEncabezadoViewModel>
 
 @{
     ViewData["Title"] = "Listado de Solicitudes";
@@ -125,20 +125,28 @@
 
                         foreach (var solicitud in Model)
                         {
+                            var nombreEstado = estados.FirstOrDefault(e => e.Value == solicitud.Estado.ToString())?.Text ?? "Desconocido";
+                            var estadoBadgeClass = solicitud.Estado switch
+                            {
+                                1 => "badge-ingresada",      // Ingresada - Azul
+                                2 => "badge-autorizada",     // Autorizada - Verde
+                                3 => "badge-vigente",        // Vigente - Verde claro
+                                4 => "badge-finalizada",     // Finalizada - Gris
+                                5 => "badge-cancelada",      // Cancelada - Naranja
+                                6 => "badge-rechazada",      // Rechazada - Rojo
+                                _ => "badge-default"         // Desconocido
+                            };
                             <tr>
                                 <td>@solicitud.IdSolicitud</td>
                                 <td>@solicitud.FechaIngresoSolicitud</td>
                                 <td>@solicitud.NombreEmpleado</td>
                                 <td>@solicitud.DiasSolicitadosTotal</td>
                                 <td>
-                                    @{
-                                       var nombreEstado = estados.FirstOrDefault(e => e.Value == solicitud.Estado.ToString())?.Text ?? "Desconocido";
-                                    }
-                                     <span class="badge badge-success">@nombreEstado</span>
+                                     <span class="badge @estadoBadgeClass">@nombreEstado</span>
                                 </td>
                                 <td>
-                                    <a href="@Url.Action("DetalleRH", "Solicitudes", new { id = solicitud.IdSolicitud })" class="btn-action ver">
-                                        <i class="fas fa-eye"></i>
+                                    <a href="@Url.Action("DetalleRH", "Solicitudes", new { id = solicitud.IdSolicitud })" class="btn-ver-detalle">
+                                        <i class="fas fa-eye"></i> Ver detalle
                                     </a>
                                 </td>
                             </tr>
@@ -257,6 +265,81 @@
             padding: 12px 15px;
             background: linear-gradient(135deg, #0694D1,#5DBACF)
         }
+
+    /* Badges de estados con colores específicos */
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-ingresada {
+        background: linear-gradient(135deg, #3B82F6, #2563EB);
+        color: white;
+    }
+
+    .badge-autorizada {
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+    }
+
+    .badge-vigente {
+        background: linear-gradient(135deg, #22C55E, #16A34A);
+        color: white;
+    }
+
+    .badge-finalizada {
+        background: linear-gradient(135deg, #6B7280, #4B5563);
+        color: white;
+    }
+
+    .badge-cancelada {
+        background: linear-gradient(135deg, #F59E0B, #D97706);
+        color: white;
+    }
+
+    .badge-rechazada {
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        color: white;
+    }
+
+    .badge-default {
+        background: linear-gradient(135deg, #9CA3AF, #6B7280);
+        color: white;
+    }
+
+    /* Botón Ver detalle mejorado */
+    .btn-ver-detalle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #0694D1, #0577a8);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(6, 148, 209, 0.2);
+    }
+
+    .btn-ver-detalle:hover {
+        background: linear-gradient(135deg, #0577a8, #045a85);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(6, 148, 209, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-ver-detalle i {
+        font-size: 14px;
+    }
 
     .empresas-table th {
         background: #68C2DE;

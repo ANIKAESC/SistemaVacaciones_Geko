@@ -64,6 +64,7 @@ GO
 
  Select * From Empleados;
 
+GO
  CREATE OR ALTER PROCEDURE sp_ObtenerAlertasEmpleadosVacaciones_Completo
 AS
 BEGIN

@@ -69,6 +69,9 @@ namespace ProyectoDojoGeko.Models
 
         [Column("MotivoRechazo")]
         public string? MotivoRechazo { get; set; }
+
+        [Column("TipoFormatoPdf")]
+        public int TipoFormatoPdf { get; set; } = 1; // 1 = FormatoGDG (por defecto), 2 = FormatoDigitalGeko
     }
 
     // Clase principal que maneja la solicitud de vacaciones completa

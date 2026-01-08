@@ -64,6 +64,7 @@
                     <th>Fecha Ingreso</th>
                     <th>Días Solicitados</th>
                     <th>Estado</th>
+                    <th style="text-align: center;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -73,16 +74,33 @@
                     {
                         var solicitud = Model[i];
                         var nombreEstado = estados.FirstOrDefault(e => e.Value == solicitud.Encabezado.Estado.ToString())?.Text ?? "Desconocido";
-                        <tr class="main-row" data-toggle="collapse" data-target="#detalles-@solicitud.Encabezado.IdSolicitud" data-id="@solicitud.Encabezado.IdSolicitud" data-estado="@nombreEstado" style="cursor:pointer;">
+                        var estadoBadgeClass = solicitud.Encabezado.Estado switch
+                        {
+                            1 => "badge-ingresada",      // Ingresada - Azul
+                            2 => "badge-autorizada",     // Autorizada - Verde
+                            3 => "badge-vigente",        // Vigente - Verde claro
+                            4 => "badge-finalizada",     // Finalizada - Gris
+                            5 => "badge-cancelada",      // Cancelada - Rojo
+                            6 => "badge-rechazada",      // Rechazada - Rojo oscuro
+                            _ => "badge-default"         // Desconocido
+                        };
+                        <tr class="main-row" data-toggle="collapse" data-target="#detalles-@solicitud.Encabezado.IdSolicitud" data-id="@solicitud.Encabezado.IdSolicitud" data-estado="@nombreEstado">
                             <td>@solicitud.Encabezado.IdSolicitud</td>
-                            <td>@solicitud.Encabezado.FechaIngresoSolicitud</td>
+                            <td>@solicitud.Encabezado.FechaIngresoSolicitud.ToString("dd/MM/yyyy")</td>
                             <td>@solicitud.Encabezado.DiasSolicitadosTotal</td>
                             <td>
-                                <span class="badge badge-success">@nombreEstado</span>
+                                <span class="badge @estadoBadgeClass">@nombreEstado</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="@Url.Action("DetallePDF", "Solicitudes", new { id = solicitud.Encabezado.IdSolicitud, soloVer = true })" 
+                                   class="btn-ver-detalle" 
+                                   title="Ver detalle de la solicitud">
+                                    <i class="fas fa-eye"></i> Ver detalle
+                                </a>
                             </td>
                         </tr>
                         <tr class="collapse-row" id="detalles-@solicitud.Encabezado.IdSolicitud" style="display:none;">
-                            <td colspan="4">
+                            <td colspan="5">
                                 <strong>Fechas solicitadas:</strong>
                                 <ul>
                                     @foreach (var detalle in solicitud.Detalles)
@@ -92,6 +110,16 @@
                                         </li>
                                     }
                                 </ul>
+                                @* Mostrar motivo del rechazo si aplica *@
+                                @if (solicitud.Encabezado.Estado == 6 && !string.IsNullOrEmpty(solicitud.Encabezado.MotivoRechazo))
+                                {
+                                    <div style="margin-top: 10px; padding: 10px; background: #FEE2E2; border-left: 4px solid #DC2626; border-radius: 4px;">
+                                        <strong style="color: #991B1B;">
+                                            <i class="fas fa-exclamation-triangle"></i> Motivo del Rechazo:
+                                        </strong>
+                                        <p style="margin: 5px 0 0 0; color: #7F1D1D;">@solicitud.Encabezado.MotivoRechazo</p>
+                                    </div>
+                                }
                             </td>
                         </tr>
                     }
@@ -99,7 +127,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="4" class="text-center">No hay solicitudes registradas.</td>
+                        <td colspan="5" class="text-center">No hay solicitudes registradas.</td>
                     </tr>
                 }
             </tbody>
@@ -112,7 +140,28 @@
             <button class="btn-cancel"><i class="fas fa-times"></i> Cancelar solicitud</button>
             <!--<button class="btn-reset"><i class="fas fa-paper-plane"></i> Solicitar autorización</button>-->
         </div>
+
+        <!-- Paginación -->
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> sistemas
+            </div>
+            <div class="pagination-controls">
+                <button id="prev-page" class="pagination-btn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                    Anterior
+                </button>
+                <div class="pagination-pages" id="pagination-pages">
+                    <button class="page-btn active">1</button>
+                </div>
+                <button id="next-page" class="pagination-btn" disabled>
+                    Siguiente
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
     </div>
+
 </div>
 
 <form id="cancelForm" asp-action="CancelarSolicitud" method="post" style="display: none;">
@@ -295,6 +344,161 @@
         .table tr.selected-row td {
             background-color: #d6eaff; /* Light blue for selection */
         }
+
+        /* Badges de estados con colores específicos */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-ingresada {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+        }
+
+        .badge-autorizada {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-vigente {
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            color: white;
+        }
+
+        .badge-finalizada {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        .badge-cancelada {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+
+        .badge-rechazada {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+        }
+
+        .badge-default {
+            background: linear-gradient(135deg, #9CA3AF, #6B7280);
+            color: white;
+        }
+
+        /* Botón Ver detalle mejorado */
+        .btn-ver-detalle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #003C9D, #002a6e);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 60, 157, 0.2);
+        }
+
+        .btn-ver-detalle:hover {
+            background: linear-gradient(135deg, #002a6e, #001a4d);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 60, 157, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-ver-detalle i {
+            font-size: 14px;
+        }
+
+        /* Paginación */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+            .pagination-btn:hover:not(:disabled) {
+                background: var(--gray-100);
+                color: var(--gray-800);
+            }
+
+            .pagination-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .pagination-pages {
+            display: flex;
+            gap: 4px;
+        }
+
+        .page-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-700);
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+            .page-btn:hover:not(.active) {
+                background: var(--gray-100);
+                color: var(--gray-800);
+            }
+
+            .page-btn.active {
+                background: var(--primary-color);
+                color: var(--white);
+                border-color: var(--primary-color);
+            }
+
 
         /* Responsive */
         @@media (max-width: 768px) {

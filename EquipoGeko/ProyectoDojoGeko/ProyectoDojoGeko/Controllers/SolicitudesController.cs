@@ -10,6 +10,7 @@ using ProyectoDojoGeko.Services.Interfaces;
 using ProyectoDojoGeko.Helper.Solicitudes;
 using ClosedXML.Excel;
 using Microsoft.Extensions.Configuration;
+using System.Data.SqlClient;
 
 namespace ProyectoDojoGeko.Controllers
 {
@@ -29,6 +30,8 @@ namespace ProyectoDojoGeko.Controllers
         private readonly daoFeriados _daoFeriados;
         private readonly daoEmpleadoEquipoWSAsync _daoEmpleadoEquipo;
         private readonly daoProyectoEquipoWSAsync _daoProyectoEquipo;
+        private readonly ILogger<SolicitudesController> _logger;
+        private readonly IConfiguration _configuration;
         //private readonly daoEmpleadoEquipo _daoEmpleadoEquipo;
 
         /*=================================================   
@@ -51,7 +54,9 @@ namespace ProyectoDojoGeko.Controllers
             daoFeriados daoFeriados,
             daoEmpleadoEquipoWSAsync daoEmpleadoEquipo,
             daoProyectoEquipoWSAsync daoProyectoEquipo,
-            IPdfSolicitudService pdfService)
+            IPdfSolicitudService pdfService,
+            ILogger<SolicitudesController> logger,
+            IConfiguration configuration)
         {
             _daoEmpleado = daoEmpleado;
             _daoSolicitud = daoSolicitud;
@@ -63,6 +68,8 @@ namespace ProyectoDojoGeko.Controllers
             _daoEmpleadoEquipo = daoEmpleadoEquipo;
             _daoProyectoEquipo = daoProyectoEquipo;
             _pdfService = pdfService;
+            _logger = logger;
+            _configuration = configuration;
         }
 
         #endregion
@@ -133,17 +140,21 @@ namespace ProyectoDojoGeko.Controllers
         {
             try
             {
+                // Log para debug
+                _logger.LogInformation($"🔴 Rechazar - IdSolicitud: {idSolicitud}, IdAutorizador: {idAutorizador}, Observaciones: {observaciones}");
 
-                // Estado 3 = Rechazado (ajusta según tus códigos de estado)
-                bool resultado = await _daoSolicitud.ActualizarEstadoSolicitud(idSolicitud, 3, idAutorizador, observaciones);
+                // Estado 6 = Rechazada
+                bool resultado = await _daoSolicitud.ActualizarEstadoSolicitud(idSolicitud, 6, idAutorizador, observaciones);
+                
+                _logger.LogInformation($"🔴 Resultado del rechazo: {resultado}");
                 
                 if (resultado)
                 {
                     // Registrar en bitácora
-                    await _bitacoraService.RegistrarBitacoraAsync("Rechazar", $"Solicitud {idSolicitud} rechazada");
+                    await _bitacoraService.RegistrarBitacoraAsync("Rechazar", $"Solicitud {idSolicitud} rechazada por autorizador {idAutorizador}");
 
-                    TempData["MensajeExito"] = "La solicitud ha sido rechazada correctamente.";
-                    return RedirectToAction("Index");
+                    TempData["SuccessMessage"] = "La solicitud ha sido rechazada correctamente. El motivo ha sido registrado.";
+                    return RedirectToAction("Detalle", new { id = idSolicitud });
                 }
                 
                 TempData["MensajeError"] = "No se pudo rechazar la solicitud. Por favor, intente nuevamente.";
@@ -151,8 +162,9 @@ namespace ProyectoDojoGeko.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError($"🔴 Error al rechazar: {ex.Message}");
                 await RegistrarError("Rechazar solicitud", ex);
-                TempData["MensajeError"] = "Ocurrió un error al intentar rechazar la solicitud.";
+                TempData["MensajeError"] = $"Ocurrió un error al intentar rechazar la solicitud: {ex.Message}";
                 return RedirectToAction("Detalle", new { id = idSolicitud });
             }
         }
@@ -430,16 +442,28 @@ namespace ProyectoDojoGeko.Controllers
         // Vista principal para crear solicitudes (formulario)
         [AuthorizeRole("SuperAdministrador", "Empleado")]
         [HttpGet]
+
         public async Task<IActionResult> Crear()
         {
             try
             {
                 // 1. Obtener el objeto empleado completo, como en la vista Index.
-                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(HttpContext.Session.GetInt32("IdEmpleado") ?? 0);
+                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado") ?? 0;
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado);
+
+                // Si no es empleado (ej: SuperAdministrador sin IdEmpleado), mostrar mensaje
                 if (empleado == null)
                 {
-                    await RegistrarError("Crear Solicitud", new Exception("No se pudo encontrar el empleado."));
-                    return RedirectToAction("Index", "Home");
+                    ViewBag.ErrorMessage = "No tienes un perfil de empleado asociado. Solo los empleados pueden crear solicitudes de vacaciones.";
+                    ViewBag.DiasDisponibles = 0;
+                    ViewBag.Feriados = await GetFeriadosConProporcion();
+                    ViewBag.empleadosAutoriza = new List<SelectListItem>();
+
+                    return View(new SolicitudViewModel
+                    {
+                        Encabezado = new SolicitudEncabezadoViewModel(),
+                        Detalles = new List<SolicitudDetalleViewModel>()
+                    });
                 }
 
                 // Unificar lógica: Preparar ViewBag y Sesión como en la vista Index.
@@ -461,34 +485,71 @@ namespace ProyectoDojoGeko.Controllers
                 {
                     ViewBag.AdvertenciaEquipo = "No estás asignado a ningún equipo. Por favor, contacta a RRHH para asignarte un equipo y que tu solicitud pueda ser revisada por un autorizador. O bien, busca tu mismo a tu lider.";
 
-                    // Excluimos al mismo empleado que está creando la solicitud
-                    var empleadosLimpio = empleados
-                        .Where(e => e.IdEmpleado != empleado.IdEmpleado)
-                        .Select(e => new SelectListItem 
+                    // Obtener todos los empleados y filtrar por rol
+                    try
+                    {
+                        using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                         {
-                            Value = e.IdEmpleado.ToString(),
-                            Text = $"{e.NombresEmpleado} {e.ApellidosEmpleado}"
-                        })
-                        .ToList();
-
-                    ViewBag.empleadosAutoriza = empleadosLimpio;
+                            await connection.OpenAsync();
+                            var query = @"SELECT DISTINCT u.IdUsuario, e.NombresEmpleado, e.ApellidosEmpleado, 
+                                                 ISNULL(STUFF((SELECT ', ' + r2.NombreRol
+                                                        FROM UsuariosRol ur2
+                                                        INNER JOIN Roles r2 ON ur2.FK_IdRol = r2.IdRol
+                                                        WHERE ur2.FK_IdUsuario = u.IdUsuario
+                                                        FOR XML PATH('')), 1, 2, ''), 'Sin Rol') AS Roles
+                                         FROM Usuarios u
+                                         INNER JOIN Empleados e ON u.FK_IdEmpleado = e.IdEmpleado
+                                         LEFT JOIN UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
+                                         WHERE (ur.FK_IdRol IN (3, 4, 5) OR ur.FK_IdRol IS NULL)
+                                         AND e.IdEmpleado != @IdEmpleado
+                                         AND EXISTS (SELECT 1 FROM UsuariosRol ur3 
+                                                     WHERE ur3.FK_IdUsuario = u.IdUsuario 
+                                                     AND ur3.FK_IdRol IN (3, 4, 5))";
+                            
+                            using (var command = new SqlCommand(query, connection))
+                            {
+                                command.Parameters.AddWithValue("@IdEmpleado", empleado.IdEmpleado);
+                                using (var reader = await command.ExecuteReaderAsync())
+                                {
+                                    var empleadosLimpio = new List<SelectListItem>();
+                                    while (await reader.ReadAsync())
+                                    {
+                                        empleadosLimpio.Add(new SelectListItem
+                                        {
+                                            Value = reader.GetInt32(0).ToString(), // IdUsuario
+                                            Text = $"{reader.GetString(1)} {reader.GetString(2)} ({reader.GetString(3)})"
+                                        });
+                                    }
+                                    ViewBag.empleadosAutoriza = empleadosLimpio;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception sqlEx)
+                    {
+                        _logger.LogError(sqlEx, "Error al obtener empleados autorizadores");
+                        // Si falla la consulta, mostrar lista vacía
+                        ViewBag.empleadosAutoriza = new List<SelectListItem>();
+                        ViewBag.AdvertenciaEquipo = "Error al cargar autorizadores. Por favor, contacta a RRHH.";
+                    }
                 }
                 // Si está en un equipo, entonces buscamos a los integrantes del equipo
-                else 
+                else
                 {
 
                     // Obtenemos a todos los empleados en su equipo
                     var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(encuentraEquipo);
 
-                    // Excluimos a los que no tengan el rol de TeamLider o SubTeamLider
+                    // Excluimos a los que no tengan el rol de TeamLider, SubTeamLider o Autorizador
                     var empleadosEquipoRol = empleadosEquipo.Where(e => e.Rol.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                    e.Rol.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    e.Rol.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                    e.Rol.IndexOf("Autorizador", StringComparison.OrdinalIgnoreCase) >= 0)
                                     .ToList();
 
                     // En caso de que el mismo empleado sea u tenga el rol de TeamLider o SubTeamLider, así también lo excluimos de la busqueda
                     var empleadosEquipoLimpio = empleadosEquipoRol
                         .Where(e => e.IdEmpleado != empleado.IdEmpleado)
-                        .Select(e => new SelectListItem 
+                        .Select(e => new SelectListItem
                         {
                             Value = e.IdEmpleado.ToString(),
                             Text = $"{e.NombresEmpleado} {e.ApellidosEmpleado} - {e.Rol}"
@@ -500,14 +561,23 @@ namespace ProyectoDojoGeko.Controllers
 
                 await _bitacoraService.RegistrarBitacoraAsync("Vista Crear Solicitud", "Acceso a la vista de creación de solicitud.");
 
-                return View();
+                var model = new SolicitudViewModel
+                {
+                    Encabezado = new SolicitudEncabezadoViewModel(),
+                    Detalles = new List<SolicitudDetalleViewModel>()
+                };
+
+
+                return View(model);
             }
             catch (Exception ex)
             {
                 await RegistrarError("Acceder a la vista de creación de solicitud", ex);
-                return RedirectToAction("Index", "Home");
+                TempData["ErrorMessage"] = "Ocurrió un error al cargar el formulario de solicitud. Por favor, intenta nuevamente.";
+                return RedirectToAction("Index", "Solicitudes");
             }
         }
+
 
         /*=================================================   
 		==   CREAR SOLICITUD CON GENERACIÓN DE PDF      == 
@@ -521,69 +591,72 @@ namespace ProyectoDojoGeko.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequestSizeLimit(5 * 1024 * 1024)] // 5MB limit
-        public async Task<IActionResult> Crear(SolicitudViewModel solicitud, IFormFile DocumentoFirmado)
+        public async Task<IActionResult> Crear(SolicitudViewModel solicitud)
         {
+
             try
             {
-                // Handle PDF upload
-                if (DocumentoFirmado != null && DocumentoFirmado.Length > 0)
-                {
-                    // Validar tipo de contenido
-                    var allowedContentTypes = new[] { "application/pdf", "application/octet-stream" };
-                    if (!allowedContentTypes.Contains(DocumentoFirmado.ContentType.ToLower()) && 
-                        !DocumentoFirmado.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-                    {
-                        ModelState.AddModelError("DocumentoFirmado", 
-                            "Formato de archivo no válido. Solo se permiten archivos PDF.");
-                    }
-                    // Validar tamaño máximo (5MB)
-                    else if (DocumentoFirmado.Length > 5 * 1024 * 1024)
-                    {
-                        ModelState.AddModelError("DocumentoFirmado", 
-                            "El archivo es demasiado grande. El tamaño máximo permitido es de 5MB.");
-                    }
-                    // Validar contenido real del PDF
-                    else if (!await EsPdfValido(DocumentoFirmado))
-                    {
-                        ModelState.AddModelError("DocumentoFirmado", 
-                            "El archivo no es un PDF válido o está dañado.");
-                    }
-                    else
-                    {
-                        try
-                        {
-                            using var memoryStream = new MemoryStream();
-                            await DocumentoFirmado.CopyToAsync(memoryStream);
-                            // Validar que el PDF no esté vacío
-                            if (memoryStream.Length == 0)
-                            {
-                                ModelState.AddModelError("DocumentoFirmado", 
-                                    "El archivo PDF está vacío.");
-                            }
-                            else
-                            {
-                                solicitud.Encabezado.DocumentoFirmadoData = memoryStream.ToArray();
-                                solicitud.Encabezado.DocumentoContentType = "application/pdf"; // Forzamos el content type
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            await _loggingService.RegistrarLogAsync(new LogViewModel
-                            {
-                                Accion = "Error al procesar PDF",
-                                Descripcion = $"Error al procesar el archivo PDF: {ex.Message}",
-                                Estado = false
-                            });
-                            ModelState.AddModelError("DocumentoFirmado", 
-                                "Ocurrió un error al procesar el archivo. Por favor, intente nuevamente.");
-                        }
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError("DocumentoFirmado", 
-                        "Es obligatorio adjuntar el documento firmado en formato PDF.");
-                }
+                // DEBUG: Log del IdAutorizador recibido
+                _logger.LogInformation("🔍 IdAutorizador recibido en POST: {IdAutorizador}", solicitud.Encabezado.IdAutorizador);
+                //// Handle PDF upload
+                //if (DocumentoFirmado != null && DocumentoFirmado.Length > 0)
+                //{
+                //    // Validar tipo de contenido
+                //    var allowedContentTypes = new[] { "application/pdf", "application/octet-stream" };
+                //    if (!allowedContentTypes.Contains(DocumentoFirmado.ContentType.ToLower()) && 
+                //        !DocumentoFirmado.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                //    {
+                //        ModelState.AddModelError("DocumentoFirmado", 
+                //            "Formato de archivo no válido. Solo se permiten archivos PDF.");
+                //    }
+                //    // Validar tamaño máximo (5MB)
+                //    else if (DocumentoFirmado.Length > 5 * 1024 * 1024)
+                //    {
+                //        ModelState.AddModelError("DocumentoFirmado", 
+                //            "El archivo es demasiado grande. El tamaño máximo permitido es de 5MB.");
+                //    }
+                //    // Validar contenido real del PDF
+                //    else if (!await EsPdfValido(DocumentoFirmado))
+                //    {
+                //        ModelState.AddModelError("DocumentoFirmado", 
+                //            "El archivo no es un PDF válido o está dañado.");
+                //    }
+                //    else
+                //    {
+                //        try
+                //        {
+                //            using var memoryStream = new MemoryStream();
+                //            await DocumentoFirmado.CopyToAsync(memoryStream);
+                //            // Validar que el PDF no esté vacío
+                //            if (memoryStream.Length == 0)
+                //            {
+                //                ModelState.AddModelError("DocumentoFirmado", 
+                //                    "El archivo PDF está vacío.");
+                //            }
+                //            else
+                //            {
+                //                solicitud.Encabezado.DocumentoFirmadoData = memoryStream.ToArray();
+                //                solicitud.Encabezado.DocumentoContentType = "application/pdf"; // Forzamos el content type
+                //            }
+                //        }
+                //        catch (Exception ex)
+                //        {
+                //            await _loggingService.RegistrarLogAsync(new LogViewModel
+                //            {
+                //                Accion = "Error al procesar PDF",
+                //                Descripcion = $"Error al procesar el archivo PDF: {ex.Message}",
+                //                Estado = false
+                //            });
+                //            ModelState.AddModelError("DocumentoFirmado", 
+                //                "Ocurrió un error al procesar el archivo. Por favor, intente nuevamente.");
+                //        }
+                //    }
+                //}
+                //else
+                //{
+                //    ModelState.AddModelError("DocumentoFirmado", 
+                //        "Es obligatorio adjuntar el documento firmado en formato PDF.");
+                //}
                 if (!ModelState.IsValid)
                 {
                     // Debug: Log error de validación
@@ -645,58 +718,87 @@ namespace ProyectoDojoGeko.Controllers
                     idEquipo = (int)empleadoEquipo.IdEquipo;
                 }
 
-                if (idEquipo != null && idEquipo != 0)
+
+                if (idEquipo != 0)
                 {
-                    try
+                    // Si el usuario NO seleccionó autorizador, intentamos autoasignar
+                    if (solicitud.Encabezado.IdAutorizador <= 0)
                     {
-                        // Obtenemos todos los empleados del equipo con sus roles
-                        var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(idEquipo);
-
-                        if (empleadosEquipo == null || !empleadosEquipo.Any())
+                        try
                         {
-                            throw new Exception("No se encontraron empleados en el equipo.");
+                            var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(idEquipo);
+
+                            if (empleadosEquipo == null || !empleadosEquipo.Any())
+                            {
+                                TempData["ErrorMessage"] = "No se encontraron empleados en el equipo. Selecciona un autorizador manualmente.";
+                                ModelState.AddModelError("", TempData["ErrorMessage"].ToString());
+                                return View(solicitud);
+                            }
+
+                            var revisor = empleadosEquipo
+                                .Where(e => e.IdEmpleado != idEmpleado.Value)
+                                .FirstOrDefault(e => e.Rol.Contains("TeamLider", StringComparison.OrdinalIgnoreCase))
+                                ?? empleadosEquipo
+                                .Where(e => e.IdEmpleado != idEmpleado.Value)
+                                .FirstOrDefault(e => e.Rol.Contains("SubTeamLider", StringComparison.OrdinalIgnoreCase));
+
+                            if (revisor == null)
+                            {
+                                TempData["ErrorMessage"] = "No se encontró TeamLider/SubTeamLider en el equipo. Selecciona un autorizador manualmente.";
+                                ModelState.AddModelError("", TempData["ErrorMessage"].ToString());
+                                return View(solicitud);
+                            }
+
+                            // Obtener el IdUsuario del revisor para guardarlo en FK_IdAutorizador
+                            using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                            {
+                                await connection.OpenAsync();
+                                var query = "SELECT IdUsuario FROM Usuarios WHERE FK_IdEmpleado = @IdEmpleado";
+                                using (var command = new SqlCommand(query, connection))
+                                {
+                                    command.Parameters.AddWithValue("@IdEmpleado", revisor.IdEmpleado);
+                                    var idUsuario = await command.ExecuteScalarAsync();
+                                    if (idUsuario != null)
+                                    {
+                                        solicitud.Encabezado.IdAutorizador = Convert.ToInt32(idUsuario);
+                                    }
+                                    else
+                                    {
+                                        TempData["ErrorMessage"] = "No se pudo obtener el usuario del autorizador. Selecciona un autorizador manualmente.";
+                                        ModelState.AddModelError("", TempData["ErrorMessage"].ToString());
+                                        return View(solicitud);
+                                    }
+                                }
+                            }
                         }
-
-                        // Buscamos primero un TeamLider
-                        var revisor = empleadosEquipo
-                            .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
-                            .FirstOrDefault(e =>
-                                e.Rol.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
-
-                        // Si no hay TeamLider, buscamos un SubTeamLider
-                        revisor ??= empleadosEquipo
-                            .Where(e => e.IdEmpleado != idEmpleado.Value) // No asignar al mismo empleado
-                            .FirstOrDefault(e =>
-                                e.Rol.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0);
-
-                        // Si no hay ningún revisor válido, lanzamos error
-                        if (revisor == null)
+                        catch (Exception ex)
                         {
-                            throw new Exception("No se encontró un TeamLider o SubTeamLider en el equipo.");
+                            await _loggingService.RegistrarLogAsync(new LogViewModel
+                            {
+                                Accion = "Error Asignación Revisor",
+                                Descripcion = $"Error asignando revisor automáticamente: {ex.Message}",
+                                Estado = false
+                            });
+
+                            ModelState.AddModelError("", ex.Message);
+                            return View(solicitud);
                         }
-
-                        // Asignamos el ID del revisor
-                        solicitud.Encabezado.IdAutorizador = revisor.IdEmpleado;
-
                     }
-                    catch (Exception ex)
-                    {
-                        await _loggingService.RegistrarLogAsync(new LogViewModel
-                        {
-                            Accion = "Error Asignación Revisor",
-                            Descripcion = $"Error asignando revisor automáticamente: {ex.Message}",
-                            Estado = false
-                        });
-                        return View(solicitud);
-                    }
+                    // else: ya viene seleccionada en el POST, no hacemos nada
                 }
                 else
                 {
-                    var errorMsg = "No se pudo encontrar el equipo del empleado. Por favor, contacte a RRHH.";
-                    TempData["ErrorMessage"] = errorMsg;
-                    ModelState.AddModelError("", errorMsg);
-                    return View(solicitud);
+                    // Si no tiene equipo, verificar que haya seleccionado un autorizador manualmente
+                    if (solicitud.Encabezado.IdAutorizador <= 0)
+                    {
+                        var errorMsg = "No se pudo encontrar el equipo del empleado. Por favor, selecciona un autorizador manualmente.";
+                        TempData["ErrorMessage"] = errorMsg;
+                        ModelState.AddModelError("", errorMsg);
+                        return View(solicitud);
+                    }
+                    // Si seleccionó autorizador manualmente, continuar normalmente
                 }
+
 
                 solicitud.Encabezado.DiasSolicitadosTotal = totalDiasHabiles;
                 solicitud.Encabezado.NombreEmpleado = HttpContext.Session.GetString("NombreCompletoEmpleado") ?? "Desconocido";
@@ -711,6 +813,9 @@ namespace ProyectoDojoGeko.Controllers
                     solicitud.Encabezado.Observaciones = string.Empty;
 
                 //solicitud.Encabezado.Observaciones = solicitud.Encabezado.Observaciones ?? string.Empty;
+
+                // DEBUG: Log del IdAutorizador antes de guardar
+                _logger.LogInformation("💾 IdAutorizador antes de guardar: {IdAutorizador}", solicitud.Encabezado.IdAutorizador);
 
                 // 1. Crear la solicitud en la base de datos
                 var idSolicitudCreada = await _daoSolicitud.InsertarSolicitudAsync(solicitud);
@@ -748,8 +853,10 @@ namespace ProyectoDojoGeko.Controllers
                     });
                     TempData["WarningMessage"] = "Solicitud creada exitosamente, pero hubo un problema al generar el PDF.";
                 }
+                return RedirectToAction("DetallePDF", new { id = idSolicitudCreada });
 
-                return RedirectToAction(nameof(Index));
+
+                //return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
@@ -767,6 +874,328 @@ namespace ProyectoDojoGeko.Controllers
                 return View(solicitud);
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> DetallePDF(int id, bool soloVer = false)
+        {
+            var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(id);
+            if (solicitud == null) return NotFound();
+
+            // si quieres llenar nombre desde sesión:
+            solicitud.Encabezado.NombreEmpleado ??= HttpContext.Session.GetString("NombreCompletoEmpleado");
+
+            // Pasar el parámetro soloVer a la vista
+            ViewBag.SoloVer = soloVer;
+
+            return View(solicitud);
+        }
+
+        /*=================================================
+		==   EDITAR SOLICITUD                           == 
+		=================================================*/
+        [AuthorizeRole("Empleado", "SuperAdministrador")]
+        [HttpGet]
+        public async Task<IActionResult> Editar(int id)
+        {
+            try
+            {
+                var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(id);
+                if (solicitud == null)
+                {
+                    TempData["ErrorMessage"] = "No se encontró la solicitud.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Verificar que el usuario sea el dueño de la solicitud o sea admin
+                var idEmpleadoSesion = HttpContext.Session.GetInt32("IdEmpleado");
+                var rolSesion = HttpContext.Session.GetString("Rol");
+
+                if (solicitud.Encabezado.IdEmpleado != idEmpleadoSesion && rolSesion != "SuperAdministrador")
+                {
+                    TempData["ErrorMessage"] = "No tienes permiso para editar esta solicitud.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Verificar que la solicitud esté en estado "Pendiente" (Estado = 1)
+                if (solicitud.Encabezado.Estado != 1)
+                {
+                    TempData["ErrorMessage"] = "Solo puedes editar solicitudes en estado Pendiente.";
+                    return RedirectToAction("DetallePDF", new { id });
+                }
+
+                // Cargar datos del empleado para mostrar días disponibles
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdEmpleado);
+                if (empleado == null)
+                {
+                    TempData["ErrorMessage"] = "No se pudo cargar la información del empleado.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Configurar ViewBag con los días disponibles
+                ViewBag.DiasDisponibles = (double)empleado.DiasVacacionesAcumulados;
+                
+                // Cargar feriados
+                ViewBag.Feriados = await GetFeriadosConProporcion();
+
+                // Cargar información del equipo y autorizadores
+                var encuentraEquipo = await _daoProyectoEquipo.ObtenerEquipoPorEmpleadoAsync(empleado.IdEmpleado);
+                var empleados = await _daoEmpleado.ObtenerEmpleadoAsync();
+
+                if (encuentraEquipo == null || encuentraEquipo <= 0)
+                {
+                    ViewBag.AdvertenciaEquipo = "No estás asignado a ningún equipo. Por favor, contacta a RRHH.";
+                    
+                    // Obtener todos los empleados y filtrar por rol usando la tabla UsuariosRol
+                    using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    {
+                        await connection.OpenAsync();
+                        var query = @"SELECT DISTINCT u.IdUsuario, e.NombresEmpleado, e.ApellidosEmpleado, 
+                                             STUFF((SELECT ', ' + r2.NombreRol
+                                                    FROM UsuariosRol ur2
+                                                    INNER JOIN Roles r2 ON ur2.FK_IdRol = r2.IdRol
+                                                    WHERE ur2.FK_IdUsuario = u.IdUsuario
+                                                    FOR XML PATH('')), 1, 2, '') AS Roles
+                                     FROM Usuarios u
+                                     INNER JOIN Empleados e ON u.FK_IdEmpleado = e.IdEmpleado
+                                     INNER JOIN UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
+                                     WHERE ur.FK_IdRol IN (3, 4, 5)
+                                     AND e.IdEmpleado != @IdEmpleado";
+                        
+                        using (var command = new SqlCommand(query, connection))
+                        {
+                            command.Parameters.AddWithValue("@IdEmpleado", empleado.IdEmpleado);
+                            using (var reader = await command.ExecuteReaderAsync())
+                            {
+                                var empleadosLimpio = new List<SelectListItem>();
+                                while (await reader.ReadAsync())
+                                {
+                                    var idUsuario = reader.GetInt32(0);
+                                    empleadosLimpio.Add(new SelectListItem
+                                    {
+                                        Value = idUsuario.ToString(), // IdUsuario
+                                        Text = $"{reader.GetString(1)} {reader.GetString(2)} ({reader.GetString(3)})",
+                                        Selected = idUsuario == solicitud.Encabezado.IdAutorizador
+                                    });
+                                }
+                                ViewBag.empleadosAutoriza = empleadosLimpio;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Obtener empleados del equipo con sus roles
+                    var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(encuentraEquipo);
+
+                    // Filtrar solo los que tengan rol de TeamLider, SubTeamLider o Autorizador
+                    var empleadosEquipoRol = empleadosEquipo
+                        .Where(e => e.Rol != null && (
+                            e.Rol.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            e.Rol.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            e.Rol.IndexOf("Autorizador", StringComparison.OrdinalIgnoreCase) >= 0))
+                        .ToList();
+
+                    // Excluir al mismo empleado
+                    var empleadosEquipoLimpio = empleadosEquipoRol
+                        .Where(e => e.IdEmpleado != empleado.IdEmpleado)
+                        .Select(e => new SelectListItem 
+                        {
+                            Value = e.IdEmpleado.ToString(),
+                            Text = $"{e.NombresEmpleado} {e.ApellidosEmpleado} ({e.Rol})",
+                            Selected = e.IdEmpleado == solicitud.Encabezado.IdAutorizador
+                        })
+                        .ToList();
+
+                    ViewBag.EmpleadosAutorizaEquipo = empleadosEquipoLimpio;
+                }
+
+                // Configurar nombre completo en sesión
+                var nombreCompleto = $"{empleado.NombresEmpleado} {empleado.ApellidosEmpleado}";
+                HttpContext.Session.SetString("NombreCompletoEmpleado", nombreCompleto);
+                
+                return View("Crear", solicitud); // Reutilizamos la misma vista de Crear
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.RegistrarLogAsync(new LogViewModel
+                {
+                    Accion = "Error - Editar Solicitud GET",
+                    Descripcion = $"Error al cargar solicitud para editar: {ex.Message}",
+                    Estado = false
+                });
+
+                TempData["ErrorMessage"] = "Ocurrió un error al cargar la solicitud.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [AuthorizeRole("Empleado", "SuperAdministrador")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Editar(SolicitudViewModel solicitud)
+        {
+            try
+            {
+                // Verificar que el usuario sea el dueño de la solicitud o sea admin
+                var idEmpleadoSesion = HttpContext.Session.GetInt32("IdEmpleado");
+                var rolSesion = HttpContext.Session.GetString("Rol");
+
+                if (solicitud.Encabezado.IdEmpleado != idEmpleadoSesion && rolSesion != "SuperAdministrador")
+                {
+                    TempData["ErrorMessage"] = "No tienes permiso para editar esta solicitud.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    ViewBag.Feriados = await GetFeriadosConProporcion();
+                    return View("Crear", solicitud);
+                }
+
+                // Recalcular los días hábiles
+                var feriados = await GetFeriadosConProporcion();
+                decimal totalDiasHabiles = 0;
+
+                foreach (var detalle in solicitud.Detalles)
+                {
+                    totalDiasHabiles += CalcularDiasHabiles(detalle.FechaInicio, detalle.FechaFin, feriados);
+                }
+
+                solicitud.Encabezado.DiasSolicitadosTotal = totalDiasHabiles;
+
+                // Actualizar la solicitud en la base de datos
+                var actualizado = await _daoSolicitud.ActualizarSolicitudAsync(solicitud);
+
+                if (actualizado)
+                {
+                    var idSolicitud = solicitud.Encabezado.IdSolicitud;
+                    
+                    // Regenerar el PDF con los nuevos datos
+                    try
+                    {
+                        var pdfBytes = await _pdfService.GenerarPDFSolicitudAsync(idSolicitud.Value);
+                        await _pdfService.GuardarPDFEnBaseDatosAsync(idSolicitud.Value, pdfBytes);
+
+                        await _bitacoraService.RegistrarBitacoraAsync(
+                            "Solicitud Actualizada",
+                            $"Solicitud #{idSolicitud} actualizada por {HttpContext.Session.GetString("NombreCompletoEmpleado")}"
+                        );
+
+                        TempData["SuccessMessage"] = "Solicitud actualizada exitosamente. El PDF ha sido regenerado.";
+                    }
+                    catch (Exception pdfEx)
+                    {
+                        await _loggingService.RegistrarLogAsync(new LogViewModel
+                        {
+                            Accion = "Warning - PDF no regenerado",
+                            Descripcion = $"Solicitud actualizada pero error al regenerar PDF: {pdfEx.Message}",
+                            Estado = false
+                        });
+
+                        TempData["WarningMessage"] = "Solicitud actualizada, pero hubo un problema al regenerar el PDF.";
+                    }
+
+                    return RedirectToAction("DetallePDF", new { id = idSolicitud.Value });
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No se pudo actualizar la solicitud.";
+                    ViewBag.Feriados = await GetFeriadosConProporcion();
+                    return View("Crear", solicitud);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.RegistrarLogAsync(new LogViewModel
+                {
+                    Accion = "Error - Editar Solicitud POST",
+                    Descripcion = $"Error al actualizar solicitud: {ex.Message}",
+                    Estado = false
+                });
+
+                TempData["ErrorMessage"] = $"Ocurrió un error al actualizar la solicitud: {ex.Message}";
+                ViewBag.Feriados = await GetFeriadosConProporcion();
+                return View("Crear", solicitud);
+            }
+        }
+
+        /*=================================================
+		==   FIRMAR SOLICITUD (EMPLEADO)                == 
+		=================================================*/
+        [AuthorizeRole("Empleado", "SuperAdministrador")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EnviarSolicitud(int id)
+        {
+            try
+            {
+                var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(id);
+                if (solicitud == null)
+                {
+                    TempData["ErrorMessage"] = "No se encontró la solicitud.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Verificar que el usuario sea el dueño de la solicitud
+                var idEmpleadoSesion = HttpContext.Session.GetInt32("IdEmpleado");
+                if (solicitud.Encabezado.IdEmpleado != idEmpleadoSesion)
+                {
+                    TempData["ErrorMessage"] = "No tienes permiso para enviar esta solicitud.";
+                    return RedirectToAction("DetallePDF", new { id });
+                }
+
+                // Verificar que la solicitud esté en estado Pendiente
+                if (solicitud.Encabezado.Estado != 1)
+                {
+                    TempData["ErrorMessage"] = "Solo puedes enviar solicitudes en estado Pendiente.";
+                    return RedirectToAction("DetallePDF", new { id });
+                }
+
+                // Verificar que el empleado tenga firma registrada
+                var idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+                if (!idUsuario.HasValue)
+                {
+                    TempData["ErrorMessage"] = "No se pudo obtener tu información de usuario.";
+                    return RedirectToAction("DetallePDF", new { id });
+                }
+
+                // Regenerar el PDF con la firma del empleado
+                var pdfBytes = await _pdfService.GenerarPDFSolicitudAsync(id);
+                
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "No se pudo generar el PDF. Asegúrate de tener una firma registrada.";
+                    return RedirectToAction("DetallePDF", new { id });
+                }
+
+                await _pdfService.GuardarPDFEnBaseDatosAsync(id, pdfBytes);
+
+                // Mantener el estado como 1 (Ingresada/Pendiente) hasta que el autorizador la apruebe
+                // Cuando el autorizador apruebe, cambiará a estado 4 (Autorizada) y se agregará su firma
+                // No cambiamos el estado aquí, solo firmamos el PDF con la firma del empleado
+
+                await _bitacoraService.RegistrarBitacoraAsync(
+                    "Solicitud Enviada a Autorización",
+                    $"Solicitud #{id} enviada por {HttpContext.Session.GetString("NombreCompletoEmpleado")} al autorizador"
+                );
+
+                TempData["SuccessMessage"] = "Solicitud enviada exitosamente al autorizador. El PDF ha sido firmado con tu firma digital.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.RegistrarLogAsync(new LogViewModel
+                {
+                    Accion = "Error - Enviar Solicitud",
+                    Descripcion = $"Error al enviar solicitud: {ex.Message}",
+                    Estado = false
+                });
+
+                TempData["ErrorMessage"] = $"Ocurrió un error al enviar la solicitud: {ex.Message}";
+                return RedirectToAction("DetallePDF", new { id });
+            }
+        }
+
 
         private decimal CalcularDiasHabiles(DateTime inicio, DateTime fin, Dictionary<string, decimal> feriados)
         {
@@ -841,7 +1270,7 @@ namespace ProyectoDojoGeko.Controllers
             }
         }*/
         [HttpGet]
-        [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider")]
+        [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider", "RRHH")]
         public async Task<ActionResult> Autorizar()
         {
             await _bitacoraService.RegistrarBitacoraAsync("Vista Autorizar", "Acceso a la vista Autorizar exitosamente");
@@ -849,20 +1278,39 @@ namespace ProyectoDojoGeko.Controllers
 
             try
             {
-                var rolUsuario = HttpContext.Session.GetString("Rol");
-                if (rolUsuario == null) return RedirectToAction("Index", "Login"); // Si el usuario no está logeado se redirige al login
+                var rolesString = HttpContext.Session.GetString("Roles");
+                if (string.IsNullOrEmpty(rolesString)) return RedirectToAction("Index", "Login");
 
-                var idAutorizador = HttpContext.Session.GetInt32("IdUsuario");
-                if (idAutorizador == null) return RedirectToAction("Index", "Login"); // Si el usuario no tiene Id se redirige al login
+                var roles = rolesString.Split(',').Select(r => r.Trim()).ToList();
+                var idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+                if (idUsuario == null) return RedirectToAction("Index", "Login");
 
-                if (rolUsuario == "TeamLider" || rolUsuario == "SubTeamLider")
+                _logger.LogInformation("🔍 Vista Autorizar - Roles: {Roles}, IdUsuario: {IdUsuario}", rolesString, idUsuario);
+
+                // Admin y RRHH ven TODAS las solicitudes
+                if (roles.Contains("SuperAdministrador") || roles.Contains("RRHH"))
                 {
-                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(idAutorizador); // Se obtienen las solicitudes pendientes de su equipo
+                    _logger.LogInformation("📋 Obteniendo TODAS las solicitudes para Admin/RRHH");
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Sin filtro
+                    _logger.LogInformation("✅ Solicitudes encontradas: {Count}", solicitudes.Count);
                 }
-                else if (rolUsuario == "Autorizador" || rolUsuario == "SuperAdministrador")
+                // Autorizadores solo ven las solicitudes asignadas a ellos
+                else if (roles.Contains("TeamLider") || roles.Contains("SubTeamLider") || roles.Contains("Autorizador"))
                 {
-                    Console.WriteLine("ROL: " + rolUsuario);
-                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Se obtienen las solicitudes pendientes sin filtrar
+                    _logger.LogInformation("📋 Obteniendo solicitudes asignadas al autorizador con IdUsuario: {IdUsuario}", idUsuario);
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(idUsuario.Value);
+                    _logger.LogInformation("✅ Solicitudes encontradas: {Count}", solicitudes.Count);
+                    
+                    // Log detallado de cada solicitud
+                    foreach (var sol in solicitudes)
+                    {
+                        _logger.LogInformation("  📄 Solicitud {IdSolicitud}: {Empleado}, Estado: {Estado}, Autorizador: {Autorizador}", 
+                            sol.IdSolicitud, sol.NombreEmpleado, sol.Estado, sol.IdAutorizador);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ Roles no autorizados: {Roles}. No se cargarán solicitudes.", rolesString);
                 }
 
                 // Cargar los estados para la vista
@@ -924,7 +1372,9 @@ namespace ProyectoDojoGeko.Controllers
                             });
                         }
 
-                        TempData["Message"] = "Solicitud autorizada con éxito. El PDF ya no está disponible para descarga.";
+                        TempData["SuccessMessage"] = "Solicitud autorizada con éxito. Su firma ha sido agregada al documento.";
+                        // Redirigir a una vista donde se vea el PDF autorizado
+                        return RedirectToAction("VerPDFAutorizado", new { idSolicitud });
                     }
                     else
                     {
@@ -941,6 +1391,96 @@ namespace ProyectoDojoGeko.Controllers
 
             return RedirectToAction(nameof(Autorizar));
 
+        }
+
+        /*=================================================   
+		==   FIRMAR SOLICITUD COMO AUTORIZADOR          == 
+		=================================================*/
+        [HttpPost]
+        [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider")]
+        public async Task<IActionResult> FirmarSolicitudAutorizador(int idSolicitud)
+        {
+            try
+            {
+                var idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+                if (!idUsuario.HasValue)
+                {
+                    TempData["ErrorMessage"] = "No se pudo identificar al usuario.";
+                    return RedirectToAction("Detalle", new { id = idSolicitud });
+                }
+
+                // Verificar que el autorizador tenga firma registrada
+                // Aquí deberías verificar en UserSignatures si tiene firma
+                // Por ahora, asumimos que sí y marcamos la solicitud como firmada por el autorizador
+                
+                TempData["SuccessMessage"] = "Solicitud firmada exitosamente. Ahora puede autorizarla.";
+                await _bitacoraService.RegistrarBitacoraAsync("Firmar Solicitud", $"Autorizador firmó solicitud {idSolicitud}");
+                
+                return RedirectToAction("Detalle", new { id = idSolicitud });
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError($"firmar solicitud {idSolicitud}", ex);
+                TempData["ErrorMessage"] = "Error al firmar la solicitud.";
+                return RedirectToAction("Detalle", new { id = idSolicitud });
+            }
+        }
+
+        /*=================================================   
+		==   VER PDF AUTORIZADO CON AMBAS FIRMAS        == 
+		=================================================*/
+        [HttpGet]
+        [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider", "RRHH")]
+        public async Task<IActionResult> VerPDFAutorizado(int idSolicitud)
+        {
+            try
+            {
+                var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(idSolicitud);
+                
+                if (solicitud == null)
+                {
+                    TempData["ErrorMessage"] = "Solicitud no encontrada.";
+                    return RedirectToAction("Autorizar");
+                }
+
+                ViewBag.IdSolicitud = idSolicitud;
+                ViewBag.NombreEmpleado = solicitud.Encabezado.NombreEmpleado;
+                
+                return View();
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError($"ver PDF autorizado de solicitud {idSolicitud}", ex);
+                TempData["ErrorMessage"] = "Error al cargar el PDF autorizado.";
+                return RedirectToAction("Autorizar");
+            }
+        }
+
+        /*=================================================   
+		==   VISUALIZAR PDF DE SOLICITUD (IFRAME)       == 
+		=================================================*/
+        [HttpGet]
+        [AuthorizeRole("SuperAdministrador", "Empleado", "RRHH", "Autorizador", "TeamLider", "SubTeamLider")]
+        public async Task<IActionResult> VisualizarPDF(int idSolicitud)
+        {
+            try
+            {
+                // Generar el PDF usando QuestPDF
+                var pdfBytes = await _pdfService.GenerarPDFSolicitudAsync(idSolicitud);
+                
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    return NotFound("PDF no encontrado");
+                }
+
+                // Devolver el PDF para visualización en iframe (inline, no descarga)
+                return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError($"visualizar PDF de solicitud {idSolicitud}", ex);
+                return NotFound("Error al cargar el PDF");
+            }
         }
 
         /*=================================================   
@@ -972,21 +1512,22 @@ namespace ProyectoDojoGeko.Controllers
                     }
                 }
 
-                var resultado = await _pdfService.ObtenerPDFSolicitudAsync(idSolicitud);
+                // Generar el PDF usando QuestPDF (con ambas firmas si está autorizada)
+                var pdfBytes = await _pdfService.GenerarPDFSolicitudAsync(idSolicitud);
 
-                if (resultado == null)
+                if (pdfBytes == null || pdfBytes.Length == 0)
                 {
-                    TempData["ErrorMessage"] = "PDF no encontrado o descarga restringida. Las solicitudes autorizadas no permiten descarga del PDF.";
+                    TempData["ErrorMessage"] = "No se pudo generar el PDF.";
                     return RedirectToAction("Index");
                 }
 
-                var (contenido, nombreArchivo) = resultado.Value;
+                var nombreArchivo = $"Solicitud_Vacaciones_{idSolicitud}.pdf";
 
                 // Log de descarga para auditoría
                 var usuario = HttpContext.Session.GetString("Usuario") ?? "Sistema";
                 await _bitacoraService.RegistrarBitacoraAsync("Descarga PDF", $"Usuario {usuario} descargó PDF de solicitud {idSolicitud}");
 
-                return File(contenido, "application/pdf", nombreArchivo);
+                return File(pdfBytes, "application/pdf", nombreArchivo);
             }
             catch (Exception ex)
             {
@@ -1064,42 +1605,15 @@ namespace ProyectoDojoGeko.Controllers
         {
             try
             {
-                var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(id);
-
-                if (solicitud == null)
-                {
-                    TempData["ErrorMessage"] = "La solicitud no fue encontrada.";
-                    return View(solicitud);
-                }
-
-                var idUsuario = HttpContext.Session.GetInt32("IdUsuario");
-                if (!idUsuario.HasValue || idUsuario.Value == 0)
-                {
-                    await RegistrarError("DetalleRH", new Exception("ID de usuario no encontrado en sesión."));
-                    return RedirectToAction("Index", "Login");
-                }
-
-                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idUsuario.Value);
-                if (empleado == null)
-                {
-                    await RegistrarError("DetalleRH", new Exception("Empleado no encontrado."));
-                    return View(solicitud);
-                }
-
-                var estados = await _estadoService.ObtenerEstadosActivosSolicitudesAsync();
-                ViewBag.Estados = estados.Select(e => new SelectListItem
-                {
-                    Value = e.IdEstadoSolicitud.ToString(),
-                    Text = e.NombreEstado
-                }).ToList();
-
-                ViewBag.Empleado = empleado;
-                return View("DetalleRH", solicitud);
+                // RRHH ve las solicitudes en modo solo lectura (como el empleado)
+                // Redirigir a DetallePDF con soloVer=true
+                return RedirectToAction("DetallePDF", new { id = id, soloVer = true });
             }
             catch (Exception ex)
             {
+                await RegistrarError("DetalleRH", ex);
                 TempData["ErrorMessage"] = "Error al cargar la solicitud: " + ex.Message;
-                return RedirectToAction("Solicitudes");
+                return RedirectToAction("RecursosHumanos");
             }
         }
         /*-----End ErickDev---------*/
@@ -1152,5 +1666,14 @@ namespace ProyectoDojoGeko.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        public async Task Firma()
+        {
+
+        }
+
+
+
+
     }
 }

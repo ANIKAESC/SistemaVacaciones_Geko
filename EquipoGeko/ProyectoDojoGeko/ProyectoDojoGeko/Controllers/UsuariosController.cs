@@ -268,8 +268,8 @@ namespace ProyectoDojoGeko.Controllers
                     Estado = false
                 });
 
-                ViewBag.Mensaje = "Error al procesar la solicitud. Por favor, inténtelo de nuevo.";
-                return View("Index", "Usuarios");
+                TempData["ErrorMessage"] = "Error al procesar la solicitud. Por favor, inténtelo de nuevo.";
+                return RedirectToAction("Index");
             }
         }
 

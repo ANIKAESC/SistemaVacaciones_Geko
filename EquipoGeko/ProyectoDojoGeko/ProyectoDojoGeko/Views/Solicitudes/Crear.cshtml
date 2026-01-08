@@ -13,7 +13,7 @@
     var codigo = Context.Session.GetString("CodigoEmpleado");
     var nombre = Context.Session.GetString("NombreCompletoEmpleado");
     var diasDisponibles = ViewBag.DiasDisponibles;
-    var fecha = DateTime.UtcNow;
+    var fecha = DateTime.Now;
 
     // Obtener listas de autorizadores
     var empleadosAutorizaEquipo = ViewBag.EmpleadosAutorizaEquipo as List<SelectListItem> ?? new List<SelectListItem>();
@@ -84,14 +84,15 @@
                     </label>
                     <select asp-for="Encabezado.IdAutorizador" id="Autorizador" class="form-control" required>
                         <option value="">Seleccione un autorizador</option>
-                        @if (empleadosAutorizaEquipo.Any())
+
+                        @if (empleadosAutorizaEquipo?.Any() == true)
                         {
                             foreach (var autoriza in empleadosAutorizaEquipo)
                             {
                                 <option value="@autoriza.Value">@autoriza.Text</option>
                             }
                         }
-                        else if (empleadosAutoriza.Any())
+                        else if (empleadosAutoriza?.Any() == true)
                         {
                             foreach (var autoriza in empleadosAutoriza)
                             {
@@ -102,6 +103,7 @@
                         {
                             <option value="">No hay empleados disponibles para autorizar</option>
                         }
+
                     </select>
                     @if (ViewBag.AdvertenciaEquipo != null)
                     {
@@ -144,43 +146,29 @@
                           placeholder="Ejemplo: Necesito estos días por motivos familiares..."></textarea>
             </div>
 
-            <!-- PDF Document Section -->
-            <div class="form-group" style="margin-top: 20px; border: 1px solid #dee2e6; border-radius: 10px; padding: 20px;">
-                <h5 style="margin-top: 0;" class="form-label">Documento de Autorización</h5>
-                <p style="color: #6c757d; font-size: 0.9em;">
-                    Por favor descargue el formulario de autorización, fírmelo y cárguelo nuevamente.
-                </p>
-                
-                <div class="form-row" style="margin-top: 15px;">
-                    <div class="form-field">
-                        <a href="/pdfs/Boleta_de_dias_de_disponibilidad_GDG.pdf" 
-                           class="btn btn-primary" 
-                           download 
-                           style="display: inline-flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-download"></i> Descargar Formulario
-                        </a>
-                    </div>
-                </div>
-
-                <div class="form-row" style="margin-top: 20px;">
-                    <div class="form-field" style="flex: 1;">
-                        <label for="DocumentoFirmado" class="form-label">
-                            Documento firmado <span style="color: #c00;">*</span>
+            <!-- Selector de Formato de PDF -->
+            <div class="form-group" style="margin-top: 30px;">
+                <label class="form-label" style="font-size: 16px; margin-bottom: 15px;">
+                    <i class="fas fa-file-pdf" style="color: #dc3545;"></i> Formato de PDF
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="form-check" style="padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; transition: all 0.3s;">
+                        <input class="form-check-input" type="radio" name="Encabezado.TipoFormatoPdf" 
+                               id="formatoGDG" value="1" checked style="margin-top: 5px;">
+                        <label class="form-check-label" for="formatoGDG" style="cursor: pointer; margin-left: 10px;">
+                            <strong>Formato GDG</strong> - Solicitud de Días de Disponibilidad
+                            <br>
+                            <small style="color: #6c757d;">Grupo Digital de Guatemala</small>
                         </label>
-                        <div class="custom-file">
-                            <input type="file" 
-                                   class="form-control" 
-                                   id="DocumentoFirmado" 
-                                   name="DocumentoFirmado" 
-                                   accept=".pdf" 
-                                   required>
-                            <div class="invalid-feedback">
-                                Por favor suba el documento firmado en formato PDF.
-                            </div>
-                        </div>
-                        <small class="form-text text-muted">
-                            Tamaño máximo: 5MB. Solo se aceptan archivos PDF.
-                        </small>
+                    </div>
+                    <div class="form-check" style="padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; transition: all 0.3s;">
+                        <input class="form-check-input" type="radio" name="Encabezado.TipoFormatoPdf" 
+                               id="formatoDigitalGeko" value="2" style="margin-top: 5px;">
+                        <label class="form-check-label" for="formatoDigitalGeko" style="cursor: pointer; margin-left: 10px;">
+                            <strong>Digital Geko Corp</strong> - Solicitud de Días de Vacaciones
+                            <br>
+                            <small style="color: #6c757d;">Formato simplificado para Digital Geko Corp S.A.</small>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -189,6 +177,7 @@
                 <button type="button" class="btn-submit" onclick="mostrarResumen()">
                     <i class="fas fa-check"></i> Confirmar solicitud
                 </button>
+
             </div>
 
         </form>
@@ -209,10 +198,11 @@
             <div id="resumenSolicitud" style="font-size: 1em; color: #333;"></div>
         </div>
         <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-            <button class="btn btn-secondary" id="cancelAction">
+            <button type="button" class="btn btn-secondary" id="cancelAction">
                 <i class="fas fa-times"></i> Cancelar
             </button>
-            <button class="btn btn-success" id="confirmAction">
+
+            <button type="button" class="btn btn-success" id="confirmAction">
                 <i class="fas fa-check"></i> Enviar
             </button>
         </div>
@@ -540,7 +530,7 @@
                 const nuevoInicio = new Date(parseDateFromInput(inicio));
                 const nuevoFin = new Date(parseDateFromInput(fin));
 
-                return rangos.some(r => {
+                return window.rangos.some(r => {
                     const existenteInicio = new Date(parseDateFromInput(r.inicio));
                     const existenteFin = new Date(parseDateFromInput(r.fin));
                     return (nuevoInicio <= existenteFin && nuevoFin >= existenteInicio);
@@ -558,7 +548,7 @@
                 return `${day}/${month}/${year}`;
             };
 
-            let rangos = [];
+            window.rangos = [];
 
             window.agregarRango = function () {
                 const inicio = document.getElementById('NuevaFechaInicio').value;
@@ -579,24 +569,24 @@
                 }
 
                 const dias = diasEntre(inicio, fin);
-                rangos.push({ inicio, fin, dias });
-                renderRangos();
+                window.rangos.push({ inicio, fin, dias });
+                window.renderRangos();
             };
 
             function eliminarRango(idx) {
-                rangos.splice(idx, 1);
-                renderRangos();
+                window.rangos.splice(idx, 1);
+                window.renderRangos();
             }
 
             window.eliminarRango = eliminarRango;
 
-            function renderRangos() {
+            window.renderRangos = function() {
                 const tbody = document.querySelector('#tablaFechas tbody');
                 tbody.innerHTML = '';
                 const detallesContainer = document.getElementById('detallesContainer');
                 detallesContainer.innerHTML = '';
 
-                rangos.forEach((r, i) => {
+                window.rangos.forEach((r, i) => {
                     const fechaInicio = formatDateLocal(r.inicio);
                     const fechaFin = formatDateLocal(r.fin);
 
@@ -620,58 +610,38 @@
                     `;
                 });
 
-                const total = rangos.reduce((acc, r) => acc + parseFloat(r.dias), 0);
+                const total = window.rangos.reduce((acc, r) => acc + parseFloat(r.dias), 0);
                 document.getElementById('TotalDias').value = total > 0 ? total.toFixed(2) : '';
+            };
+
+        window.mostrarResumen = function () {
+            if (window.rangos.length === 0) {
+                alert("Debes agregar al menos un rango de fechas.");
+                return false;
             }
 
-            window.mostrarResumen = function () {
-                if (rangos.length === 0) {
-                    alert("Debes agregar al menos un rango de fechas.");
-                    return false;
-                }
-                
-                const totalDias = document.getElementById("TotalDias").value || "0";
-                const solicitado = document.getElementById("SolicitadoLider").value;
-                const documentoFirmado = document.getElementById("DocumentoFirmado");
-                
-                if (!solicitado) {
-                    alert("Debes indicar si ya solicitaste a tu líder.");
-                    return false;
-                }
-                
-                // Validar archivo subido
-                if (documentoFirmado.files.length === 0) {
-                    alert("Debes subir el documento firmado.");
-                    return false;
-                }
-                
-                const file = documentoFirmado.files[0];
-                const fileSize = file.size / 1024 / 1024; // in MB
-                const fileType = file.type;
-                
-                if (fileType !== 'application/pdf') {
-                    alert("Solo se permiten archivos PDF.");
-                    return false;
-                }
-                
-                if (fileSize > 5) {
-                    alert("El archivo no debe pesar más de 5MB.");
-                    return false;
-                }
+            const totalDias = document.getElementById("TotalDias").value || "0";
+            const solicitado = document.getElementById("SolicitadoLider").value;
 
-                let resumen = "<ul style='padding-left: 20px;'>";
-                rangos.forEach(r => {
-                    const fechaInicio = formatDateLocal(r.inicio);
-                    const fechaFin = formatDateLocal(r.fin);
-                    resumen += `<li><strong>${fechaInicio}</strong> al <strong>${fechaFin}</strong> - ${parseFloat(r.dias).toFixed(2)} día(s)</li>`;
-                });
-                resumen += "</ul>";
-                resumen += `<p><strong>Total de días:</strong> ${totalDias}</p>`;
-                resumen += `<p><strong>Solicitado al líder:</strong> ${solicitado}</p>`;
+            if (!solicitado) {
+                alert("Debes indicar si ya solicitaste a tu líder.");
+                return false;
+            }
 
-                document.getElementById("resumenSolicitud").innerHTML = resumen;
-                document.getElementById("confirmModal").style.display = "block";
-            };
+            let resumen = "<ul style='padding-left: 20px;'>";
+            window.rangos.forEach(r => {
+                const fechaInicio = formatDateLocal(r.inicio);
+                const fechaFin = formatDateLocal(r.fin);
+                resumen += `<li><strong>${fechaInicio}</strong> al <strong>${fechaFin}</strong> - ${parseFloat(r.dias).toFixed(2)} día(s)</li>`;
+            });
+            resumen += "</ul>";
+            resumen += `<p><strong>Total de días:</strong> ${totalDias}</p>`;
+            resumen += `<p><strong>Solicitado al líder:</strong> ${solicitado}</p>`;
+
+            document.getElementById("resumenSolicitud").innerHTML = resumen;
+            document.getElementById("confirmModal").style.display = "block";
+        };
+
 
             document.getElementById("cancelAction").addEventListener("click", () => {
                 document.getElementById("confirmModal").style.display = "none";
@@ -684,6 +654,102 @@
             document.getElementById("confirmAction").addEventListener("click", () => {
                 document.getElementById("solicitudForm").submit();
             });
+            document.getElementById("confirmAction").addEventListener("click", (e) => {
+            e.preventDefault();
+            console.log("SUBMIT!");
+            document.getElementById("solicitudForm").submit();
         });
+
+        });
+
+        // Cargar datos existentes si es una edición
+        @if (Model?.Detalles != null && Model.Detalles.Any())
+        {
+            <text>
+            // Función para cargar datos de edición
+            function cargarDatosEdicion() {
+                console.log('=== INICIANDO CARGA DE DATOS DE EDICIÓN ===');
+                
+                // Cargar rangos de fechas
+                const rangosExistentes = @Html.Raw(Json.Serialize(Model.Detalles.Select(d => new {
+                    inicio = d.FechaInicio.ToString("yyyy-MM-dd"),
+                    fin = d.FechaFin.ToString("yyyy-MM-dd"),
+                    dias = d.DiasHabilesTomados
+                })));
+                
+                if (window.rangos !== undefined) {
+                    window.rangos = rangosExistentes;
+                    if (typeof window.renderRangos === 'function') {
+                        window.renderRangos();
+                        console.log('✅ Rangos cargados:', rangosExistentes);
+                    }
+                }
+
+                // Cargar autorizador seleccionado
+                @if (Model?.Encabezado?.IdAutorizador != null)
+                {
+                    <text>
+                    const autorizadorSelect = document.getElementById('Autorizador');
+                    console.log('Buscando select Autorizador:', autorizadorSelect);
+                    if (autorizadorSelect) {
+                        const valorAutorizador = '@Model.Encabezado.IdAutorizador';
+                        autorizadorSelect.value = valorAutorizador;
+                        console.log('✅ Autorizador establecido a:', valorAutorizador, 'Valor actual:', autorizadorSelect.value);
+                        
+                        // Verificar si el valor se estableció correctamente
+                        if (autorizadorSelect.value !== valorAutorizador) {
+                            console.warn('⚠️ El valor del autorizador no se estableció correctamente');
+                            console.log('Opciones disponibles:', Array.from(autorizadorSelect.options).map(o => ({value: o.value, text: o.text})));
+                        }
+                    } else {
+                        console.error('❌ No se encontró el select de Autorizador');
+                    }
+                    </text>
+                }
+
+                // Cargar solicitud a líder
+                @if (!string.IsNullOrEmpty(Model?.Encabezado?.SolicitudLider))
+                {
+                    <text>
+                    const solicitadoLiderSelect = document.getElementById('SolicitadoLider');
+                    console.log('Buscando select SolicitadoLider:', solicitadoLiderSelect);
+                    if (solicitadoLiderSelect) {
+                        const valorLider = '@Model.Encabezado.SolicitudLider';
+                        solicitadoLiderSelect.value = valorLider;
+                        console.log('✅ Solicitado a líder establecido a:', valorLider, 'Valor actual:', solicitadoLiderSelect.value);
+                    } else {
+                        console.error('❌ No se encontró el select de SolicitadoLider');
+                    }
+                    </text>
+                }
+
+                // Cargar observaciones
+                @if (!string.IsNullOrEmpty(Model?.Encabezado?.Observaciones))
+                {
+                    <text>
+                    const observacionesTextarea = document.getElementById('Observaciones');
+                    console.log('Buscando textarea Observaciones:', observacionesTextarea);
+                    if (observacionesTextarea) {
+                        observacionesTextarea.value = '@Html.Raw(Model.Encabezado.Observaciones.Replace("\r", "").Replace("\n", "\\n").Replace("'", "\\'"))';
+                        console.log('✅ Observaciones cargadas');
+                    } else {
+                        console.error('❌ No se encontró el textarea de Observaciones');
+                    }
+                    </text>
+                }
+                
+                console.log('=== FIN CARGA DE DATOS DE EDICIÓN ===');
+            }
+
+            // Ejecutar cuando el DOM esté listo
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(cargarDatosEdicion, 200);
+                });
+            } else {
+                setTimeout(cargarDatosEdicion, 200);
+            }
+            </text>
+        }
     </script>
 }

@@ -310,11 +310,14 @@
 			<div class="sidebar-header">
 				<div class="logo-container">
 					@{
-						var logoEmpresaUrl = Context.Items["LogoEmpresaUrl"] as string ?? "/imagenes/default.png";
+						var logoEmpresaUrl = Context.Items["LogoEmpresaUrl"] as string;
+						// Si no hay logo configurado, usar imagen predeterminada local
+						if (string.IsNullOrEmpty(logoEmpresaUrl))
+						{
+							logoEmpresaUrl = "/imagenes/geko.jpeg"; // Cambia "logo-default.png" por el nombre de tu imagen
+						}
 					}
-					<img src="@logoEmpresaUrl" alt="Logo empresa" width="120" height="40" class="h-auto" />
-					<div class="logo-text">
-					</div>
+					<img src="@logoEmpresaUrl" alt="Logo empresa" style="max-width: 180px; height: auto; object-fit: contain;" onerror="this.src='/imagenes/geko.jpeg'" />
 				</div>
 			</div>
 
@@ -597,7 +600,7 @@
 						<img src="@fotoPerfilUrl" alt="Foto de perfil" class="avatar-img" />
 					</div>
 					<div class="user-details">
-						<div class="user-name">@(ViewBag.Usuario ?? "Usuario")</div>
+						<div class="user-name">@(Context.Session.GetString("NombreCompletoEmpleado") ?? Context.Session.GetString("Usuario") ?? "Usuario")</div>
 					</div>
 				</div>
 				<div class="sidebar-actions">

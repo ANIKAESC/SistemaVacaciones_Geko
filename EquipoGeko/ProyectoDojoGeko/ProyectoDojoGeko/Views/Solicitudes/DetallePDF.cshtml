@@ -1,0 +1,474 @@
+@model SolicitudViewModel
+
+@{
+    var tituloEstado = Model.Encabezado.Estado == 6 ? "Solicitud Rechazada #" : 
+                       Model.Encabezado.Estado == 2 ? "Solicitud Autorizada #" : 
+                       "Vista Previa - Solicitud #";
+    ViewData["Title"] = tituloEstado + Model.Encabezado.IdSolicitud;
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var soloVer = ViewBag.SoloVer ?? false;
+    var rol = Context.Session.GetString("Rol");
+    var esRRHH = rol == "RRHH";
+}
+
+<style>
+    :root {
+        --primary-color: #003C9D;
+        --secondary-color: #6c757d;
+        --success-color: #28a745;
+        --warning-color: #F39C12;
+        --info-color: #0dcaf0;
+        --light-bg: #f8f9fa;
+        --soft-gray: #e9ecef;
+        --text-color: #343a40;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #fdfdfd;
+    }
+
+    .pdf-preview-container {
+        padding: 30px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--soft-gray);
+    }
+
+    .preview-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin: 0;
+    }
+
+    .text-muted {
+        color: #6c757d;
+        font-size: 15px;
+    }
+
+    .preview-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .preview-actions form {
+        margin: 0;
+        padding: 0;
+    }
+
+    .pdf-viewer {
+        width: 100%;
+        height: 800px;
+        border: 2px solid var(--soft-gray);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .info-alert {
+        background: #e7f3ff;
+        border-left: 4px solid var(--info-color);
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .success-alert {
+        background: #d4edda;
+        border-left: 4px solid var(--success-color);
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-action {
+        padding: 12px 24px !important;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px !important;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        line-height: 1.5;
+        vertical-align: middle;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    button.btn-action {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        text-decoration: none;
+    }
+
+    .btn-success {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        color: white;
+    }
+
+    .btn-warning {
+        background-color: var(--warning-color);
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background-color: #d48806;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        color: white;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #002f7d;
+        color: white;
+    }
+
+    .form-card {
+        background: white;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+    }
+
+    .empleado-info-card .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 15px;
+        color: var(--text-color);
+        border-bottom: 1px solid var(--soft-gray);
+    }
+
+    .empleado-info-card .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .table {
+        width: 100%;
+        font-size: 15px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table th {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .table td {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        padding: 12px;
+        text-align: center;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid var(--soft-gray);
+        font-size: 15px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    @@media (max-width: 768px) {
+        .preview-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .preview-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .empleado-info-card .info-row {
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+</style>
+
+<div class="pdf-preview-container">
+    <div class="preview-header">
+        <div>
+            <h2 class="preview-title">
+                @if (Model.Encabezado.Estado == 6)
+                {
+                    <i class="fas fa-times-circle" style="color: #DC2626;"></i>
+                    <span style="color: #003C9D; ">Solicitud Rechazada #@Model.Encabezado.IdSolicitud</span>
+                }
+                else if (Model.Encabezado.Estado >= 2)
+                {
+                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                    <span>Solicitud Autorizada #@Model.Encabezado.IdSolicitud</span>
+                }
+                else
+                {
+                    <i class="fas fa-file-pdf text-danger"></i>
+                    <span>Vista Previa - Solicitud #@Model.Encabezado.IdSolicitud</span>
+                }
+            </h2>
+            <p class="text-muted mb-0">
+                @if (Model.Encabezado.Estado >= 2)
+                {
+                    <span>Documento pdf de la solicitud</span>
+                }
+                else
+                {
+                    <span>Revisa que toda la información sea correcta</span>
+                }
+            </p>
+        </div>
+        <div class="preview-actions">
+            @if (!soloVer && Model.Encabezado.Estado == 1)
+            {
+                <form asp-action="EnviarSolicitud" asp-route-id="@Model.Encabezado.IdSolicitud" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-action btn-success" 
+                            onclick="return confirm('¿Estás seguro de que deseas enviar esta solicitud al autorizador? Se agregará tu firma digital automáticamente.');">
+                        <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                    </button>
+                </form>
+                <a asp-action="Editar" asp-route-id="@Model.Encabezado.IdSolicitud" 
+                   class="btn-action btn-warning">
+                    <i class="fas fa-edit"></i> Editar Solicitud
+                </a>
+            }
+            @if (esRRHH)
+            {
+                <a asp-action="RecursosHumanos" class="btn-action btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Listado
+                </a>
+            }
+            else
+            {
+                <a asp-action="Index" class="btn-action btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a las Solicitudes
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="success-alert">
+            <i class="fas fa-check-circle"></i> 
+            <strong>@TempData["SuccessMessage"]</strong>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i> 
+            <strong>@TempData["ErrorMessage"]</strong>
+        </div>
+    }
+
+    @* Alerta especial si la solicitud está rechazada *@
+    @if (Model.Encabezado.Estado == 6)
+    {
+        <div class="alert alert-info" role="alert" style="margin-bottom: 30px; background: #EFF6FF; border-left: 6px solid #3B82F6; color: #1E40AF; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 15px 0; color: #003C9D; font-size: 24px;">
+                <i class="fas fa-info-circle" style="color: #3B82F6"></i> Tu solicitud fue rechazada
+            </h3>
+            @if (!string.IsNullOrEmpty(Model.Encabezado.MotivoRechazo))
+            {
+                <p style="margin: 0 0 20px 0; font-size: 16px; color: #003C9D;">
+                    El autorizador ha rechazado tu solicitud de vacaciones por el siguiente motivo:
+                </p>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px; border: 2px solid #93C5FD;">
+                    <strong style="color: #003C9D; font-size: 18px; display: block; margin-bottom: 10px;">
+                        <i class="fas fa-comment-dots" style="color: #3B82F6;"></i> Motivo del rechazo:
+                    </strong>
+                    <p style="margin: 0; color: #374151; font-size: 16px; line-height: 1.6;">@Model.Encabezado.MotivoRechazo</p>
+                </div>
+            }
+            else
+            {
+                <p style="margin: 0; font-size: 16px; color: #003C9D;">El autorizador ha rechazado tu solicitud de vacaciones.</p>
+            }
+        </div>
+
+        <!-- Mostrar PDF de la solicitud rechazada -->
+        <div class="pdf-viewer-section" style="margin-bottom: 30px;">
+            <h4 style="margin-bottom: 15px; color: #003C9D;">
+                <i class="fas fa-file-pdf"></i> Documento de la Solicitud Rechazada
+            </h4>
+            <iframe src="@Url.Action("VisualizarPDF", "Solicitudes", new { idSolicitud = Model.Encabezado.IdSolicitud })" 
+                    class="pdf-viewer">
+            </iframe>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="@Url.Action("DescargarPDF", "Solicitudes", new { idSolicitud = Model.Encabezado.IdSolicitud })"
+                   class="btn btn-danger btn-action">
+                    <i class="fas fa-download"></i> Descargar PDF
+                </a>
+            </div>
+        </div>
+    }
+    else if (Model.Encabezado.Estado >= 2)
+    {
+        <div class="success-alert">
+            <i class="fas fa-check-circle"></i> 
+            @if (esRRHH)
+            {
+                <text><strong>La solicitud fue autorizada.</strong> A continuación puedes ver el documento con ambas firmas.</text>
+            }
+            else
+            {
+                <text><strong>¡Solicitud Autorizada!</strong> Tu solicitud ha sido autorizada. A continuación puedes ver el documento con ambas firmas.</text>
+            }
+        </div>
+        
+        <div class="pdf-viewer-section" style="margin-bottom: 30px;">
+            <h4 style="margin-bottom: 15px; color: #28a745;">
+                <i class="fas fa-file-pdf"></i> Documento Autorizado con Ambas Firmas
+            </h4>
+            <iframe src="@Url.Action("VisualizarPDF", "Solicitudes", new { idSolicitud = Model.Encabezado.IdSolicitud })" 
+                    class="pdf-viewer">
+            </iframe>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="@Url.Action("DescargarPDF", "Solicitudes", new { idSolicitud = Model.Encabezado.IdSolicitud })" 
+                   class="btn btn-success btn-action">
+                    <i class="fas fa-download"></i> Descargar PDF Autorizado
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        @if (!soloVer)
+        {
+            <div class="info-alert">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Información:</strong> Este es el PDF que se generó automáticamente con tus datos. 
+                Si encuentras algún error, puedes editarlo usando el botón "Editar Solicitud".
+            </div>
+        }
+
+        <!-- Visor de PDF (solo si NO está autorizada, porque ya se muestra arriba) -->
+        @if (Model.Encabezado.Estado < 2)
+        {
+            <div class="form-group" style="margin-top: 30px;">
+                <h5 style="margin-top: 0; margin-bottom: 15px;" class="form-label">
+                    <i class="fas fa-file-pdf text-danger"></i> Vista Previa del PDF
+                </h5>
+                
+                <object data="@Url.Action("BoletaDiasDisponibilidad", "Pdf", new { id = Model.Encabezado.IdSolicitud, v = DateTime.Now.Ticks })#toolbar=1&navpanes=0&scrollbar=1" 
+                        type="application/pdf"
+                        class="pdf-viewer">
+                    <embed src="@Url.Action("BoletaDiasDisponibilidad", "Pdf", new { id = Model.Encabezado.IdSolicitud, v = DateTime.Now.Ticks })#toolbar=1&navpanes=0&scrollbar=1" 
+                           type="application/pdf"
+                           class="pdf-viewer" />
+                    <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 8px;">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <p>Tu navegador no puede mostrar el PDF directamente.</p>
+                        <a asp-controller="Pdf"
+                           asp-action="BoletaDiasDisponibilidad"
+                           asp-route-id="@Model.Encabezado.IdSolicitud"
+                           class="btn btn-primary btn-action"
+                           target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Abrir PDF en nueva pestaña
+                        </a>
+                    </div>
+                </object>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <a asp-controller="Pdf"
+                       asp-action="BoletaDiasDisponibilidad"
+                       asp-route-id="@Model.Encabezado.IdSolicitud"
+                       asp-route-download="true"
+                       class="btn btn-primary btn-action">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </a>
+                    <a asp-controller="Pdf"
+                       asp-action="BoletaDiasDisponibilidad"
+                       asp-route-id="@Model.Encabezado.IdSolicitud"
+                       class="btn btn-secondary btn-action"
+                       target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Abrir en Nueva Pestaña
+                    </a>
+                </div>
+            </div>
+        }
+    }
+</div>

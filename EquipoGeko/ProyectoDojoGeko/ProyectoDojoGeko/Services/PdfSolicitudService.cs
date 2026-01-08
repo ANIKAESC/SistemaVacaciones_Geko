@@ -1,47 +1,33 @@
-﻿using System.Data;
+using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.IO.Compression;
-using System.Text;
-
+using ProyectoDojoGeko.Helper;
+using ProyectoDojoGeko.Services.Interfaces;
+using QuestPDF.Fluent;
 
 /*===============================================
 ==   Service: PdfSolicitudService               = 
 =================================================*/
 
-/***Generación de PDF: Usa wkhtmltopdf con plantilla HTML que replica exactamente tu formato
+/***Generación de PDF: Usa QuestPDF para generar PDFs nativamente sin dependencias externas
 **Compresión Brotli: Reduce significativamente el tamaño de almacenamiento
 **Almacenamiento en DB: PDFs comprimidos se guardan en tabla `SolicitudPDF`
 **Control de Descarga: Permite descarga solo hasta que se apruebe la solicitud
 **Gestión Automática: Se crea el PDF al crear la solicitud y se restringe al aprobar*/
 
-
-
 namespace ProyectoDojoGeko.Services
 {
-    public interface IPdfSolicitudService
-    {
-        Task<byte[]> GenerarPDFSolicitudAsync(int idSolicitud);
-        Task<bool> GuardarPDFEnBaseDatosAsync(int idSolicitud, byte[] pdfBytes);
-        Task<(byte[] contenido, string nombreArchivo)?> ObtenerPDFSolicitudAsync(int idSolicitud);
-        Task RestringirDescargaPDFAsync(int idSolicitud);
-    }
 
     public class PdfSolicitudService : IPdfSolicitudService
     {
         private readonly string _connectionString;
-        private readonly string _wkhtmltopdfPath;
-        private readonly IWebHostEnvironment _environment;
         private readonly ILogger<PdfSolicitudService> _logger;
 
         public PdfSolicitudService(
             IConfiguration configuration,
-            IWebHostEnvironment environment,
             ILogger<PdfSolicitudService> logger)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
-            _wkhtmltopdfPath = Path.Combine(environment.ContentRootPath, "tools", "wkhtmltopdf.exe");
-            _environment = environment;
             _logger = logger;
         }
 
@@ -49,60 +35,36 @@ namespace ProyectoDojoGeko.Services
         {
             try
             {
+                _logger.LogInformation("Iniciando generación de PDF para solicitud {IdSolicitud}", idSolicitud);
+                
                 // 1. Obtener datos de la solicitud
                 var datosSolicitud = await ObtenerDatosSolicitudAsync(idSolicitud);
                 if (datosSolicitud == null)
+                {
+                    _logger.LogError("No se encontraron datos para la solicitud {IdSolicitud}", idSolicitud);
                     throw new Exception($"No se encontró la solicitud con ID: {idSolicitud}");
-
-                // 2. Generar HTML desde la plantilla
-                var htmlContent = GenerarHTMLSolicitud(datosSolicitud);
-
-                // 3. Crear archivo temporal HTML
-                var tempHtmlFile = Path.GetTempFileName() + ".html";
-                var tempPdfFile = Path.GetTempFileName() + ".pdf";
-
-                try
-                {
-                    await File.WriteAllTextAsync(tempHtmlFile, htmlContent, Encoding.UTF8);
-
-                    // 4. Ejecutar wkhtmltopdf
-                    var processInfo = new ProcessStartInfo
-                    {
-                        FileName = _wkhtmltopdfPath,
-                        Arguments = $"--page-size A4 --margin-top 20mm --margin-bottom 20mm --margin-left 15mm --margin-right 15mm --encoding UTF-8 \"{tempHtmlFile}\" \"{tempPdfFile}\"",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    };
-
-                    using (var process = Process.Start(processInfo))
-                    {
-                        await process.WaitForExitAsync();
-
-                        if (process.ExitCode != 0)
-                        {
-                            var error = await process.StandardError.ReadToEndAsync();
-                            throw new Exception($"Error generando PDF: {error}");
-                        }
-                    }
-
-                    // 5. Leer el PDF generado
-                    if (!File.Exists(tempPdfFile))
-                        throw new Exception("El archivo PDF no fue generado correctamente");
-
-                    return await File.ReadAllBytesAsync(tempPdfFile);
                 }
-                finally
-                {
-                    // Limpiar archivos temporales
-                    if (File.Exists(tempHtmlFile)) File.Delete(tempHtmlFile);
-                    if (File.Exists(tempPdfFile)) File.Delete(tempPdfFile);
-                }
+
+                _logger.LogInformation("Datos obtenidos para solicitud {IdSolicitud}. Tipo formato: {TipoFormato}", 
+                    idSolicitud, datosSolicitud.TipoFormato);
+
+                // 2. Generar PDF usando QuestPDF con el formato seleccionado
+                _logger.LogInformation("📄 Antes de crear documento - Firma Empleado: {FirmaEmpleado}, Firma Autorizador: {FirmaAutorizador}", 
+                    datosSolicitud.FirmaEmpleado != null ? $"{datosSolicitud.FirmaEmpleado.Length} bytes" : "NULL",
+                    datosSolicitud.FirmaAutorizador != null ? $"{datosSolicitud.FirmaAutorizador.Length} bytes" : "NULL");
+                
+                var documento = SolicitudPdfDocumentFactory.CrearDocumento(datosSolicitud);
+                _logger.LogInformation("Documento creado. Generando PDF...");
+                
+                var pdfBytes = documento.GeneratePdf();
+                _logger.LogInformation("PDF generado exitosamente. Tamaño: {Size} bytes", pdfBytes.Length);
+
+                return pdfBytes;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generando PDF para solicitud {IdSolicitud}", idSolicitud);
+                _logger.LogError(ex, "Error generando PDF para solicitud {IdSolicitud}. Mensaje: {Message}", 
+                    idSolicitud, ex.Message);
                 throw;
             }
         }
@@ -111,8 +73,15 @@ namespace ProyectoDojoGeko.Services
         {
             try
             {
+                _logger.LogInformation("Iniciando guardado de PDF para solicitud {IdSolicitud}. Tamaño original: {Size} bytes", 
+                    idSolicitud, pdfBytes.Length);
+                
                 // Comprimir con Brotli
                 var compressedBytes = ComprimirConBrotli(pdfBytes);
+                _logger.LogInformation("PDF comprimido. Tamaño comprimido: {Size} bytes. Reducción: {Reduction}%", 
+                    compressedBytes.Length, 
+                    Math.Round((1 - (double)compressedBytes.Length / pdfBytes.Length) * 100, 2));
+                
                 var nombreArchivo = $"Solicitud_Vacaciones_{idSolicitud}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
 
                 using var connection = new SqlConnection(_connectionString);
@@ -126,13 +95,19 @@ namespace ProyectoDojoGeko.Services
                 command.Parameters.AddWithValue("@TamanoComprimido", compressedBytes.Length);
 
                 await connection.OpenAsync();
+                _logger.LogInformation("Ejecutando stored procedure sp_InsertarSolicitudPDF...");
+                
                 var result = await command.ExecuteScalarAsync();
-
-                return result != null && Convert.ToInt32(result) > 0;
+                
+                bool success = result != null && Convert.ToInt32(result) > 0;
+                _logger.LogInformation("PDF guardado en BD. Resultado: {Success}", success);
+                
+                return success;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error guardando PDF en base de datos para solicitud {IdSolicitud}", idSolicitud);
+                _logger.LogError(ex, "Error guardando PDF en base de datos para solicitud {IdSolicitud}. Mensaje: {Message}", 
+                    idSolicitud, ex.Message);
                 return false;
             }
         }
@@ -209,6 +184,10 @@ namespace ProyectoDojoGeko.Services
                     se.DiasSolicitadosTotal,
                     se.FechaIngresoSolicitud,
                     se.Observaciones,
+                    se.TipoFormatoPdf,
+                    se.FK_IdEmpleado,
+                    se.FK_IdAutorizador,
+                    se.FK_IdEstadoSolicitud,
                     e.Puesto,
                     e.Departamento,
                     MIN(sd.FechaInicio) as FechaInicio,
@@ -218,7 +197,8 @@ namespace ProyectoDojoGeko.Services
                 LEFT JOIN SolicitudDetalle sd ON se.IdSolicitud = sd.FK_IdSolicitud
                 WHERE se.IdSolicitud = @IdSolicitud
                 GROUP BY se.IdSolicitud, se.NombresEmpleado, se.DiasSolicitadosTotal, 
-                         se.FechaIngresoSolicitud, se.Observaciones, e.Puesto, e.Departamento", connection);
+                         se.FechaIngresoSolicitud, se.Observaciones, se.TipoFormatoPdf, 
+                         se.FK_IdEmpleado, se.FK_IdAutorizador, se.FK_IdEstadoSolicitud, e.Puesto, e.Departamento", connection);
 
             command.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
 
@@ -227,151 +207,171 @@ namespace ProyectoDojoGeko.Services
 
             if (await reader.ReadAsync())
             {
-                return new DatosSolicitudPDF
+                var tipoFormato = reader.IsDBNull(reader.GetOrdinal("TipoFormatoPdf")) ? 1 : reader.GetInt32("TipoFormatoPdf");
+                var idEmpleado = reader.GetInt32("FK_IdEmpleado");
+                var idAutorizador = reader.IsDBNull(reader.GetOrdinal("FK_IdAutorizador")) ? (int?)null : reader.GetInt32("FK_IdAutorizador");
+                var estadoSolicitud = reader.GetInt32("FK_IdEstadoSolicitud");
+                
+                var datos = new DatosSolicitudPDF
                 {
                     IdSolicitud = reader.GetInt32("IdSolicitud"),
                     NombreEmpleado = reader.GetString("NombresEmpleado"),
-                    Puesto = reader.IsDBNull("Puesto") ? "" : reader.GetString("Puesto"),
-                    Departamento = reader.IsDBNull("Departamento") ? "" : reader.GetString("Departamento"),
+                    Puesto = reader.IsDBNull(reader.GetOrdinal("Puesto")) ? "" : reader.GetString("Puesto"),
+                    Departamento = reader.IsDBNull(reader.GetOrdinal("Departamento")) ? "" : reader.GetString("Departamento"),
                     DiasSolicitados = reader.GetDecimal("DiasSolicitadosTotal"),
                     FechaSolicitud = reader.GetDateTime("FechaIngresoSolicitud"),
-                    FechaInicio = reader.IsDBNull("FechaInicio") ? null : reader.GetDateTime("FechaInicio"),
-                    FechaFin = reader.IsDBNull("FechaFin") ? null : reader.GetDateTime("FechaFin"),
-                    Observaciones = reader.IsDBNull("Observaciones") ? "" : reader.GetString("Observaciones")
+                    FechaInicio = reader.IsDBNull(reader.GetOrdinal("FechaInicio")) ? null : reader.GetDateTime("FechaInicio"),
+                    FechaFin = reader.IsDBNull(reader.GetOrdinal("FechaFin")) ? null : reader.GetDateTime("FechaFin"),
+                    Observaciones = reader.IsDBNull(reader.GetOrdinal("Observaciones")) ? "" : reader.GetString("Observaciones"),
+                    TipoFormato = (TipoFormatoPdf)tipoFormato
                 };
+
+                // Cerrar el reader antes de hacer nuevas consultas
+                await reader.CloseAsync();
+
+                // Cargar los detalles de períodos de vacaciones
+                using var commandDetalles = new SqlCommand(@"
+                    SELECT FechaInicio, FechaFin, DiasHabilesTomados
+                    FROM SolicitudDetalle
+                    WHERE FK_IdSolicitud = @IdSolicitud
+                    ORDER BY FechaInicio", connection);
+                commandDetalles.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
+                
+                using var readerDetalles = await commandDetalles.ExecuteReaderAsync();
+                while (await readerDetalles.ReadAsync())
+                {
+                    datos.Detalles.Add(new DetallePeriodoVacaciones
+                    {
+                        FechaInicio = readerDetalles.GetDateTime("FechaInicio"),
+                        FechaFin = readerDetalles.GetDateTime("FechaFin"),
+                        DiasHabiles = readerDetalles.GetDecimal("DiasHabilesTomados")
+                    });
+                }
+                await readerDetalles.CloseAsync();
+
+                // Obtener firma del empleado
+                datos.FirmaEmpleado = await ObtenerFirmaPorEmpleadoAsync(connection, idEmpleado);
+                
+                if (datos.FirmaEmpleado != null)
+                {
+                    _logger.LogInformation("✅ Firma del empleado cargada en datos. Tamaño: {Size} bytes", datos.FirmaEmpleado.Length);
+                }
+                else
+                {
+                    _logger.LogWarning("❌ No se cargó firma del empleado en datos");
+                }
+
+                // Obtener firma y nombre del autorizador SOLO si la solicitud fue autorizada
+                // Estados BD: 1=Ingresada, 2=Autorizada, 3=Vigente, 4=Finalizada, 5=Cancelada, 6=Rechazada
+                // Solo mostramos firma del autorizador si está en estado 2 (Autorizada) o superior, EXCEPTO Rechazada (6)
+                if (idAutorizador.HasValue && estadoSolicitud >= 2 && estadoSolicitud != 6)
+                {
+                    datos.FirmaAutorizador = await ObtenerFirmaPorUsuarioAsync(connection, idAutorizador.Value);
+                    datos.NombreAutorizador = await ObtenerNombreAutorizadorAsync(connection, idAutorizador.Value);
+                    
+                    if (datos.FirmaAutorizador != null)
+                    {
+                        _logger.LogInformation("✅ Firma del autorizador cargada en datos (Estado: {Estado}). Tamaño: {Size} bytes", 
+                            estadoSolicitud, datos.FirmaAutorizador.Length);
+                    }
+                }
+                else if (idAutorizador.HasValue)
+                {
+                    // Solo cargar el nombre del autorizador, no la firma
+                    datos.NombreAutorizador = await ObtenerNombreAutorizadorAsync(connection, idAutorizador.Value);
+                    _logger.LogInformation("ℹ️ Solicitud en estado {Estado}. No se carga firma del autorizador.", estadoSolicitud);
+                }
+
+                return datos;
             }
 
             return null;
         }
 
-        private string GenerarHTMLSolicitud(DatosSolicitudPDF datos)
+        private async Task<byte[]?> ObtenerFirmaPorEmpleadoAsync(SqlConnection connection, int idEmpleado)
         {
-            var fechaActual = datos.FechaSolicitud.ToString("dd/MM/yyyy");
-            var periodoCorrespondiente = datos.FechaInicio.HasValue && datos.FechaFin.HasValue
-                ? $"{datos.FechaInicio.Value:dd/MM/yyyy} AL {datos.FechaFin.Value:dd/MM/yyyy}"
-                : "Por definir";
+            try
+            {
+                using var command = new SqlCommand(@"
+                    SELECT us.SignatureImage
+                    FROM UserSignatures us
+                    INNER JOIN Usuarios u ON us.UserId = u.Username
+                    WHERE u.FK_IdEmpleado = @IdEmpleado", connection);
 
-            return $@"
-<!DOCTYPE html>
-<html lang='es'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Solicitud de Días de Disponibilidad</title>
-    <style>
-        body {{
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            margin: 0;
-            padding: 20px;
-        }}
-        .header {{
-            text-align: center;
-            margin-bottom: 30px;
-        }}
-        .title {{
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }}
-        .fecha {{
-            text-align: right;
-            margin-bottom: 20px;
-        }}
-        .content {{
-            margin-bottom: 30px;
-            text-align: justify;
-        }}
-        .dias-periodo {{
-            text-align: center;
-            font-weight: bold;
-            margin: 20px 0;
-            font-size: 14px;
-        }}
-        .observaciones {{
-            margin: 30px 0;
-        }}
-        .observaciones-label {{
-            font-weight: bold;
-            margin-bottom: 10px;
-        }}
-        .observaciones-content {{
-            border: 1px solid #000;
-            min-height: 80px;
-            padding: 10px;
-        }}
-        .firmas {{
-            margin-top: 60px;
-            display: flex;
-            justify-content: space-between;
-        }}
-        .firma {{
-            text-align: center;
-            width: 45%;
-        }}
-        .linea-firma {{
-            border-bottom: 1px solid #000;
-            margin-bottom: 5px;
-            height: 40px;
-        }}
-        .underline {{
-            border-bottom: 1px solid #000;
-            display: inline-block;
-            min-width: 200px;
-            text-align: center;
-        }}
-    </style>
-</head>
-<body>
-    <div class='header'>
-        <div class='title'>SOLICITUD DE DIAS DE DISPONIBILIDAD. GDG</div>
-    </div>
+                command.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
 
-    <div class='fecha'>
-        Fecha: {fechaActual}
-    </div>
-
-    <div class='content'>
-        <p>Señores<br>
-        Grupo Digital de Guatemala<br>
-        Presente.</p>
-
-        <p style='margin-top: 30px;'>
-        Por este medio hago de su conocimiento que el (la) señor (ita) 
-        <span class='underline'>{datos.NombreEmpleado}</span> que aporta su industria como: 
-        <span class='underline'>{datos.Puesto}</span> en el Departamento de 
-        <span class='underline'>{datos.Departamento}</span> tomará 
-        <span class='underline'>{datos.DiasSolicitados}</span> días de disponibilidad, 
-        correspondientes al periodo: <span class='underline'>{periodoCorrespondiente}</span>
-        </p>
-    </div>
-
-    <div class='dias-periodo'>
-        LOS DÍAS LOS TOMARÁ DEL {(datos.FechaInicio?.ToString("dd/MM/yyyy") ?? "___/___/___")} 
-        AL {(datos.FechaFin?.ToString("dd/MM/yyyy") ?? "___/___/___")} DEL AÑO EN CURSO.
-    </div>
-
-    <div class='observaciones'>
-        <div class='observaciones-label'>Observaciones:</div>
-        <div class='observaciones-content'>
-            {datos.Observaciones}
-        </div>
-    </div>
-
-    <div class='firmas'>
-        <div class='firma'>
-            <div class='linea-firma'></div>
-            <div>(f) Director o encargado</div>
-        </div>
-        <div class='firma'>
-            <div class='linea-firma'></div>
-            <div>(f) Socio Industrial</div>
-        </div>
-    </div>
-</body>
-</html>";
+                var result = await command.ExecuteScalarAsync();
+                
+                if (result != null && result != DBNull.Value)
+                {
+                    _logger.LogInformation("Firma encontrada para empleado {IdEmpleado}. Tamaño: {Size} bytes", 
+                        idEmpleado, ((byte[])result).Length);
+                    return result as byte[];
+                }
+                
+                _logger.LogWarning("No se encontró firma para empleado {IdEmpleado}", idEmpleado);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener firma para empleado {IdEmpleado}", idEmpleado);
+                return null;
+            }
         }
+
+        private async Task<byte[]?> ObtenerFirmaPorUsuarioAsync(SqlConnection connection, int idUsuario)
+        {
+            try
+            {
+                using var command = new SqlCommand(@"
+                    SELECT us.SignatureImage
+                    FROM UserSignatures us
+                    INNER JOIN Usuarios u ON us.UserId = u.Username
+                    WHERE u.IdUsuario = @IdUsuario", connection);
+
+                command.Parameters.AddWithValue("@IdUsuario", idUsuario);
+
+                var result = await command.ExecuteScalarAsync();
+                
+                if (result != null && result != DBNull.Value)
+                {
+                    _logger.LogInformation("Firma encontrada para usuario {IdUsuario}. Tamaño: {Size} bytes", 
+                        idUsuario, ((byte[])result).Length);
+                    return result as byte[];
+                }
+                
+                _logger.LogWarning("No se encontró firma para usuario {IdUsuario}", idUsuario);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener firma para usuario {IdUsuario}", idUsuario);
+                return null;
+            }
+        }
+
+        private async Task<string?> ObtenerNombreAutorizadorAsync(SqlConnection connection, int idUsuario)
+        {
+            try
+            {
+                using var command = new SqlCommand(@"
+                    SELECT CONCAT(e.NombresEmpleado, ' ', e.ApellidosEmpleado) as NombreCompleto
+                    FROM Usuarios u
+                    INNER JOIN Empleados e ON u.FK_IdEmpleado = e.IdEmpleado
+                    WHERE u.IdUsuario = @IdUsuario", connection);
+
+                command.Parameters.AddWithValue("@IdUsuario", idUsuario);
+
+                var result = await command.ExecuteScalarAsync();
+                return result?.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo obtener nombre del autorizador {IdUsuario}", idUsuario);
+                return null;
+            }
+        }
+
 
         private byte[] ComprimirConBrotli(byte[] data)
         {
@@ -392,16 +392,4 @@ namespace ProyectoDojoGeko.Services
         }
     }
 
-    public class DatosSolicitudPDF
-    {
-        public int IdSolicitud { get; set; }
-        public string NombreEmpleado { get; set; }
-        public string Puesto { get; set; }
-        public string Departamento { get; set; }
-        public decimal DiasSolicitados { get; set; }
-        public DateTime FechaSolicitud { get; set; }
-        public DateTime? FechaInicio { get; set; }
-        public DateTime? FechaFin { get; set; }
-        public string Observaciones { get; set; }
-    }
 }

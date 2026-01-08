@@ -22,7 +22,6 @@ namespace ProyectoDojoGeko.Models
         public string Accion { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El campo {0} es obligatorio.")]
-        [StringLength(255, ErrorMessage = "El campo {0} no puede tener más de {1} caracteres.")]
         [Column("Descripcion")]
         public string Descripcion { get; set; } = string.Empty;
 

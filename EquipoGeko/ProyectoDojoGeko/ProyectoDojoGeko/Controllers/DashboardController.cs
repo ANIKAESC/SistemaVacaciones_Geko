@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ProyectoDojoGeko.Data;
 using ProyectoDojoGeko.Models;
 using ProyectoDojoGeko.Filters;
@@ -46,6 +46,23 @@ namespace ProyectoDojoGeko.Controllers
         {
             try
             {
+                // Obtener el rol del usuario
+                var rol = HttpContext.Session.GetString("Rol");
+
+                // Redirigir según el rol
+                if (rol == "Empleado")
+                {
+                    return RedirectToAction("Index", "Solicitudes");
+                }
+                else if (rol == "RRHH")
+                {
+                    return RedirectToAction("RecursosHumanos", "Solicitudes");
+                }
+                else if (rol == "Autorizador" || rol == "TeamLider" || rol == "SubTeamLider")
+                {
+                    return RedirectToAction("Autorizar", "Solicitudes");
+                }
+                // Solo Admin y SuperAdministrador ven el dashboard
                 // Crear el modelo del dashboard
                 var dashboardModel = new DashboardViewModel();
 

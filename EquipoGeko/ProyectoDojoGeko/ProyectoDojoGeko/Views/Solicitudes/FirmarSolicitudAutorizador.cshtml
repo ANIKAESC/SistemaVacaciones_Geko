@@ -1,0 +1,225 @@
+@{
+    ViewData["Title"] = "Firmar Solicitud - Autorizador";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var idSolicitud = ViewBag.IdSolicitud;
+    var nombreEmpleado = ViewBag.NombreEmpleado;
+}
+
+<link rel="stylesheet" href="~/css/firma.css" />
+
+<div class="firma-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-pen-fancy"></i>
+                Firmar Solicitud como Autorizador
+            </h1>
+            <p class="page-subtitle">
+                Solicitud de <strong>@nombreEmpleado</strong> - N° @idSolicitud
+            </p>
+        </div>
+    </div>
+
+    <div class="firma-card">
+        <div class="firma-instrucciones">
+            <i class="fas fa-info-circle"></i>
+            <p>Por favor, suba una imagen de su firma. Esta firma será agregada al documento de la solicitud.</p>
+        </div>
+
+        <form id="formFirma" asp-action="GuardarFirmaAutorizador" method="post">
+            <input type="hidden" name="idSolicitud" value="@idSolicitud" />
+            <input type="hidden" id="firmaBase64" name="firmaBase64" />
+
+            <div class="upload-container">
+                <label for="inputFirmaImagen" class="upload-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Haga clic para seleccionar una imagen de su firma</span>
+                    <small>Formatos: PNG, JPG, JPEG (máx. 2MB)</small>
+                </label>
+                <input type="file" 
+                       id="inputFirmaImagen" 
+                       accept="image/png,image/jpeg,image/jpg" 
+                       style="display: none;">
+                <div id="preview-container" style="display: none; margin-top: 1.5rem; text-align: center;">
+                    <p style="margin-bottom: 0.5rem; font-weight: bold; color: #28a745;">
+                        <i class="fas fa-check-circle"></i> Vista previa de su firma:
+                    </p>
+                    <img id="preview-imagen" src="" alt="Vista previa" style="max-width: 100%; max-height: 200px; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+            </div>
+
+            <div class="firma-acciones">
+                <button type="submit" id="btnGuardar" class="btn btn-success" disabled>
+                    <i class="fas fa-save"></i> Guardar Firma
+                </button>
+                <a href="@Url.Action("Detalle", "Solicitudes", new { id = idSolicitud })" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const inputFirma = document.getElementById('inputFirmaImagen');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImagen = document.getElementById('preview-imagen');
+    const btnGuardar = document.getElementById('btnGuardar');
+    const firmaBase64Input = document.getElementById('firmaBase64');
+
+    // Manejar selección de archivo
+    inputFirma.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        
+        if (!file) {
+            return;
+        }
+
+        // Validar tipo de archivo
+        if (!file.type.match('image/png') && !file.type.match('image/jpeg') && !file.type.match('image/jpg')) {
+            alert('Por favor, seleccione una imagen PNG o JPG.');
+            inputFirma.value = '';
+            return;
+        }
+
+        // Validar tamaño (2MB máximo)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('La imagen no debe superar los 2MB.');
+            inputFirma.value = '';
+            return;
+        }
+
+        // Leer y mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const base64 = event.target.result;
+            previewImagen.src = base64;
+            previewContainer.style.display = 'block';
+            firmaBase64Input.value = base64;
+            btnGuardar.disabled = false;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Validar antes de enviar
+    document.getElementById('formFirma').addEventListener('submit', function(e) {
+        if (!firmaBase64Input.value) {
+            e.preventDefault();
+            alert('Por favor, seleccione una imagen de su firma antes de guardar.');
+            return;
+        }
+    });
+</script>
+
+<style>
+    .firma-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .firma-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .firma-instrucciones {
+        background: #e3f2fd;
+        border-left: 4px solid #2196F3;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .firma-instrucciones i {
+        font-size: 1.5rem;
+        color: #2196F3;
+    }
+
+    .upload-container {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .upload-label {
+        display: inline-block;
+        padding: 3rem 4rem;
+        border: 3px dashed #ddd;
+        border-radius: 12px;
+        background: #f9f9f9;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .upload-label:hover {
+        border-color: #2196F3;
+        background: #e3f2fd;
+    }
+
+    .upload-label i {
+        font-size: 3rem;
+        color: #2196F3;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .upload-label span {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-label small {
+        display: block;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .firma-acciones {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .firma-acciones .btn {
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 8px;
+        min-width: 150px;
+        transition: all 0.3s ease;
+    }
+
+    .firma-acciones .btn i {
+        margin-right: 0.5rem;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        color: #002244;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-title i {
+        margin-right: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+</style>
