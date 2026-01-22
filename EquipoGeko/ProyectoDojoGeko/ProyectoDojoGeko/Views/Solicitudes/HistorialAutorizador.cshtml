@@ -1,0 +1,840 @@
+@model List<ProyectoDojoGeko.Models.SolicitudEncabezadoViewModel>
+
+@{
+    ViewData["Title"] = "Historial de Solicitudes";
+    
+    var codigoSistema = Context.Session.GetString("SistemaActual");
+    Layout = (codigoSistema != null || codigoSistema != "") ?
+        "~/Views/Shared/_DashboardLayoutSistema.cshtml" : 
+        "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var todasLasSolicitudes = Model.ToList();
+    var totalSolicitudes = todasLasSolicitudes.Count;
+
+    var codigoEmpleado = Context.Session.GetString("CodigoEmpleado") ?? "N/A";
+    var nombreEmpleado = Context.Session.GetString("NombreCompletoEmpleado") ?? "N/A";
+    var estados = ViewBag.Estados as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var estadoSeleccionado = Context.Request.Query["estadoSolicitud"].ToString();
+}
+
+<div class="solicitudes-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Historial de Solicitudes
+            </h1>
+            <p class="page-subtitle">
+                Historial completo de todas las solicitudes de vacaciones.
+            </p>
+        </div>
+        <div class="header-actions">
+            <a href="@Url.Action("Autorizar", "Solicitudes")" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Volver a Pendientes
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters">
+        <div class="filter-group">
+            <div class="filter-group d-flex justify-content-between align-items-center w-100 flex-wrap">
+                <form method="get" asp-action="HistorialAutorizador" asp-controller="Solicitudes" class="d-flex gap-2 align-items-center flex-wrap">
+                    
+                    <!-- Filtro por nombre -->
+                    <div class="search-container">
+                        <i class="fa-solid fa-user-tie"></i>
+                        <input type="text" 
+                               name="nombresEmpleado" 
+                               placeholder="Buscar empleado..." 
+                               class="search-input" 
+                               value="@Context.Request.Query["nombresEmpleado"]" />
+                    </div>
+
+                    <!-- Filtro por estado -->
+                    <label for="estadoFilter">Estado:</label>
+                    <select id="estadoFilter" name="estadoSolicitud" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        @foreach (var estado in estados)
+                        {
+                            if (estado.Key.ToString() == estadoSeleccionado)
+                            {
+                                <option value="@estado.Key" selected="selected">@estado.Value</option>
+                            }
+                            else
+                            {
+                                <option value="@estado.Key">@estado.Value</option>
+                            }
+                        }
+                    </select>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                </form>
+
+                <button id="resetFilters" class="btn-reset-filters ms-auto">
+                    <i class="fas fa-sync-alt"></i>
+                    Reiniciar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="status-icon">
+                <i class="fa-solid fa-rectangle-list"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">@totalSolicitudes</div>
+                <div class="stat-label">Total Solicitudes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="status-icon pendiente">
+                <i class="fa-solid fa-stopwatch"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">@Model.Count(e => e.Estado == 1)</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="status-icon autorizada">
+                <i class="fa-solid fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">@Model.Count(e => e.Estado == 2)</div>
+                <div class="stat-label">Autorizadas</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="status-icon rechazada">
+                <i class="fa-solid fa-times-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">@Model.Count(e => e.Estado == 6)</div>
+                <div class="stat-label">Rechazadas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de solicitudes -->
+    <div class="table-container">
+        <div class="solicitudes-header">
+            <h2>
+                <i class="fas fa-clipboard-list"></i>
+                Todas las Solicitudes
+            </h2>
+        </div>
+
+        <table class="empresas-table" id="tablaHistorial">
+            <thead>
+                <tr>
+                    <th>N° Solicitud</th>
+                    <th>Empleado</th>
+                    <th>Días Solicitados</th>
+                    <th>Estado</th>
+                    <th>Fecha Ingreso</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (todasLasSolicitudes.Any())
+                {
+                    foreach (var solicitud in todasLasSolicitudes)
+                    {
+                        var nombreEstado = estados.ContainsKey(solicitud.Estado) ? estados[solicitud.Estado] : "Desconocido";
+                        var estadoBadgeClass = solicitud.Estado switch
+                        {
+                            1 => "badge-ingresada",      // Ingresada - Azul
+                            2 => "badge-autorizada",     // Autorizada - Verde
+                            3 => "badge-vigente",        // Vigente - Verde claro
+                            4 => "badge-finalizada",     // Finalizada - Gris
+                            5 => "badge-cancelada",      // Cancelada - Naranja
+                            6 => "badge-rechazada",      // Rechazada - Rojo
+                            _ => "badge-default"         // Desconocido
+                        };
+                        <tr>
+                            <td>@solicitud.IdSolicitud</td>
+                            <td>@solicitud.NombreEmpleado</td>
+                            <td>@solicitud.DiasSolicitadosTotal</td>
+                            <td>
+                                <span class="badge @estadoBadgeClass">@nombreEstado</span>
+                            </td>
+                            <td>@solicitud.FechaIngresoSolicitud.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <a href="@Url.Action("Detalle", "Solicitudes", new { id = solicitud.IdSolicitud })"
+                                   class="btn-detail">
+                                    <i class="fas fa-eye"></i> Ver detalle
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" style="text-align: center;">
+                            No hay solicitudes registradas
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Paginación -->
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> solicitudes
+        </div>
+        <div class="pagination-controls">
+            <button id="prev-page" class="pagination-btn" disabled>
+                <i class="fas fa-chevron-left"></i>
+                Anterior
+            </button>
+            <div class="pagination-pages" id="pagination-pages">
+                <button class="page-btn active">1</button>
+            </div>
+            <button id="next-page" class="pagination-btn" disabled>
+                Siguiente
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/empresas.css" />
+
+    <style>
+        :root {
+            --autorizador-primary: #4C1D95;
+            --autorizador-dark: #2E1065;
+            --autorizador-light: #6D28D9;
+            --soft-gray: #e9ecef;
+            --text-color: #343a40;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .solicitudes-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-back {
+            background: linear-gradient(135deg, var(--autorizador-primary), var(--autorizador-dark));
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 29, 149, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--autorizador-primary);
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-title i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--autorizador-primary), var(--autorizador-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: #6c757d;
+            margin: 0;
+        }
+
+        /* ===== ESTILOS FILTROS ===== */
+        .filters {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        /* Campo de búsqueda */
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 16px;
+            color: #6c757d;
+            z-index: 2;
+        }
+
+        .search-input {
+            padding: 10px 16px 10px 44px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            min-width: 250px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--autorizador-primary);
+            box-shadow: 0 0 0 3px rgba(76, 29, 149, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: #adb5bd;
+        }
+
+        .filter-select {
+            padding: 10px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            min-width: 200px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--autorizador-primary);
+            box-shadow: 0 0 0 3px rgba(76, 29, 149, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--autorizador-primary), var(--autorizador-dark));
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 29, 149, 0.3);
+        }
+
+        .btn-reset-filters {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-reset-filters:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(76, 29, 149, 0.15);
+        }
+
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--autorizador-primary), var(--autorizador-dark));
+            color: white;
+        }
+
+        .status-icon.pendiente {
+            background: linear-gradient(135deg, #F39C12, #d48806);
+        }
+
+        .status-icon.autorizada {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+
+        .status-icon.rechazada {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--autorizador-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .solicitudes-header {
+            margin-bottom: 20px;
+        }
+
+        .solicitudes-header h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--autorizador-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .empresas-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 15px;
+        }
+
+        .empresas-table thead {
+            background-color: var(--autorizador-primary) !important;
+        }
+
+        .empresas-table th {
+            color: white !important;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+            background-color: var(--autorizador-primary) !important;
+        }
+
+        .empresas-table th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .empresas-table th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        .empresas-table tbody tr {
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        .empresas-table tbody tr:hover {
+            background-color: #f5f3ff;
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(76, 29, 149, 0.1);
+        }
+
+        .empresas-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--soft-gray);
+            text-align: left;
+        }
+
+        .empresas-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .btn-detail {
+            background-color: var(--autorizador-primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-detail:hover {
+            background-color: var(--autorizador-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 29, 149, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-detail i {
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-ingresada {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+        }
+
+        .badge-autorizada {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-vigente {
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            color: white;
+        }
+
+        .badge-finalizada {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        .badge-cancelada {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+
+        .badge-rechazada {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+        }
+
+        .badge-default {
+            background: linear-gradient(135deg, #9CA3AF, #6B7280);
+            color: white;
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-top: 1.5rem;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #f8f9fa;
+            color: #212529;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-pages {
+            display: flex;
+            gap: 4px;
+        }
+
+        .page-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            background: white;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover:not(.active) {
+            background: #f8f9fa;
+            color: #212529;
+        }
+
+        .page-btn.active {
+            background: var(--autorizador-primary);
+            color: white;
+            border-color: var(--autorizador-primary);
+        }
+
+        @@media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .empresas-table {
+                min-width: 700px;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initPagination();
+            initResetFilters();
+        });
+
+        // Función para reiniciar filtros
+        function initResetFilters() {
+            const resetBtn = document.getElementById('resetFilters');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    window.location.href = '@Url.Action("HistorialAutorizador", "Solicitudes")';
+                });
+            }
+        }
+
+        function initPagination() {
+            const table = document.getElementById('tablaHistorial');
+            if (!table) return;
+
+            const rowsPerPage = 10;
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const totalRows = rows.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+            if (totalPages <= 1) {
+                document.querySelector('.pagination-container').style.display = 'none';
+                return;
+            }
+
+            let currentPage = 1;
+
+            function showPage(pageNumber) {
+                currentPage = pageNumber;
+                const startIndex = (pageNumber - 1) * rowsPerPage;
+                const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+
+                rows.forEach((row, index) => {
+                    row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+                });
+
+                document.getElementById('showing-start').textContent = totalRows > 0 ? startIndex + 1 : 0;
+                document.getElementById('showing-end').textContent = endIndex;
+                document.getElementById('total-items').textContent = totalRows;
+
+                document.getElementById('prev-page').disabled = pageNumber === 1;
+                document.getElementById('next-page').disabled = pageNumber === totalPages;
+
+                updatePageButtons();
+            }
+
+            function updatePageButtons() {
+                const paginationPages = document.getElementById('pagination-pages');
+                paginationPages.innerHTML = '';
+
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                if (startPage > 1) {
+                    const firstBtn = createPageButton(1);
+                    paginationPages.appendChild(firstBtn);
+                    if (startPage > 2) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = '#6c757d';
+                        paginationPages.appendChild(dots);
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const btn = createPageButton(i);
+                    paginationPages.appendChild(btn);
+                }
+
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = '#6c757d';
+                        paginationPages.appendChild(dots);
+                    }
+                    const lastBtn = createPageButton(totalPages);
+                    paginationPages.appendChild(lastBtn);
+                }
+            }
+
+            function createPageButton(pageNumber) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (pageNumber === currentPage ? ' active' : '');
+                btn.textContent = pageNumber;
+                btn.onclick = () => showPage(pageNumber);
+                return btn;
+            }
+
+            document.getElementById('prev-page').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    showPage(currentPage - 1);
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    showPage(currentPage + 1);
+                }
+            });
+
+            showPage(1);
+        }
+    </script>
+}

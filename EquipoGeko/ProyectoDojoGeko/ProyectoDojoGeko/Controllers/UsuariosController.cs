@@ -244,16 +244,40 @@ namespace ProyectoDojoGeko.Controllers
                     protocol: Request.Scheme // "http" o "https"  
                 );
 
-                // Enviamos el correo de bienvenida  
-                await _emailService.EnviarCorreoConMailjetAsync(model.Usuario.Username, emailDestino, contraseniaGenerada, urlCambioPassword);
-
-                await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
+                // Enviamos el correo de bienvenida
+                try
                 {
-                    Accion = "Crear Usuario",
-                    Descripcion = $"Nuevo usuario '{model.Usuario.Username}' creado por {usuarioActual}.",
-                    FK_IdUsuario = idUsuarioSesion,
-                    FK_IdSistema = idSistema
-                });
+                    await _emailService.EnviarCorreoConMailjetAsync(model.Usuario.Username, emailDestino, contraseniaGenerada, urlCambioPassword);
+                    
+                    await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
+                    {
+                        Accion = "Crear Usuario",
+                        Descripcion = $"Nuevo usuario '{model.Usuario.Username}' creado por {usuarioActual}. Correo enviado a {emailDestino}.",
+                        FK_IdUsuario = idUsuarioSesion,
+                        FK_IdSistema = idSistema
+                    });
+                }
+                catch (Exception emailEx)
+                {
+                    // El usuario se creó pero el correo falló
+                    await _loggingService.RegistrarLogAsync(new LogViewModel
+                    {
+                        Accion = "Error Envío Correo",
+                        Descripcion = $"Usuario '{model.Usuario.Username}' creado correctamente, pero falló el envío de correo a {emailDestino}: {emailEx.Message}",
+                        Estado = false
+                    });
+                    
+                    await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
+                    {
+                        Accion = "Crear Usuario",
+                        Descripcion = $"Nuevo usuario '{model.Usuario.Username}' creado por {usuarioActual}. ERROR: No se pudo enviar correo.",
+                        FK_IdUsuario = idUsuarioSesion,
+                        FK_IdSistema = idSistema
+                    });
+                    
+                    // Mostrar mensaje al usuario
+                    TempData["Warning"] = $"Usuario creado correctamente, pero no se pudo enviar el correo de bienvenida. Contraseña temporal: {contraseniaGenerada}";
+                }
 
                 return RedirectToAction("Index");
             }

@@ -301,10 +301,9 @@
         <div class="preview-actions">
             @if (!soloVer && Model.Encabezado.Estado == 1)
             {
-                <form asp-action="EnviarSolicitud" asp-route-id="@Model.Encabezado.IdSolicitud" method="post">
+                <form id="formEnviarSolicitud" asp-action="EnviarSolicitud" asp-route-id="@Model.Encabezado.IdSolicitud" method="post">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn-action btn-success" 
-                            onclick="return confirm('¿Estás seguro de que deseas enviar esta solicitud al autorizador? Se agregará tu firma digital automáticamente.');">
+                    <button type="button" class="btn-action btn-success" id="btnEnviarSolicitud">
                         <i class="fas fa-paper-plane"></i> Enviar Solicitud
                     </button>
                 </form>
@@ -328,13 +327,7 @@
         </div>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="success-alert">
-            <i class="fas fa-check-circle"></i> 
-            <strong>@TempData["SuccessMessage"]</strong>
-        </div>
-    }
+    @* Mensaje de éxito ahora se muestra solo en SweetAlert2 *@
 
     @if (TempData["ErrorMessage"] != null)
     {
@@ -395,7 +388,7 @@
             }
             else
             {
-                <text><strong>¡Solicitud Autorizada!</strong> Tu solicitud ha sido autorizada. A continuación puedes ver el documento con ambas firmas.</text>
+                <text><strong>¡Solicitud Autorizada!</strong> La solicitud ha sido autorizada. A continuación puedes ver el documento con ambas firmas.</text>
             }
         </div>
         
@@ -472,3 +465,83 @@
         }
     }
 </div>
+
+@section Scripts
+{
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const btnEnviar = document.getElementById('btnEnviarSolicitud');
+        if (btnEnviar) {
+            btnEnviar.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: 'Enviar solicitud',
+                    html: '<div style="text-align: left; padding: 1rem;"><p style="margin-bottom: 1rem;">Estas seguro de que deseas enviar esta solicitud al autorizador</p><div style="background: #e3f2fd; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #2196F3;"><p style="margin: 0; color: #1976D2; font-weight: 600;">Informacion importante:</p><ul style="margin: 0.5rem 0 0 1.5rem; color: #424242;"><li>Se agregara tu firma digital automaticamente</li><li>El autorizador recibira una notificacion por correo</li><li>No podras editar la solicitud despues de enviarla</li></ul></div></div>',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Si, enviar',
+                    cancelButtonText: 'Cancelar',
+                    customClass: {
+                        popup: 'swal-wide',
+                        confirmButton: 'swal-btn-confirm',
+                        cancelButton: 'swal-btn-cancel'
+                    },
+                    width: '600px'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('formEnviarSolicitud').submit();
+                    }
+                });
+            });
+        }
+    </script>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                title: 'Exito',
+                html: '@Html.Raw(TempData["SuccessMessage"])',
+                icon: 'success',
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Entendido',
+                allowOutsideClick: false
+            });
+        </script>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@TempData["ErrorMessage"]',
+                icon: 'error',
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Entendido'
+            });
+        </script>
+    }
+    
+    <style>
+        .swal-wide {
+            border-radius: 1rem;
+        }
+        
+        .swal-btn-confirm {
+            padding: 0.75rem 2rem !important;
+            border-radius: 0.5rem !important;
+            font-weight: 600 !important;
+        }
+        
+        .swal-btn-cancel {
+            padding: 0.75rem 2rem !important;
+            border-radius: 0.5rem !important;
+            font-weight: 600 !important;
+        }
+    </style>
+}
+

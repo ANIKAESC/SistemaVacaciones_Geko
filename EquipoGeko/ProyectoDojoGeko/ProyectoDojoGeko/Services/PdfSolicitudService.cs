@@ -189,16 +189,18 @@ namespace ProyectoDojoGeko.Services
                     se.FK_IdAutorizador,
                     se.FK_IdEstadoSolicitud,
                     e.Puesto,
-                    e.Departamento,
+                    ISNULL(d.Nombre, '') as Departamento,
                     MIN(sd.FechaInicio) as FechaInicio,
                     MAX(sd.FechaFin) as FechaFin
                 FROM SolicitudEncabezado se
                 INNER JOIN Empleados e ON se.FK_IdEmpleado = e.IdEmpleado
                 LEFT JOIN SolicitudDetalle sd ON se.IdSolicitud = sd.FK_IdSolicitud
+                LEFT JOIN EmpleadosDepartamento ed ON e.IdEmpleado = ed.FK_IdEmpleado
+                LEFT JOIN Departamentos d ON ed.FK_IdDepartamento = d.IdDepartamento
                 WHERE se.IdSolicitud = @IdSolicitud
                 GROUP BY se.IdSolicitud, se.NombresEmpleado, se.DiasSolicitadosTotal, 
                          se.FechaIngresoSolicitud, se.Observaciones, se.TipoFormatoPdf, 
-                         se.FK_IdEmpleado, se.FK_IdAutorizador, se.FK_IdEstadoSolicitud, e.Puesto, e.Departamento", connection);
+                         se.FK_IdEmpleado, se.FK_IdAutorizador, se.FK_IdEstadoSolicitud, e.Puesto, d.Nombre", connection);
 
             command.Parameters.AddWithValue("@IdSolicitud", idSolicitud);
 

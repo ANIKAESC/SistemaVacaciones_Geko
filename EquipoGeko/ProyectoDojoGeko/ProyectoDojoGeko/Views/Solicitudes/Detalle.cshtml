@@ -92,52 +92,6 @@
         <!-- Información del Empleado -->
         <div class="info-section">
             <div class="section-header">
-                <h3 class="section-title">
-                    <i class="fas fa-user icon-naranja"></i> Información del Empleado
-                </h3>
-            </div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label"><i class="fas fa-id-card icon-naranja"></i> Código</div>
-                    <div class="info-value">@empleado?.CodigoEmpleado</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label"><i class="fas fa-user icon-naranja"></i> Nombre:</div>
-                    <div class="info-value">@empleado?.NombresEmpleado @empleado?.ApellidosEmpleado</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label"><i class="fas fa-building icon-naranja"></i> Departamento</div>
-                    <div class="info-value">@empleado?.Departamento</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label"><i class="fas fa-briefcase icon-naranja"></i> Puesto</div>
-                    <div class="info-value">@empleado?.Puesto</div>
-                </div>
-@*                 <div class="info-item">
-                    <div class="info-label"><i class="fas fa-calendar-plus icon-naranja"></i> Fecha de Ingreso</div>
-                    <div class="info-value">@(empleado?.FechaIngreso?.ToString("dd/MM/yyyy") ?? "")</div>
-                </div> *@
-                <div class="info-item">
-                    <div class="info-label"><i class="fas fa-envelope icon-naranja"></i> Correo</div>
-                    <div class="info-value">@empleado?.CorreoInstitucional</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label"><i class="fas fa-phone icon-naranja"></i> Teléfono</div>
-                    <div class="info-value">@empleado?.Telefono</div>
-                </div>
-@*                 <div class="info-item">
-                    <div class="info-label"><i class="fas fa-map-marker-alt icon-naranja"></i> Dirección</div>
-                    <div class="info-value">@empleado?.Direccion</div>
-                </div>
-              *@
-                <div class="info-item">
-                    <div class="info-label"><i class="fas fa-id-card icon-naranja"></i> DPI</div>
-                    <div class="info-value">@empleado?.DPI</div>
-                </div>
-             
-
-            </div>
-        </div>
 
         <!-- Tabla de fechas -->
         <div class="info-section">
@@ -193,7 +147,7 @@
                 <i class="fas fa-tasks"></i> Acciones del Autorizador
             </div>
 
-            <div class="firma-info-box">
+@*             <div class="firma-info-box">
                 <i class="fas fa-info-circle"></i>
                 <p>
                     Al autorizar esta solicitud, su firma registrada se agregará automáticamente al documento.
@@ -201,21 +155,21 @@
                         <i class="fas fa-pen-fancy"></i> Gestionar mi firma
                     </a>
                 </p>
-            </div>
+            </div> *@
             
             <div class="botones-container">
-                <form asp-action="AutorizarSolicitud" method="post" class="inline-form" onsubmit="return confirm('¿Está seguro de autorizar esta solicitud? Su firma se agregará automáticamente.');">
+                <form asp-action="AutorizarSolicitud" method="post" class="inline-form" id="formAutorizar">
                     <input type="hidden" name="idSolicitud" value="@Model.Encabezado.IdSolicitud" />
-                    <button type="submit" class="btn btn-success boton-accion-grande">
+                    <button type="button" class="btn btn-success boton-accion-grande" id="btnMostrarModalAutorizar">
                         <i class="fas fa-check-circle"></i> Autorizar Solicitud
                     </button>
                 </form>
 
-                <form asp-action="Rechazar" method="post" class="inline-form" onsubmit="return confirmarRechazo(event);">
+                <form asp-action="Rechazar" method="post" class="inline-form" id="formRechazar">
                     <input type="hidden" name="idSolicitud" value="@Model.Encabezado.IdSolicitud" />
                     <input type="hidden" name="idAutorizador" value="@idAutorizador" />
                     <input type="hidden" name="observaciones" id="observacionesRechazo" value="" />
-                    <button type="submit" class="btn btn-danger boton-accion-grande">
+                    <button type="button" class="btn btn-danger boton-accion-grande" id="btnMostrarModalRechazar">
                         <i class="fas fa-times-circle"></i> Rechazar Solicitud
                     </button>
                 </form>
@@ -282,6 +236,109 @@
     </div>
 </div>
 
+<!-- Modal para Rechazar Solicitud -->
+<div class="modal fade" id="modalRechazarSolicitud" tabindex="-1" role="dialog" aria-labelledby="modalRechazarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content modal-rechazo">
+      
+      <div class="modal-header modal-rechazo__header">
+        <h5 class="modal-title" id="modalRechazarLabel">
+          <i class="fas fa-exclamation-triangle"></i>
+          Rechazar Solicitud
+        </h5>
+
+        <button type="button" class="close modal-rechazo__close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body modal-rechazo__body">
+        <div class="modal-rechazo__alert">
+          <i class="fas fa-info-circle"></i>
+          <div>
+            <strong>Importante:</strong> Esta acción rechazará la solicitud de vacaciones. El empleado será notificado del rechazo.
+          </div>
+        </div>
+
+        <div class="form-group mb-0">
+          <label for="motivoRechazoInput" class="modal-rechazo__label">
+            <i class="fas fa-comment-dots"></i>
+            Motivo del Rechazo <span>*</span>
+          </label>
+
+          <textarea
+            maxlength="150"
+            class="form-control modal-rechazo__textarea"
+            id="motivoRechazoInput"
+            rows="5"
+            placeholder="Explique detalladamente el motivo por el cual se rechaza esta solicitud de vacaciones..."
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer modal-rechazo__footer">
+        <button type="button" class="btn btn-secondary modal-rechazo__btn" data-dismiss="modal">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <button type="button" class="btn btn-primary modal-rechazo__btn modal-rechazo__btn--primary" id="btnConfirmarRechazo">
+          <i class="fas fa-ban"></i> Confirmar Rechazo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Autorizar Solicitud -->
+<div class="modal fade" id="modalAutorizarSolicitud" tabindex="-1" role="dialog" aria-labelledby="modalAutorizarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content modal-autorizar">
+      
+      <div class="modal-header modal-autorizar__header">
+        <h5 class="modal-title" id="modalAutorizarLabel">
+          <i class="fas fa-check-circle"></i>
+          Autorizar Solicitud
+        </h5>
+
+        <button type="button" class="close modal-autorizar__close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body modal-autorizar__body">
+        <div class="modal-autorizar__alert">
+          <i class="fas fa-info-circle"></i>
+          <div>
+            <strong>¿Está seguro de autorizar esta solicitud?</strong>
+            <p>Al confirmar, su firma registrada se agregará automáticamente al documento PDF y el empleado será notificado.</p>
+          </div>
+        </div>
+
+        <div class="modal-autorizar__info">
+          <div class="info-item">
+            <i class="fas fa-user"></i>
+            <span><strong>Empleado:</strong> @Model.Encabezado.NombreEmpleado</span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span><strong>Días solicitados:</strong> @Model.Encabezado.DiasSolicitadosTotal</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer modal-autorizar__footer">
+        <button type="button" class="btn btn-secondary modal-autorizar__btn" data-dismiss="modal">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <button type="button" class="btn btn-success modal-autorizar__btn modal-autorizar__btn--primary" id="btnConfirmarAutorizar">
+          <i class="fas fa-check-circle"></i> Confirmar Autorización
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 @section Styles {
     <link rel="stylesheet" href="~/css/empresas.css" />
     <link rel="stylesheet" href="~/css/detalle-solicitud.css" />
@@ -294,6 +351,254 @@
         border-radius: 8px;
         overflow: hidden;
     }
+
+    /* Estilos para el modal de rechazo */
+            /* ===== Fix layout: todo en columna, textarea full width ===== */
+            #modalRechazarSolicitud .modal-body {
+                padding: 22px !important;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+                /* Caja "Importante" (si la tienes como div con fondo) */
+                #modalRechazarSolicitud .modal-body > div {
+                    width: 100%;
+                }
+
+            #modalRechazarSolicitud .modal-dialog {
+                max-width: 480px; /* tamaño ideal */
+                width: 100%;
+                margin: 1.75rem auto; /* centrado horizontal */
+            }
+
+            /* Forzar que form-group no sea row/inline */
+            #modalRechazarSolicitud .form-group {
+                margin: 0 !important;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+                /* Label arriba, no a la par */
+                #modalRechazarSolicitud .form-group label {
+                    display: flex !important;
+                    align-items: center;
+                    gap: 8px;
+                    margin: 0 !important;
+                    font-weight: 700;
+                    color: #374151;
+                }
+
+                /* Textarea SIEMPRE debajo y a lo ancho */
+                #modalRechazarSolicitud .form-group textarea,
+                #modalRechazarSolicitud textarea.form-control {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    min-height: 140px;
+                    border-radius: 12px;
+                    border: 2px solid #E5E7EB;
+                    padding: 12px 14px;
+                    resize: vertical;
+                    box-sizing: border-box;
+                }
+
+                    /* Focus bonito */
+                    #modalRechazarSolicitud textarea.form-control:focus {
+                        border-color: #2563EB;
+                        box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .18);
+                        outline: none;
+                    }
+
+            /* Alert centrada y legible */
+            #modalRechazarSolicitud .modal-body p {
+                margin: 0;
+                line-height: 1.5;
+            }
+
+            /* Footer ordenado */
+            #modalRechazarSolicitud .modal-footer {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                padding: 16px 22px;
+                background: #F9FAFB;
+                border-top: 1px solid #E5E7EB;
+            }
+
+                /* Botones consistentes */
+                #modalRechazarSolicitud .modal-footer .btn {
+                    border-radius: 12px;
+                    padding: 10px 16px;
+                    font-weight: 700;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+            /* Primario con gradiente */
+            #modalRechazarSolicitud .btn-primary {
+                border: 0;
+                background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            }
+
+            /* Hover suaves */
+            #modalRechazarSolicitud .btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 8px 18px rgba(0,0,0,.12);
+            }
+
+            /* Header limpio */
+            #modalRechazarSolicitud .modal-header {
+                padding: 18px 22px;
+                border: 0;
+                background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+                color: #fff;
+            }
+
+
+                /* X */
+                #modalRechazarSolicitud .modal-header .close {
+                    color: #fff;
+                    opacity: .95;
+                    font-size: 1.8rem;
+                    line-height: 1;
+                    margin: 0;
+                    padding: 0;
+                    transition: transform .2s ease, opacity .2s ease;
+                    background: #1E40AF;
+                }
+
+                    #modalRechazarSolicitud .modal-header .close:hover {
+                        transform: rotate(90deg);
+                        opacity: 1;
+                    }
+
+    /* ===== MODAL AUTORIZAR ===== */
+    #modalAutorizarSolicitud .modal-dialog {
+        max-width: 500px;
+        width: 100%;
+        margin: 1.75rem auto;
+    }
+
+    #modalAutorizarSolicitud .modal-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    #modalAutorizarSolicitud .modal-header {
+        padding: 20px 24px;
+        border: 0;
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        color: #fff;
+    }
+
+    #modalAutorizarSolicitud .modal-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    #modalAutorizarSolicitud .modal-header .close {
+        color: #fff;
+        opacity: .95;
+        font-size: 1.8rem;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+        transition: transform .2s ease, opacity .2s ease;
+    }
+
+    #modalAutorizarSolicitud .modal-header .close:hover {
+        transform: rotate(90deg);
+        opacity: 1;
+    }
+
+    .modal-autorizar__alert {
+        background: #D1FAE5;
+        border-left: 4px solid #10B981;
+        padding: 16px;
+        border-radius: 8px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .modal-autorizar__alert i {
+        color: #059669;
+        font-size: 1.3rem;
+        margin-top: 2px;
+    }
+
+    .modal-autorizar__alert strong {
+        color: #065F46;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    .modal-autorizar__alert p {
+        margin: 0;
+        color: #047857;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .modal-autorizar__info {
+        background: #F9FAFB;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .modal-autorizar__info .info-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #374151;
+    }
+
+    .modal-autorizar__info .info-item i {
+        color: #10B981;
+        font-size: 1.1rem;
+        width: 20px;
+    }
+
+    #modalAutorizarSolicitud .modal-footer {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        padding: 16px 24px;
+        background: #F9FAFB;
+        border-top: 1px solid #E5E7EB;
+    }
+
+    #modalAutorizarSolicitud .modal-footer .btn {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    #modalAutorizarSolicitud .btn-success {
+        border: 0;
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    }
+
+    #modalAutorizarSolicitud .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,.15);
+    }
+
 
     .acciones-box {
         display: flex;
@@ -796,12 +1101,21 @@
 
     // Verificar carga de librerías al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Verificando pdfMake...');
+        console.log('=== VERIFICANDO LIBRERÍAS ===');
+        console.log('jQuery disponible:', typeof $ !== 'undefined');
+        console.log('Bootstrap disponible:', typeof bootstrap !== 'undefined');
+        console.log('pdfMake disponible:', typeof pdfMake !== 'undefined');
+        
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            console.log('✅ jQuery modal disponible');
+        } else {
+            console.warn('⚠️ jQuery modal NO disponible');
+        }
 
         if (typeof pdfMake !== 'undefined') {
-            console.log('pdfMake cargado correctamente');
+            console.log('✅ pdfMake cargado correctamente');
         } else {
-            console.error('pdfMake NO está disponible');
+            console.error('❌ pdfMake NO está disponible');
         }
 
         // Manejar el modal del visor de PDF
@@ -852,31 +1166,302 @@
     });
 
     // Función para confirmar rechazo con observaciones
+    let formRechazoActual = null;
+    
     function confirmarRechazo(event) {
         event.preventDefault();
+        formRechazoActual = event.target;
         
-        const motivo = prompt('Por favor, ingrese el motivo del rechazo (opcional):');
-        
-        // Si el usuario cancela, no enviar el formulario
-        if (motivo === null) {
-            return false;
+        // Limpiar el textarea
+        const textarea = document.getElementById('motivoRechazoInput');
+        if (textarea) {
+            textarea.value = '';
+            // Limpiar errores previos
+            const errorMsg = document.getElementById('errorMotivoRechazo');
+            if (errorMsg) {
+                errorMsg.remove();
+            }
+            textarea.style.borderColor = '#E5E7EB';
+            textarea.style.boxShadow = 'none';
         }
         
-        // Confirmar la acción
-        if (confirm('¿Está seguro de que desea rechazar esta solicitud?')) {
-            // Agregar el motivo al campo oculto
-            document.getElementById('observacionesRechazo').value = motivo;
-            // Obtener el formulario y enviarlo
-            const form = event.target;
-            console.log('📤 Enviando formulario de rechazo...', {
-                idSolicitud: form.querySelector('[name="idSolicitud"]').value,
-                idAutorizador: form.querySelector('[name="idAutorizador"]').value,
-                observaciones: motivo
-            });
-            form.submit();
-            return true;
+        // Mostrar el modal usando Bootstrap nativo
+        const modal = document.getElementById('modalRechazarSolicitud');
+        if (modal) {
+            // Si Bootstrap está disponible
+            if (typeof bootstrap !== 'undefined') {
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            } else if (typeof $ !== 'undefined' && $.fn.modal) {
+                // Si jQuery está disponible
+                $(modal).modal('show');
+            } else {
+                // Fallback: mostrar manualmente
+                // Crear backdrop primero
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                backdrop.id = 'modalBackdrop';
+                backdrop.onclick = cerrarModal;
+                document.body.appendChild(backdrop);
+                
+                // Mostrar modal
+                modal.style.display = 'block';
+                modal.classList.add('show');
+                document.body.classList.add('modal-open');
+                
+                // Centrar el modal verticalmente
+                setTimeout(function() {
+                    const dialog = modal.querySelector('.modal-dialog');
+                    if (dialog) {
+                        const windowHeight = window.innerHeight;
+                        const dialogHeight = dialog.offsetHeight;
+                        const topMargin = Math.max((windowHeight - dialogHeight) / 2, 30);
+                        dialog.style.marginTop = topMargin + 'px';
+                    }
+                }, 10);
+            }
         }
         
         return false;
     }
+    
+    // Función para cerrar el modal
+    function cerrarModal() {
+        const modal = document.getElementById('modalRechazarSolicitud');
+        if (modal) {
+            if (typeof bootstrap !== 'undefined') {
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) {
+                    bsModal.hide();
+                }
+            } else if (typeof $ !== 'undefined' && $.fn.modal) {
+                $(modal).modal('hide');
+            } else {
+                // Fallback: cerrar manualmente
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                
+                // Remover backdrop
+                const backdrop = document.getElementById('modalBackdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+            }
+        }
+    }
+    
+    // Esperar a que el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejar el botón de confirmar rechazo en el modal
+        const btnConfirmar = document.getElementById('btnConfirmarRechazo');
+        if (btnConfirmar) {
+            btnConfirmar.addEventListener('click', function() {
+                const motivo = document.getElementById('motivoRechazoInput').value.trim();
+                
+                // Validar que se haya ingresado un motivo
+                if (!motivo) {
+                    // Agregar efecto de error al textarea
+                    const textarea = document.getElementById('motivoRechazoInput');
+                    textarea.style.borderColor = '#2563EB';
+                    textarea.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
+                    textarea.focus();
+                    
+                    // Mostrar mensaje de error
+                    if (!document.getElementById('errorMotivoRechazo')) {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.id = 'errorMotivoRechazo';
+                        errorMsg.style.cssText = 'color: #2563EB; font-size: 0.875rem; margin-top: 8px; font-weight: 500;';
+                        errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Por favor, ingrese el motivo del rechazo.';
+                        textarea.parentNode.appendChild(errorMsg);
+                    }
+                    
+                    return;
+                }
+                
+                // Agregar el motivo al campo oculto
+                document.getElementById('observacionesRechazo').value = motivo;
+                
+                // Cerrar el modal
+                cerrarModal();
+                
+                // Enviar el formulario después de un pequeño delay
+                setTimeout(function() {
+                    if (formRechazoActual) {
+                        formRechazoActual.submit();
+                    }
+                }, 300);
+            });
+        }
+        
+        // Manejar botones de cerrar modal
+        const closeButtons = document.querySelectorAll('#modalRechazarSolicitud .close, #modalRechazarSolicitud [data-dismiss="modal"]');
+        closeButtons.forEach(function(btn) {
+            btn.addEventListener('click', cerrarModal);
+        });
+        
+        // Cerrar modal con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modalRechazarSolicitud');
+                if (modal && modal.classList.contains('show')) {
+                    cerrarModal();
+                }
+            }
+        });
+        
+        // Limpiar el error cuando el usuario empiece a escribir
+        const motivoInput = document.getElementById('motivoRechazoInput');
+        if (motivoInput) {
+            motivoInput.addEventListener('input', function() {
+                this.style.borderColor = '#E5E7EB';
+                this.style.boxShadow = 'none';
+                const errorMsg = document.getElementById('errorMotivoRechazo');
+                if (errorMsg) {
+                    errorMsg.remove();
+                }
+            });
+            
+            // Agregar efecto de focus al textarea
+            motivoInput.addEventListener('focus', function() {
+                this.style.borderColor = '#2563EB';
+                this.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
+            });
+            
+            motivoInput.addEventListener('blur', function() {
+                if (!this.value.trim()) {
+                    this.style.borderColor = '#E5E7EB';
+                    this.style.boxShadow = 'none';
+                }
+            });
+        }
+
+        // ===== FUNCIONES PARA ABRIR/CERRAR MODALES =====
+        function abrirModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) {
+                console.error('Modal no encontrado:', modalId);
+                return;
+            }
+
+            console.log('Abriendo modal:', modalId);
+
+            // Intentar con jQuery/Bootstrap primero
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                console.log('Usando jQuery modal');
+                $('#' + modalId).modal('show');
+            } 
+            // Intentar con Bootstrap 5 nativo
+            else if (typeof bootstrap !== 'undefined') {
+                console.log('Usando Bootstrap 5');
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            }
+            // Fallback manual
+            else {
+                console.log('Usando fallback manual');
+                // Crear backdrop
+                let backdrop = document.getElementById('modal-backdrop-custom');
+                if (!backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.id = 'modal-backdrop-custom';
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1040;';
+                    document.body.appendChild(backdrop);
+                }
+                
+                // Mostrar modal
+                modal.style.display = 'block';
+                modal.classList.add('show');
+                modal.style.zIndex = '1050';
+                document.body.classList.add('modal-open');
+                
+                // Agregar evento para cerrar con ESC
+                document.addEventListener('keydown', function cerrarConEsc(e) {
+                    if (e.key === 'Escape') {
+                        cerrarModal(modalId);
+                        document.removeEventListener('keydown', cerrarConEsc);
+                    }
+                });
+            }
+        }
+
+        function cerrarModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            console.log('Cerrando modal:', modalId);
+
+            // Intentar con jQuery/Bootstrap
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#' + modalId).modal('hide');
+            }
+            // Intentar con Bootstrap 5
+            else if (typeof bootstrap !== 'undefined') {
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) bsModal.hide();
+            }
+            // Fallback manual
+            else {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                
+                const backdrop = document.getElementById('modal-backdrop-custom');
+                if (backdrop) backdrop.remove();
+            }
+        }
+
+        // ===== MODAL AUTORIZAR =====
+        const btnMostrarModalAutorizar = document.getElementById('btnMostrarModalAutorizar');
+        if (btnMostrarModalAutorizar) {
+            btnMostrarModalAutorizar.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Click en botón autorizar');
+                abrirModal('modalAutorizarSolicitud');
+            });
+        }
+
+        const btnConfirmarAutorizar = document.getElementById('btnConfirmarAutorizar');
+        if (btnConfirmarAutorizar) {
+            btnConfirmarAutorizar.addEventListener('click', function() {
+                console.log('Confirmando autorización...');
+                cerrarModal('modalAutorizarSolicitud');
+                
+                // Pequeño delay para que se vea el cierre del modal
+                setTimeout(function() {
+                    document.getElementById('formAutorizar').submit();
+                }, 200);
+            });
+        }
+
+        // ===== MODAL RECHAZAR =====
+        const btnMostrarModalRechazar = document.getElementById('btnMostrarModalRechazar');
+        if (btnMostrarModalRechazar) {
+            btnMostrarModalRechazar.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Click en botón rechazar');
+                
+                // Limpiar el textarea
+                const textarea = document.getElementById('motivoRechazoInput');
+                if (textarea) {
+                    textarea.value = '';
+                    textarea.style.borderColor = '#E5E7EB';
+                    textarea.style.boxShadow = 'none';
+                }
+                
+                abrirModal('modalRechazarSolicitud');
+            });
+        }
+
+        // Botones de cerrar modales
+        document.querySelectorAll('[data-dismiss="modal"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                if (modal) {
+                    cerrarModal(modal.id);
+                }
+            });
+        });
+    });
 </script>

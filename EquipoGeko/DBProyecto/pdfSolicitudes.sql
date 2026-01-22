@@ -389,3 +389,20 @@ BEGIN
     END CATCH
 END;
 GO
+
+ALTER TABLE SolicitudEncabezado
+ADD TipoFormatoPdf INT NOT NULL DEFAULT 1;
+GO
+
+-- Verificar que se agregó correctamente
+SELECT 
+    COLUMN_NAME, 
+    DATA_TYPE, 
+    IS_NULLABLE,
+    COLUMN_DEFAULT
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'SolicitudEncabezado'
+  AND COLUMN_NAME = 'TipoFormatoPdf';
+GO
+
+PRINT 'Columna TipoFormatoPdf agregada exitosamente!';

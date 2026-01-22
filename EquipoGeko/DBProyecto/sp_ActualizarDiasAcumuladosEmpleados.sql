@@ -55,3 +55,30 @@ END
 GO
 
 EXEC sp_ActualizarDiasAcumuladosEmpleados
+
+
+-- Opción 1: Modificar el SP para que NO sobrescriba datos
+CREATE OR ALTER PROCEDURE sp_ActualizarDiasAcumuladosEmpleados
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Solo actualizar empleados nuevos (sin días cargados manualmente)
+    UPDATE e
+    SET e.DiasVacacionesAcumulados = 
+        (
+            (
+                DATEDIFF(MONTH, e.FechaIngreso, GETDATE()) 
+                - CASE 
+                    WHEN DAY(GETDATE()) < DAY(e.FechaIngreso) THEN 1 
+                    ELSE 0 
+                  END
+            ) * 1.25
+        )
+    FROM Empleados e
+    WHERE e.FK_IdEstado = 1
+      AND DATEDIFF(DAY, e.FechaIngreso, GETDATE()) > 0
+      AND e.DiasVacacionesAcumulados = 0; -- Solo si está en 0
+
+END
+GO

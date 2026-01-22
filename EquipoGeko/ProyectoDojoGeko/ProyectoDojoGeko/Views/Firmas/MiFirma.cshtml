@@ -319,22 +319,22 @@
                 <i class="fas fa-save"></i> Guardar Firma
             </button>
 
-            @if (Model?.ImagenFirmaData != null)
+@*             @if (Model?.ImagenFirmaData != null)
             {
                 <button type="button" class="btn btn-danger btn-action" onclick="confirmarEliminar()">
                     <i class="fas fa-trash"></i> Eliminar Firma
                 </button>
-            }
+            } *@
         </div>
     </form>
 
         <!-- Formulario oculto para eliminar -->
-        @if (Model?.ImagenFirmaData != null)
+@*         @if (Model?.ImagenFirmaData != null)
         {
             <form asp-action="EliminarFirma" method="post" id="formEliminar" style="display: none;">
                 @Html.AntiForgeryToken()
             </form>
-        }
+        } *@''
     </div>
 </div>
 

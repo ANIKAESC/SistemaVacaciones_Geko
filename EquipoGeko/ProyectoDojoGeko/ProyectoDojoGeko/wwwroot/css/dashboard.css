@@ -46,6 +46,7 @@ body {
     overflow-x: hidden;
 }
 
+
 /* Contenedor principal */
 .app-container {
     display: flex;
@@ -151,6 +152,7 @@ body {
 .nav-link i {
     width: 20px;
     margin-right: 12px;
+    margin-left: 10px;
     font-size: 16px;
     text-align: center;
 }
@@ -158,6 +160,7 @@ body {
 .nav-link span {
     font-size: 14px;
     font-weight: 500;
+    margin-left: 10px;
 }
 
 /* Footer de la barra lateral */

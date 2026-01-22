@@ -38,6 +38,12 @@
                 Consulta y gestiona tus solicitudes de vacaciones.
             </p>
         </div>
+        <div class="header-actions">
+            <button type="button" class="btn-cumpleanos" data-bs-toggle="modal" data-bs-target="#modalCumpleanos">
+                <i class="fas fa-birthday-cake"></i>
+                Solicitud por Cumpleaños
+            </button>
+        </div>
     </div>
 
     <div class="form-card empleado-info-card">
@@ -57,7 +63,7 @@
             <h2><i class="fas fa-list"></i> Solicitudes</h2>
 
         </div>
-        <table class="table table-striped">
+        <table class="table table-striped" id="tablaSolicitudes">
             <thead>
                 <tr>
                     <th>No. Solicitud</th>
@@ -144,7 +150,7 @@
         <!-- Paginación -->
         <div class="pagination-container">
             <div class="pagination-info">
-                Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> sistemas
+                Mostrando <span id="showing-start">1</span> a <span id="showing-end">@Model.Count()</span> de <span id="total-items">@Model.Count()</span> solicitudes
             </div>
             <div class="pagination-controls">
                 <button id="prev-page" class="pagination-btn" disabled>
@@ -167,6 +173,65 @@
 <form id="cancelForm" asp-action="CancelarSolicitud" method="post" style="display: none;">
     <input type="hidden" id="idSolicitud" name="idSolicitud" />
 </form>
+
+<!-- Modal Solicitud por Cumpleaños -->
+<div class="modal fade" id="modalCumpleanos" tabindex="-1" aria-labelledby="modalCumpleanosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCumpleanosLabel">
+                    <i class="fas fa-birthday-cake"></i> Solicitud por Cumpleaños
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formCumpleanos" asp-action="SolicitudCumpleanos" asp-controller="Solicitudes" method="get">
+                <div class="modal-body">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-info-circle"></i> 
+                        Configura tu solicitud de día de cumpleaños seleccionando el autorizador y el formato del PDF.
+                    </p>
+
+                    <!-- Selector de Autorizador -->
+                    <div class="mb-3">
+                        <label for="idAutorizador" class="form-label">
+                            <i class="fas fa-user-tie icon-label"></i>Autorizador <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="idAutorizador" name="idAutorizador" required>
+                            <option value="">Seleccione un autorizador...</option>
+                            @if (ViewBag.empleadosAutoriza != null)
+                            {
+                                @foreach (var empleado in ViewBag.empleadosAutoriza as List<SelectListItem>)
+                                {
+                                    <option value="@empleado.Value">@empleado.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Selector de Formato PDF -->
+                    <div class="mb-3">
+                        <label for="tipoFormato" class="form-label">
+                            <i class="fas fa-file-pdf icon-label"></i>Formato de PDF <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="tipoFormato" name="tipoFormato" required>
+                            <option value="">Seleccione un formato...</option>
+                            <option value="1">Formato GDG</option>
+                            <option value="2">Formato GEKO</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @section Styles {
     <link rel="stylesheet" href="~/css/empleado-form.css" />
@@ -193,6 +258,46 @@
             margin-bottom: 25px;
             border-bottom: 2px solid var(--soft-gray);
             padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-cumpleanos {
+            background: linear-gradient(135deg, #8ab5ff, #7194d2);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 350;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgb(138, 181, 255);
+        }
+
+        .btn-cumpleanos:hover {
+            transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgb(138, 181, 255);
+                background: linear-gradient(135deg, #7194d2, #8ab5ff);
+        }
+
+        .btn-cumpleanos i {
+            font-size: 16px;
         }
 
         .page-title {
@@ -514,12 +619,246 @@
             }
 
         }
+
+        /* ===== ESTILOS PARA MODAL CUMPLEAÑOS ===== */
+        #modalCumpleanos {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 9999 !important;
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #modalCumpleanos.show {
+            display: block !important;
+        }
+
+        #modalCumpleanos .modal-dialog {
+            position: relative;
+            width: auto;
+            max-width: 600px; /* Modal más pequeño */
+            margin: 1.75rem auto;
+            pointer-events: none;
+        }
+
+        #modalCumpleanos .modal-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            text-align: left;
+            pointer-events: auto;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid rgba(0,0,0,.2);
+            border-radius: 0.5rem;
+            outline: 0;
+        }
+
+        .modal-backdrop {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 9998 !important;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+        }
+
+        .modal-backdrop.show {
+            opacity: 0.5;
+        }
+
+        /* ===== ESTILOS INTERNOS DEL MODAL ===== */
+        #modalCumpleanos .modal-header {
+            background: linear-gradient(135deg, #7194d2, #8ab5ff);
+            color: white;
+            border-bottom: none;
+            border-radius: 0.5rem 0.5rem 0 0;
+            padding: 1.5rem;
+        }
+
+        #modalCumpleanos .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: left;
+            gap: 0.5rem;
+        }
+
+        #modalCumpleanos .modal-title i {
+            font-size: 1.5rem;
+        }
+
+        #modalCumpleanos .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+
+        #modalCumpleanos .btn-close:hover {
+            opacity: 1;
+        }
+
+        #modalCumpleanos .modal-body {
+            padding: 1.5rem;
+            background: #f8f9fa;
+        }
+
+        #modalCumpleanos .modal-body p.text-muted {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+                border-left: 4px solid #8ab5ff;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        #modalCumpleanos .form-label {
+            font-weight: 600;
+            color: #343a40;
+            margin-bottom: 0.5rem;
+            display: block;
+            text-align: left;
+        }
+
+        #modalCumpleanos .form-label i.icon-label {
+                color: #8ab5ff;
+            display: inline-block;
+            width: 20px; /* Ancho fijo para alineación perfecta */
+            text-align: center;
+            margin-right: 0.5rem;
+        }
+
+        #modalCumpleanos .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            width: 100%; /* Asegurar que ambos selectores tengan el mismo ancho */
+        }
+
+        #modalCumpleanos .form-select:focus {
+                border-color: #8ab5ff;
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 157, 0.25);
+        }
+
+        #modalCumpleanos .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #dee2e6;
+            background: white;
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+
+        #modalCumpleanos .btn-secondary {
+            background: #6c757d;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        #modalCumpleanos .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        #modalCumpleanos .btn-primary {
+            background: linear-gradient(135deg, #7194d2, #8ab5ff);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgb(138, 181, 255);
+        }
+
+        #modalCumpleanos .btn-primary:hover {
+                background: linear-gradient(135deg, #8ab5ff, #7194d2);
+            transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgb(138, 181, 255);
+        }
     </style>
 }
 
 
 @section Scripts {
     <script>
+        // Inicializar modal de cumpleaños
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalCumpleanos = document.getElementById('modalCumpleanos');
+            const btnCumpleanos = document.querySelector('[data-bs-target="#modalCumpleanos"]');
+            
+            if (btnCumpleanos && modalCumpleanos) {
+                btnCumpleanos.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Crear backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.id = 'modalBackdrop';
+                    document.body.appendChild(backdrop);
+                    
+                    // Mostrar modal
+                    modalCumpleanos.classList.add('show');
+                    modalCumpleanos.style.display = 'block';
+                    document.body.classList.add('modal-open');
+                    
+                    // Cerrar modal
+                    const closeButtons = modalCumpleanos.querySelectorAll('[data-bs-dismiss="modal"]');
+                    closeButtons.forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            modalCumpleanos.classList.remove('show');
+                            modalCumpleanos.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const existingBackdrop = document.getElementById('modalBackdrop');
+                            if (existingBackdrop) {
+                                existingBackdrop.remove();
+                            }
+                        });
+                    });
+                    
+                    // Cerrar al hacer click en el backdrop
+                    backdrop.addEventListener('click', function() {
+                        modalCumpleanos.classList.remove('show');
+                        modalCumpleanos.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                        backdrop.remove();
+                    });
+                });
+            }
+
+            // Validar formulario de cumpleaños antes de enviar
+            const formCumpleanos = document.getElementById('formCumpleanos');
+            if (formCumpleanos) {
+                formCumpleanos.addEventListener('submit', function(e) {
+                    const idAutorizador = document.getElementById('idAutorizador').value;
+                    const tipoFormato = document.getElementById('tipoFormato').value;
+
+                    if (!idAutorizador || idAutorizador === '') {
+                        e.preventDefault();
+                        alert('Por favor, selecciona un autorizador.');
+                        return false;
+                    }
+
+                    if (!tipoFormato || tipoFormato === '') {
+                        e.preventDefault();
+                        alert('Por favor, selecciona un formato de PDF.');
+                        return false;
+                    }
+
+                    // Si todo está bien, mostrar loading
+                    console.log('✅ Formulario válido, enviando...');
+                    console.log('IdAutorizador:', idAutorizador);
+                    console.log('TipoFormato:', tipoFormato);
+                });
+            }
+        });
+
         let selectedRow = null;
         let selectedSolicitudId = 0;
         let selectedEstado = '';
@@ -574,5 +913,135 @@
                 document.getElementById('cancelForm').submit();
             }
         });
+
+        // Inicializar paginación
+        initPagination();
+
+        function initPagination() {
+            const table = document.getElementById('tablaSolicitudes');
+            if (!table) return;
+
+            const rowsPerPage = 10;
+            const mainRows = Array.from(table.querySelectorAll('tbody tr.main-row'));
+            const totalRows = mainRows.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+            // Si no hay suficientes filas, ocultar paginación
+            if (totalPages <= 1) {
+                document.querySelector('.pagination-container').style.display = 'none';
+                return;
+            }
+
+            let currentPage = 1;
+
+            // Función para mostrar página
+            function showPage(pageNumber) {
+                currentPage = pageNumber;
+                const startIndex = (pageNumber - 1) * rowsPerPage;
+                const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+
+                // Cerrar todas las filas de detalles al cambiar de página
+                document.querySelectorAll('.collapse-row').forEach(detailRow => {
+                    detailRow.style.display = 'none';
+                    // Resetear iconos
+                    const mainRow = detailRow.previousElementSibling;
+                    if (mainRow) {
+                        const icon = mainRow.querySelector('.fa-chevron-up');
+                        if (icon) {
+                            icon.classList.remove('fa-chevron-up');
+                            icon.classList.add('fa-chevron-down');
+                        }
+                    }
+                });
+
+                // Mostrar/ocultar filas principales
+                mainRows.forEach((row, index) => {
+                    row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+                });
+
+                // Actualizar info de paginación
+                document.getElementById('showing-start').textContent = totalRows > 0 ? startIndex + 1 : 0;
+                document.getElementById('showing-end').textContent = endIndex;
+                document.getElementById('total-items').textContent = totalRows;
+
+                // Actualizar botones
+                document.getElementById('prev-page').disabled = pageNumber === 1;
+                document.getElementById('next-page').disabled = pageNumber === totalPages;
+
+                // Actualizar botones de página
+                updatePageButtons();
+            }
+
+            // Función para crear botones de página
+            function updatePageButtons() {
+                const paginationPages = document.getElementById('pagination-pages');
+                paginationPages.innerHTML = '';
+
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Botón primera página
+                if (startPage > 1) {
+                    const firstBtn = createPageButton(1);
+                    paginationPages.appendChild(firstBtn);
+                    if (startPage > 2) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = 'var(--gray-500)';
+                        paginationPages.appendChild(dots);
+                    }
+                }
+
+                // Botones de páginas
+                for (let i = startPage; i <= endPage; i++) {
+                    const btn = createPageButton(i);
+                    paginationPages.appendChild(btn);
+                }
+
+                // Botón última página
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = 'var(--gray-500)';
+                        paginationPages.appendChild(dots);
+                    }
+                    const lastBtn = createPageButton(totalPages);
+                    paginationPages.appendChild(lastBtn);
+                }
+            }
+
+            // Crear botón de página
+            function createPageButton(pageNumber) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (pageNumber === currentPage ? ' active' : '');
+                btn.textContent = pageNumber;
+                btn.onclick = () => showPage(pageNumber);
+                return btn;
+            }
+
+            // Event listeners para botones anterior/siguiente
+            document.getElementById('prev-page').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    showPage(currentPage - 1);
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    showPage(currentPage + 1);
+                }
+            });
+
+            // Mostrar primera página
+            showPage(1);
+        }
     </script>
 }

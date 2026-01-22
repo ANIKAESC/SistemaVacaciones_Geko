@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -85,6 +85,10 @@ namespace ProyectoDojoGeko.Models
         [Range(0.00, 365.00, ErrorMessage = "El campo {0} debe estar entre {1} y {2} días.")]
         [Column("DiasVacacionesAcumulados")]
         public decimal DiasVacacionesAcumulados { get; set; } = 0.00M;
+
+        [Range(0.00, 365.00, ErrorMessage = "El campo {0} debe estar entre {1} y {2} días.")]
+        [Column("DiasTomadosHistoricos")]
+        public decimal DiasTomadosHistoricos { get; set; } = 0.00M;
 
         [DataType(DataType.Date)]
         [Column("FechaNacimiento")]

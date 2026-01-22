@@ -32,6 +32,7 @@ namespace ProyectoDojoGeko.Controllers
         private readonly daoProyectoEquipoWSAsync _daoProyectoEquipo;
         private readonly ILogger<SolicitudesController> _logger;
         private readonly IConfiguration _configuration;
+        private readonly EmailService _emailService;
         //private readonly daoEmpleadoEquipo _daoEmpleadoEquipo;
 
         /*=================================================   
@@ -56,7 +57,8 @@ namespace ProyectoDojoGeko.Controllers
             daoProyectoEquipoWSAsync daoProyectoEquipo,
             IPdfSolicitudService pdfService,
             ILogger<SolicitudesController> logger,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            EmailService emailService)
         {
             _daoEmpleado = daoEmpleado;
             _daoSolicitud = daoSolicitud;
@@ -70,6 +72,7 @@ namespace ProyectoDojoGeko.Controllers
             _pdfService = pdfService;
             _logger = logger;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         #endregion
@@ -235,8 +238,8 @@ namespace ProyectoDojoGeko.Controllers
                     ViewBag.Estados = new List<SelectListItem>();
                 }
 
-                // Le decimos que es de tipo double para que pueda manejar decimales
-                ViewBag.DiasDisponibles = (double)(empleado.DiasVacacionesAcumulados);
+                // Calcular días disponibles correctamente
+                ViewBag.DiasDisponibles = await CalcularDiasDisponiblesAsync(empleado.IdEmpleado);
 
                 // Mandamos los feriados a la vista para deshabilitarlos en el calendario
                 try
@@ -247,6 +250,44 @@ namespace ProyectoDojoGeko.Controllers
                 {
                     await RegistrarError("obtener feriados", exFeriados);
                     ViewBag.Feriados = new Dictionary<DateTime, double>();
+                }
+
+                // Cargar autorizadores para el modal de cumpleaños
+                try
+                {
+                    using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    {
+                        await connection.OpenAsync();
+                        var query = @"SELECT DISTINCT u.IdUsuario, e.NombresEmpleado, e.ApellidosEmpleado
+                                     FROM Usuarios u
+                                     INNER JOIN Empleados e ON u.FK_IdEmpleado = e.IdEmpleado
+                                     INNER JOIN UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
+                                     WHERE ur.FK_IdRol IN (3, 4, 5)
+                                     AND e.IdEmpleado != @IdEmpleado";
+                        
+                        using (var command = new SqlCommand(query, connection))
+                        {
+                            command.Parameters.AddWithValue("@IdEmpleado", empleado.IdEmpleado);
+                            using (var reader = await command.ExecuteReaderAsync())
+                            {
+                                var empleadosLimpio = new List<SelectListItem>();
+                                while (await reader.ReadAsync())
+                                {
+                                    empleadosLimpio.Add(new SelectListItem
+                                    {
+                                        Value = reader.GetInt32(0).ToString(), // IdUsuario
+                                        Text = $"{reader.GetString(1)} {reader.GetString(2)}"
+                                    });
+                                }
+                                ViewBag.empleadosAutoriza = empleadosLimpio;
+                            }
+                        }
+                    }
+                }
+                catch (Exception exAutorizadores)
+                {
+                    await RegistrarError("obtener autorizadores", exAutorizadores);
+                    ViewBag.empleadosAutoriza = new List<SelectListItem>();
                 }
 
                 // Registramos la acción en la bitácora
@@ -336,7 +377,7 @@ namespace ProyectoDojoGeko.Controllers
                 //}).ToList();
 
 
-                await _bitacoraService.RegistrarBitacoraAsync("Vista RRecursosHumanos", "Se obtubieron los encabezados de las solicitudes");
+                await _bitacoraService.RegistrarBitacoraAsync("Vista RecursosHumanos", "Se obtubieron los encabezados de las solicitudes");
                 return View(solicitudes);
 
             }
@@ -447,6 +488,22 @@ namespace ProyectoDojoGeko.Controllers
         {
             try
             {
+                // 0. Actualizar días acumulados antes de mostrar la vista
+                try
+                {
+                    await _daoEmpleado.ActualizarDiasAcumuladosEmpleadosAsync();
+                }
+                catch (Exception diasEx)
+                {
+                    // Si falla, logueamos pero continuamos
+                    await _loggingService.RegistrarLogAsync(new LogViewModel
+                    {
+                        Accion = "Warning - Actualización Días",
+                        Descripcion = $"No se pudieron actualizar los días acumulados al cargar vista Crear: {diasEx.Message}",
+                        Estado = false
+                    });
+                }
+                
                 // 1. Obtener el objeto empleado completo, como en la vista Index.
                 var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado") ?? 0;
                 var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado);
@@ -469,7 +526,9 @@ namespace ProyectoDojoGeko.Controllers
                 // Unificar lógica: Preparar ViewBag y Sesión como en la vista Index.
                 var nombreCompleto = $"{empleado.NombresEmpleado} {empleado.ApellidosEmpleado}";
                 HttpContext.Session.SetString("NombreCompletoEmpleado", nombreCompleto);
-                ViewBag.DiasDisponibles = (double)empleado.DiasVacacionesAcumulados;
+                
+                // Calcular días disponibles correctamente
+                ViewBag.DiasDisponibles = await CalcularDiasDisponiblesAsync(empleado.IdEmpleado);
 
                 // Mandamos los feriados a la vista para deshabilitarlos en el calendario
                 ViewBag.Feriados = await GetFeriadosConProporcion();
@@ -517,7 +576,7 @@ namespace ProyectoDojoGeko.Controllers
                                         empleadosLimpio.Add(new SelectListItem
                                         {
                                             Value = reader.GetInt32(0).ToString(), // IdUsuario
-                                            Text = $"{reader.GetString(1)} {reader.GetString(2)} ({reader.GetString(3)})"
+                                            Text = $"{reader.GetString(1)} {reader.GetString(2)}"
                                         });
                                     }
                                     ViewBag.empleadosAutoriza = empleadosLimpio;
@@ -668,25 +727,62 @@ namespace ProyectoDojoGeko.Controllers
                 var feriados = await GetFeriadosConProporcion();
                 decimal totalDiasHabiles = 0;
 
-                foreach (var detalle in solicitud.Detalles)
-                {
-                    totalDiasHabiles += CalcularDiasHabiles(detalle.FechaInicio, detalle.FechaFin, feriados);
-                }
-
                 // Validar que el empleado tenga suficientes días disponibles
                 var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
                 if (idEmpleado.HasValue)
                 {
                     var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado.Value);
+                    
+                    // Calcular días hábiles excluyendo el cumpleaños
+                    foreach (var detalle in solicitud.Detalles)
+                    {
+                        totalDiasHabiles += CalcularDiasHabiles(detalle.FechaInicio, detalle.FechaFin, feriados, empleado?.FechaNacimiento);
+                    }
                     if (empleado != null)
                     {
-                        if (totalDiasHabiles > empleado.DiasVacacionesAcumulados)
+                        // 🎂 VALIDACIÓN ESPECIAL PARA CUMPLEAÑOS
+                        if (totalDiasHabiles == 0)
+                        {
+                            _logger.LogInformation("🎂 Detectado totalDiasHabiles = 0. Verificando si es cumpleaños...");
+                            
+                            // Verificar si es SOLO el día de cumpleaños
+                            if (EsSoloCumpleanos(solicitud.Detalles, empleado.FechaNacimiento))
+                            {
+                                _logger.LogInformation("✅ Confirmado: Es solicitud de cumpleaños. IdAutorizador: {IdAutorizador}", solicitud.Encabezado.IdAutorizador);
+                                
+                                // Permitir crear solicitud de cumpleaños con 0 días
+                                solicitud.Encabezado.Observaciones = string.IsNullOrEmpty(solicitud.Encabezado.Observaciones)
+                                    ? "🎂 Solicitud de día de cumpleaños - No se descuentan días de vacaciones"
+                                    : solicitud.Encabezado.Observaciones + " | 🎂 Día de cumpleaños - No se descuentan días";
+                                
+                                TempData["InfoMessage"] = "🎂 Tu solicitud de cumpleaños ha sido creada. Este día no se descontará de tus vacaciones.";
+                                
+                                await _bitacoraService.RegistrarBitacoraAsync(
+                                    "Solicitud Cumpleaños", 
+                                    $"Solicitud de cumpleaños creada para {empleado.NombresEmpleado} {empleado.ApellidosEmpleado} - 0 días descontados. IdAutorizador: {solicitud.Encabezado.IdAutorizador}"
+                                );
+                                
+                                // ✅ CONTINUAR con el flujo normal (asignar autorizador, crear solicitud, generar PDF)
+                                // NO hacer return aquí, dejar que continúe
+                            }
+                            else
+                            {
+                                // No es cumpleaños, no permitir solicitud de 0 días
+                                var mensajeError = "Debes solicitar al menos 1 día de vacaciones. Si es tu cumpleaños, asegúrate de seleccionar la fecha correcta.";
+                                TempData["ErrorMessage"] = mensajeError;
+                                ModelState.AddModelError("", mensajeError);
+                                await RecargarViewBagCrearAsync();
+                                return View(solicitud);
+                            }
+                        }
+                        else if (totalDiasHabiles > empleado.DiasVacacionesAcumulados)
                         {
                             var mensajeError = $"No tienes suficientes días disponibles. Solicitaste {totalDiasHabiles} días pero solo tienes {empleado.DiasVacacionesAcumulados} días disponibles.";
                             TempData["ErrorMessage"] = mensajeError;
                             TempData.Keep("ErrorMessage"); // Mantener el mensaje para la próxima solicitud
                             await _bitacoraService.RegistrarBitacoraAsync("Validación de días", $"Intento de solicitud con {totalDiasHabiles} días cuando solo tiene {empleado.DiasVacacionesAcumulados} disponibles");
                             ModelState.AddModelError("", mensajeError); // Asegurar que el error se muestre en la validación del modelo
+                            await RecargarViewBagCrearAsync();
                             return View(solicitud);
                         }
                     }
@@ -696,6 +792,7 @@ namespace ProyectoDojoGeko.Controllers
                         TempData["ErrorMessage"] = errorMsg;
                         TempData.Keep("ErrorMessage");
                         ModelState.AddModelError("", errorMsg);
+                        await RecargarViewBagCrearAsync();
                         return View(solicitud);
                     }
                 }
@@ -705,6 +802,7 @@ namespace ProyectoDojoGeko.Controllers
                     TempData["ErrorMessage"] = errorMsg;
                     TempData.Keep("ErrorMessage");
                     ModelState.AddModelError("", errorMsg);
+                    await RecargarViewBagCrearAsync();
                     return View(solicitud);
                 }
 
@@ -730,8 +828,17 @@ namespace ProyectoDojoGeko.Controllers
 
                             if (empleadosEquipo == null || !empleadosEquipo.Any())
                             {
-                                TempData["ErrorMessage"] = "No se encontraron empleados en el equipo. Selecciona un autorizador manualmente.";
+                                _logger.LogWarning("⚠️ No se encontraron empleados en el equipo. Recargando ViewBag...");
+                                
+                                await RecargarViewBagCrearAsync();
+                                
+                                var countEquipo = (ViewBag.EmpleadosAutorizaEquipo as List<SelectListItem>)?.Count ?? 0;
+                                var countGeneral = (ViewBag.empleadosAutoriza as List<SelectListItem>)?.Count ?? 0;
+                                
+                                TempData["ErrorMessage"] = $"No se encontraron empleados en el equipo. Selecciona un autorizador manualmente. [DEBUG: Autorizadores equipo={countEquipo}, general={countGeneral}]";
                                 ModelState.AddModelError("", TempData["ErrorMessage"].ToString());
+                                
+                                _logger.LogInformation("✅ ViewBag recargado. EmpleadosAutorizaEquipo: {Count}", countEquipo);
                                 return View(solicitud);
                             }
 
@@ -746,6 +853,7 @@ namespace ProyectoDojoGeko.Controllers
                             {
                                 TempData["ErrorMessage"] = "No se encontró TeamLider/SubTeamLider en el equipo. Selecciona un autorizador manualmente.";
                                 ModelState.AddModelError("", TempData["ErrorMessage"].ToString());
+                                await RecargarViewBagCrearAsync();
                                 return View(solicitud);
                             }
 
@@ -766,6 +874,7 @@ namespace ProyectoDojoGeko.Controllers
                                     {
                                         TempData["ErrorMessage"] = "No se pudo obtener el usuario del autorizador. Selecciona un autorizador manualmente.";
                                         ModelState.AddModelError("", TempData["ErrorMessage"].ToString());
+                                        await RecargarViewBagCrearAsync();
                                         return View(solicitud);
                                     }
                                 }
@@ -794,6 +903,7 @@ namespace ProyectoDojoGeko.Controllers
                         var errorMsg = "No se pudo encontrar el equipo del empleado. Por favor, selecciona un autorizador manualmente.";
                         TempData["ErrorMessage"] = errorMsg;
                         ModelState.AddModelError("", errorMsg);
+                        await RecargarViewBagCrearAsync();
                         return View(solicitud);
                     }
                     // Si seleccionó autorizador manualmente, continuar normalmente
@@ -869,6 +979,10 @@ namespace ProyectoDojoGeko.Controllers
                 });
 
                 await RegistrarError("crear solicitud de vacaciones", ex);
+                
+                // IMPORTANTE: Recargar datos necesarios para la vista
+                await RecargarViewBagCrearAsync();
+                
                 // PRUEBA: Mostrar el error detallado para depuración
                 ModelState.AddModelError("", $"Ocurrió un error al crear la solicitud. Detalle: {ex.Message}");
                 return View(solicitud);
@@ -931,8 +1045,8 @@ namespace ProyectoDojoGeko.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Configurar ViewBag con los días disponibles
-                ViewBag.DiasDisponibles = (double)empleado.DiasVacacionesAcumulados;
+                // Calcular días disponibles correctamente
+                ViewBag.DiasDisponibles = await CalcularDiasDisponiblesAsync(empleado.IdEmpleado);
                 
                 // Cargar feriados
                 ViewBag.Feriados = await GetFeriadosConProporcion();
@@ -973,7 +1087,7 @@ namespace ProyectoDojoGeko.Controllers
                                     empleadosLimpio.Add(new SelectListItem
                                     {
                                         Value = idUsuario.ToString(), // IdUsuario
-                                        Text = $"{reader.GetString(1)} {reader.GetString(2)} ({reader.GetString(3)})",
+                                        Text = $"{reader.GetString(1)} {reader.GetString(2)}",
                                         Selected = idUsuario == solicitud.Encabezado.IdAutorizador
                                     });
                                 }
@@ -1056,9 +1170,12 @@ namespace ProyectoDojoGeko.Controllers
                 var feriados = await GetFeriadosConProporcion();
                 decimal totalDiasHabiles = 0;
 
+                // Obtener empleado para excluir cumpleaños del cálculo
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdEmpleado);
+                
                 foreach (var detalle in solicitud.Detalles)
                 {
-                    totalDiasHabiles += CalcularDiasHabiles(detalle.FechaInicio, detalle.FechaFin, feriados);
+                    totalDiasHabiles += CalcularDiasHabiles(detalle.FechaInicio, detalle.FechaFin, feriados, empleado?.FechaNacimiento);
                 }
 
                 solicitud.Encabezado.DiasSolicitadosTotal = totalDiasHabiles;
@@ -1174,13 +1291,88 @@ namespace ProyectoDojoGeko.Controllers
                 // Cuando el autorizador apruebe, cambiará a estado 4 (Autorizada) y se agregará su firma
                 // No cambiamos el estado aquí, solo firmamos el PDF con la firma del empleado
 
+                // Enviar notificación por correo al autorizador
+                try
+                {
+                    // Obtener datos del autorizador
+                    // IMPORTANTE: FK_IdAutorizador en SolicitudEncabezado es IdUsuario, NO IdEmpleado
+                    var idUsuarioAutorizador = solicitud.Encabezado.IdAutorizador;
+                    
+                    if (idUsuarioAutorizador.HasValue && idUsuarioAutorizador.Value > 0)
+                    {
+                        // Primero obtener el IdEmpleado del usuario autorizador
+                        int? idEmpleadoAutorizador = null;
+                        using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                        {
+                            await connection.OpenAsync();
+                            using (var cmd = new SqlCommand("SELECT FK_IdEmpleado FROM Usuarios WHERE IdUsuario = @IdUsuario", connection))
+                            {
+                                cmd.Parameters.AddWithValue("@IdUsuario", idUsuarioAutorizador.Value);
+                                var resultado = await cmd.ExecuteScalarAsync();
+                                if (resultado != null && resultado != DBNull.Value)
+                                {
+                                    idEmpleadoAutorizador = Convert.ToInt32(resultado);
+                                }
+                            }
+                        }
+                        
+                        if (idEmpleadoAutorizador.HasValue)
+                        {
+                            var autorizador = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleadoAutorizador.Value);
+                            
+                            if (autorizador != null && !string.IsNullOrEmpty(autorizador.CorreoInstitucional))
+                            {
+                                // Obtener fechas de la solicitud
+                                var fechaInicio = solicitud.Detalles.Min(d => d.FechaInicio);
+                                var fechaFin = solicitud.Detalles.Max(d => d.FechaFin);
+                                
+                                // Crear URL para que el autorizador acceda directamente
+                                var urlAutorizar = Url.Action(
+                                    "Autorizar",
+                                    "Solicitudes",
+                                    null,
+                                    protocol: Request.Scheme
+                                );
+                                
+                                // Enviar correo de notificación
+                                await _emailService.EnviarNotificacionNuevaSolicitudAsync(
+                                    nombreEmpleado: HttpContext.Session.GetString("NombreCompletoEmpleado") ?? "Empleado",
+                                    nombreAutorizador: $"{autorizador.NombresEmpleado} {autorizador.ApellidosEmpleado}",
+                                    correoAutorizador: autorizador.CorreoInstitucional,
+                                    numeroSolicitud: id,
+                                    diasSolicitados: solicitud.Encabezado.DiasSolicitadosTotal,
+                                    fechaInicio: fechaInicio,
+                                    fechaFin: fechaFin,
+                                    urlAutorizar: urlAutorizar
+                                );
+                                
+                                await _bitacoraService.RegistrarBitacoraAsync(
+                                    "Notificación Enviada",
+                                    $"Correo de notificación enviado al autorizador {autorizador.NombresEmpleado} {autorizador.ApellidosEmpleado} ({autorizador.CorreoInstitucional}) para solicitud #{id}"
+                                );
+                            }
+                        }
+                    }
+                }
+                catch (Exception emailEx)
+                {
+                    // Si falla el envío del correo, registramos el error pero no detenemos el proceso
+                    await _loggingService.RegistrarLogAsync(new LogViewModel
+                    {
+                        Accion = "Error Envío Correo",
+                        Descripcion = $"Error al enviar correo de notificación para solicitud #{id}: {emailEx.Message}",
+                        Estado = false
+                    });
+                    // Continuamos con el flujo normal aunque falle el correo
+                }
+
                 await _bitacoraService.RegistrarBitacoraAsync(
                     "Solicitud Enviada a Autorización",
                     $"Solicitud #{id} enviada por {HttpContext.Session.GetString("NombreCompletoEmpleado")} al autorizador"
                 );
 
-                TempData["SuccessMessage"] = "Solicitud enviada exitosamente al autorizador. El PDF ha sido firmado con tu firma digital.";
-                return RedirectToAction(nameof(Index));
+                TempData["SuccessMessage"] = "¡Solicitud enviada exitosamente! 🎉<br><br>✅ El PDF ha sido firmado con tu firma digital<br>📧 Se ha notificado al autorizador por correo<br>⏳ Tu solicitud está pendiente de autorización";
+                return RedirectToAction("DetallePDF", new { id });
             }
             catch (Exception ex)
             {
@@ -1197,11 +1389,21 @@ namespace ProyectoDojoGeko.Controllers
         }
 
 
-        private decimal CalcularDiasHabiles(DateTime inicio, DateTime fin, Dictionary<string, decimal> feriados)
+        private decimal CalcularDiasHabiles(DateTime inicio, DateTime fin, Dictionary<string, decimal> feriados, DateTime? fechaNacimiento = null)
         {
             decimal diasHabiles = 0;
             for (var date = inicio; date <= fin; date = date.AddDays(1))
             {
+                // Verificar si es el día de cumpleaños del empleado
+                if (fechaNacimiento.HasValue && 
+                    date.Month == fechaNacimiento.Value.Month && 
+                    date.Day == fechaNacimiento.Value.Day)
+                {
+                    // El día de cumpleaños NO cuenta como día de vacaciones
+                    _logger.LogInformation("🎂 Día de cumpleaños detectado en rango: {Fecha} - NO se descuenta", date.ToString("dd/MM/yyyy"));
+                    continue; // Saltar este día
+                }
+                
                 if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
                 {
                     string fechaActualStr = date.ToString("yyyy-MM-dd");
@@ -1216,6 +1418,137 @@ namespace ProyectoDojoGeko.Controllers
                 }
             }
             return diasHabiles;
+        }
+
+        // Método helper para verificar si el rango de fechas incluye SOLO el cumpleaños del empleado
+        private bool EsSoloCumpleanos(List<SolicitudDetalleViewModel> detalles, DateTime fechaNacimiento)
+        {
+            // Verificar si hay un solo detalle
+            if (detalles == null || detalles.Count != 1)
+                return false;
+
+            var detalle = detalles[0];
+            
+            // Verificar si es el mismo día (inicio = fin)
+            if (detalle.FechaInicio.Date != detalle.FechaFin.Date)
+                return false;
+
+            // Verificar si coincide con el cumpleaños (mes y día)
+            return detalle.FechaInicio.Month == fechaNacimiento.Month && 
+                   detalle.FechaInicio.Day == fechaNacimiento.Day;
+        }
+
+        // Método helper para recargar ViewBag necesarios cuando se regresa a la vista Crear
+        private async Task RecargarViewBagCrearAsync()
+        {
+            var debugInfo = new System.Text.StringBuilder();
+            
+            try
+            {
+                _logger.LogInformation("🔄 RecargarViewBagCrearAsync - INICIANDO");
+                debugInfo.AppendLine("🔄 Recargando ViewBag...");
+                
+                ViewBag.Feriados = await GetFeriadosConProporcion();
+                
+                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
+                _logger.LogInformation("🔄 IdEmpleado: {IdEmpleado}", idEmpleado);
+                debugInfo.AppendLine($"IdEmpleado: {idEmpleado}");
+                
+                if (idEmpleado.HasValue)
+                {
+                    var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado.Value);
+                    if (empleado != null)
+                    {
+                        // Calcular días disponibles correctamente
+                        ViewBag.DiasDisponibles = await CalcularDiasDisponiblesAsync(empleado.IdEmpleado);
+                        
+                        // Recargar lista de autorizadores
+                        var encuentraEquipo = await _daoProyectoEquipo.ObtenerEquipoPorEmpleadoAsync(empleado.IdEmpleado);
+                        _logger.LogInformation("🔄 Equipo encontrado: {Equipo}", encuentraEquipo);
+                        debugInfo.AppendLine($"Equipo: {encuentraEquipo}");
+                        
+                        if (encuentraEquipo != null && encuentraEquipo > 0)
+                        {
+                            // Tiene equipo, cargar autorizadores del equipo
+                            var empleadosEquipo = await _daoProyectoEquipo.ObtenerEmpleadosConRolesPorEquipoAsync(encuentraEquipo);
+                            _logger.LogInformation("🔄 Empleados en equipo: {Count}", empleadosEquipo?.Count() ?? 0);
+                            debugInfo.AppendLine($"Empleados en equipo: {empleadosEquipo?.Count() ?? 0}");
+                            
+                            // Excluir a los que no tengan el rol correcto y al empleado actual
+                            var empleadosEquipoLimpio = empleadosEquipo
+                                .Where(e => e.Rol != null && (
+                                    e.Rol.IndexOf("TeamLider", StringComparison.OrdinalIgnoreCase) >= 0 || 
+                                    e.Rol.IndexOf("SubTeamLider", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                    e.Rol.IndexOf("Autorizador", StringComparison.OrdinalIgnoreCase) >= 0))
+                                .Where(e => e.IdEmpleado != empleado.IdEmpleado)
+                                .Select(e => new SelectListItem
+                                {
+                                    Value = e.IdEmpleado.ToString(),
+                                    Text = $"{e.NombresEmpleado} {e.ApellidosEmpleado} - {e.Rol}"
+                                })
+                                .ToList();
+                            
+                            _logger.LogInformation("🔄 Autorizadores después de filtrar: {Count}", empleadosEquipoLimpio.Count);
+                            debugInfo.AppendLine($"Autorizadores filtrados: {empleadosEquipoLimpio.Count}");
+                            ViewBag.EmpleadosAutorizaEquipo = empleadosEquipoLimpio;
+                        }
+                        else
+                        {
+                            // No tiene equipo, cargar todos los autorizadores
+                            using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                            {
+                                await connection.OpenAsync();
+                                // Usar la misma consulta que en el GET Crear
+                                var query = @"SELECT DISTINCT u.IdUsuario, e.NombresEmpleado, e.ApellidosEmpleado, 
+                                                     ISNULL(STUFF((SELECT ', ' + r2.NombreRol
+                                                                   FROM UsuariosRol ur2
+                                                                   INNER JOIN Roles r2 ON ur2.FK_IdRol = r2.IdRol
+                                                                   WHERE ur2.FK_IdUsuario = u.IdUsuario
+                                                                   FOR XML PATH('')), 1, 2, ''), 'Sin Rol') AS Roles
+                                              FROM Usuarios u
+                                              INNER JOIN Empleados e ON u.FK_IdEmpleado = e.IdEmpleado
+                                              LEFT JOIN UsuariosRol ur ON u.IdUsuario = ur.FK_IdUsuario
+                                              WHERE (ur.FK_IdRol IN (3, 4, 5) OR ur.FK_IdRol IS NULL)
+                                              AND e.IdEmpleado != @IdEmpleado
+                                              AND EXISTS (SELECT 1 FROM UsuariosRol ur3 
+                                                          WHERE ur3.FK_IdUsuario = u.IdUsuario 
+                                                          AND ur3.FK_IdRol IN (3, 4, 5))";
+                                
+                                using (var command = new SqlCommand(query, connection))
+                                {
+                                    command.Parameters.AddWithValue("@IdEmpleado", empleado.IdEmpleado);
+                                    
+                                    using (var reader = await command.ExecuteReaderAsync())
+                                    {
+                                        var listaAutorizadores = new List<SelectListItem>();
+                                        while (await reader.ReadAsync())
+                                        {
+                                            listaAutorizadores.Add(new SelectListItem
+                                            {
+                                                Value = reader.GetInt32(0).ToString(), // IdUsuario
+                                                Text = $"{reader.GetString(1)} {reader.GetString(2)}" // Nombres + Apellidos
+                                            });
+                                        }
+                                        
+                                        _logger.LogInformation("🔄 Autorizadores sin equipo: {Count}", listaAutorizadores.Count);
+                                        debugInfo.AppendLine($"Autorizadores sin equipo: {listaAutorizadores.Count}");
+                                        ViewBag.empleadosAutoriza = listaAutorizadores;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Guardar debug info en ViewBag para mostrarlo en la vista
+                ViewBag.DebugInfo = debugInfo.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error al recargar ViewBag: {Error}", ex.Message);
+                debugInfo.AppendLine($"❌ ERROR: {ex.Message}");
+                ViewBag.DebugInfo = debugInfo.ToString();
+            }
         }
 
         // Vista principal para autorizar solicitudes
@@ -1271,13 +1604,22 @@ namespace ProyectoDojoGeko.Controllers
         }*/
         [HttpGet]
         [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider", "RRHH")]
-        public async Task<ActionResult> Autorizar()
+        public async Task<ActionResult> Autorizar(string? estadoSolicitud = null,
+           string? nombresEmpleado = null)
         {
+
             await _bitacoraService.RegistrarBitacoraAsync("Vista Autorizar", "Acceso a la vista Autorizar exitosamente");
             var solicitudes = new List<SolicitudEncabezadoViewModel>();
 
             try
             {
+                if (!string.IsNullOrWhiteSpace(nombresEmpleado))
+                    solicitudes = solicitudes.Where(solicitud => solicitud.NombreEmpleado.Equals(nombresEmpleado)).ToList();
+
+                if (!string.IsNullOrWhiteSpace(estadoSolicitud) && int.TryParse(estadoSolicitud, out int estadoId))
+                {
+                    solicitudes = solicitudes.Where(solicitud => solicitud.Estado == estadoId).ToList();
+                }
                 var rolesString = HttpContext.Session.GetString("Roles");
                 if (string.IsNullOrEmpty(rolesString)) return RedirectToAction("Index", "Login");
 
@@ -1287,19 +1629,23 @@ namespace ProyectoDojoGeko.Controllers
 
                 _logger.LogInformation("🔍 Vista Autorizar - Roles: {Roles}, IdUsuario: {IdUsuario}", rolesString, idUsuario);
 
-                // Admin y RRHH ven TODAS las solicitudes
+                // Admin y RRHH ven TODAS las solicitudes PENDIENTES
                 if (roles.Contains("SuperAdministrador") || roles.Contains("RRHH"))
                 {
-                    _logger.LogInformation("📋 Obteniendo TODAS las solicitudes para Admin/RRHH");
-                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Sin filtro
-                    _logger.LogInformation("✅ Solicitudes encontradas: {Count}", solicitudes.Count);
+                    _logger.LogInformation("📋 Obteniendo solicitudes PENDIENTES para Admin/RRHH");
+                    var todasSolicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Sin filtro
+                    // Filtrar solo las pendientes (Estado = 1 "Ingresada")
+                    solicitudes = todasSolicitudes.Where(s => s.Estado == 1).ToList();
+                    _logger.LogInformation("✅ Solicitudes PENDIENTES encontradas: {Count}", solicitudes.Count);
                 }
-                // Autorizadores solo ven las solicitudes asignadas a ellos
+                // Autorizadores solo ven las solicitudes PENDIENTES asignadas a ellos
                 else if (roles.Contains("TeamLider") || roles.Contains("SubTeamLider") || roles.Contains("Autorizador"))
                 {
-                    _logger.LogInformation("📋 Obteniendo solicitudes asignadas al autorizador con IdUsuario: {IdUsuario}", idUsuario);
-                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(idUsuario.Value);
-                    _logger.LogInformation("✅ Solicitudes encontradas: {Count}", solicitudes.Count);
+                    _logger.LogInformation("📋 Obteniendo solicitudes PENDIENTES asignadas al autorizador con IdUsuario: {IdUsuario}", idUsuario);
+                    var todasSolicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(idUsuario.Value);
+                    // Filtrar solo las pendientes (Estado = 1 "Ingresada")
+                    solicitudes = todasSolicitudes.Where(s => s.Estado == 1).ToList();
+                    _logger.LogInformation("✅ Solicitudes PENDIENTES encontradas: {Count}", solicitudes.Count);
                     
                     // Log detallado de cada solicitud
                     foreach (var sol in solicitudes)
@@ -1325,6 +1671,75 @@ namespace ProyectoDojoGeko.Controllers
             {
                 // Log the error and redirect to the Index action (hace falta DI)***
                 await RegistrarError("autorizar solicitudes", ex);
+                return View(solicitudes);
+            }
+        }
+
+        // GET: SolicitudesController/HistorialAutorizador
+        [HttpGet]
+        [AuthorizeRole("SuperAdministrador", "Autorizador", "TeamLider", "SubTeamLider", "RRHH")]
+        public async Task<ActionResult> HistorialAutorizador(string? estadoSolicitud = null, string? nombresEmpleado = null)
+        {
+            await _bitacoraService.RegistrarBitacoraAsync("Vista Historial Autorizador", "Acceso al historial de solicitudes autorizadas");
+            var solicitudes = new List<SolicitudEncabezadoViewModel>();
+
+            try
+            {
+                var rolesString = HttpContext.Session.GetString("Roles");
+                if (string.IsNullOrEmpty(rolesString)) return RedirectToAction("Index", "Login");
+
+                var roles = rolesString.Split(',').Select(r => r.Trim()).ToList();
+                var idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+                if (idUsuario == null) return RedirectToAction("Index", "Login");
+
+                _logger.LogInformation("🔍 Vista Historial Autorizador - Roles: {Roles}, IdUsuario: {IdUsuario}", rolesString, idUsuario);
+
+                // Admin y RRHH ven TODAS las solicitudes (sin filtro de estado)
+                if (roles.Contains("SuperAdministrador") || roles.Contains("RRHH"))
+                {
+                    _logger.LogInformation("📋 Obteniendo TODAS las solicitudes para Admin/RRHH");
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(); // Sin filtro
+                    _logger.LogInformation("✅ Total de solicitudes encontradas: {Count}", solicitudes.Count);
+                }
+                // Autorizadores ven TODAS las solicitudes asignadas a ellos (sin filtro de estado)
+                else if (roles.Contains("TeamLider") || roles.Contains("SubTeamLider") || roles.Contains("Autorizador"))
+                {
+                    _logger.LogInformation("📋 Obteniendo TODAS las solicitudes asignadas al autorizador con IdUsuario: {IdUsuario}", idUsuario);
+                    solicitudes = await _daoSolicitud.ObtenerSolicitudEncabezadoAutorizadorAsync(idUsuario.Value);
+                    _logger.LogInformation("✅ Total de solicitudes encontradas: {Count}", solicitudes.Count);
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ Roles no autorizados: {Roles}. No se cargarán solicitudes.", rolesString);
+                }
+
+                // ✅ APLICAR FILTRO POR NOMBRE SI SE PROPORCIONÓ
+                if (!string.IsNullOrWhiteSpace(nombresEmpleado))
+                {
+                    solicitudes = solicitudes.Where(s => 
+                        s.NombreEmpleado.Contains(nombresEmpleado, StringComparison.OrdinalIgnoreCase)
+                    ).ToList();
+                    _logger.LogInformation("🔍 Filtro aplicado - Nombre: {Nombre}, Solicitudes filtradas: {Count}", nombresEmpleado, solicitudes.Count);
+                }
+
+                // ✅ APLICAR FILTRO POR ESTADO SI SE PROPORCIONÓ
+                if (!string.IsNullOrWhiteSpace(estadoSolicitud) && int.TryParse(estadoSolicitud, out int estadoId))
+                {
+                    solicitudes = solicitudes.Where(s => s.Estado == estadoId).ToList();
+                    _logger.LogInformation("🔍 Filtro aplicado - Estado: {EstadoId}, Solicitudes filtradas: {Count}", estadoId, solicitudes.Count);
+                }
+
+                // Cargar los estados para la vista
+                var estados = await _estadoService.ObtenerEstadosActivosSolicitudesAsync();
+                ViewBag.Estados = estados.ToDictionary(e => e.IdEstadoSolicitud, e => e.NombreEstado);
+
+                await _bitacoraService.RegistrarBitacoraAsync("Vista Historial Autorizador", "Obtener historial completo de solicitudes");
+                return View(solicitudes);
+
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("ver historial de solicitudes", ex);
                 return View(solicitudes);
             }
         }
@@ -1355,7 +1770,24 @@ namespace ProyectoDojoGeko.Controllers
 
                     if (autorizada)
                     {
-                        // 2. Restringir descarga del PDF automáticamente
+                        // 2. Actualizar días acumulados del empleado
+                        try
+                        {
+                            await _daoEmpleado.ActualizarDiasAcumuladosEmpleadosAsync();
+                            await _bitacoraService.RegistrarBitacoraAsync("Días Actualizados", $"Días acumulados actualizados después de autorizar solicitud {idSolicitud}");
+                        }
+                        catch (Exception diasEx)
+                        {
+                            // Si falla la actualización de días, logueamos pero no afectamos la autorización
+                            await _loggingService.RegistrarLogAsync(new LogViewModel
+                            {
+                                Accion = "Warning - Actualización Días",
+                                Descripcion = $"Solicitud {idSolicitud} autorizada correctamente, pero no se pudieron actualizar los días acumulados: {diasEx.Message}",
+                                Estado = false
+                            });
+                        }
+                        
+                        // 3. Restringir descarga del PDF automáticamente
                         try
                         {
                             await _pdfService.RestringirDescargaPDFAsync(idSolicitud);
@@ -1508,7 +1940,7 @@ namespace ProyectoDojoGeko.Controllers
                     if (solicitudEmpleado?.Encabezado?.IdEmpleado != idEmpleadoSesion)
                     {
                         TempData["ErrorMessage"] = "No tienes permisos para descargar este PDF.";
-                        return RedirectToAction("Index");
+                        return RedirectToAction("DetallePDF", new { id = idSolicitud, soloVer = true });
                     }
                 }
 
@@ -1518,7 +1950,16 @@ namespace ProyectoDojoGeko.Controllers
                 if (pdfBytes == null || pdfBytes.Length == 0)
                 {
                     TempData["ErrorMessage"] = "No se pudo generar el PDF.";
-                    return RedirectToAction("Index");
+                    // Redirigir según el rol
+                    if (rolUsuario == "Autorizador" || rolUsuario == "TeamLider" || rolUsuario == "SubTeamLider")
+                    {
+                        return RedirectToAction("Detalle", new { id = idSolicitud });
+                    }
+                    else if (rolUsuario == "RRHH")
+                    {
+                        return RedirectToAction("DetalleRH", new { id = idSolicitud });
+                    }
+                    return RedirectToAction("DetallePDF", new { id = idSolicitud, soloVer = true });
                 }
 
                 var nombreArchivo = $"Solicitud_Vacaciones_{idSolicitud}.pdf";
@@ -1672,7 +2113,284 @@ namespace ProyectoDojoGeko.Controllers
 
         }
 
+        /*=================================================   
+		==   SOLICITUD POR CUMPLEAÑOS - CREAR Y MOSTRAR   == 
+		=================================================*/
+        [HttpGet]
+        [AuthorizeRole("Empleado", "SuperAdministrador")]
+        public async Task<IActionResult> SolicitudCumpleanos(int idAutorizador, int tipoFormato)
+        {
+            try
+            {
+                _logger.LogInformation("🎂 SolicitudCumpleanos - Parámetros recibidos: idAutorizador={IdAutorizador}, tipoFormato={TipoFormato}", idAutorizador, tipoFormato);
 
+                // Validar parámetros
+                if (idAutorizador <= 0 || (tipoFormato != 1 && tipoFormato != 2))
+                {
+                    _logger.LogWarning("⚠️ Parámetros inválidos: idAutorizador={IdAutorizador}, tipoFormato={TipoFormato}", idAutorizador, tipoFormato);
+                    TempData["ErrorMessage"] = "Parámetros inválidos. Por favor, selecciona un autorizador y formato válidos.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Obtener empleado de sesión
+                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
+                if (idEmpleado == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado.Value);
+                if (empleado == null)
+                {
+                    _logger.LogError("❌ Empleado no encontrado con ID: {IdEmpleado}", idEmpleado.Value);
+                    TempData["ErrorMessage"] = "No se encontró el perfil del empleado.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                _logger.LogInformation("✅ Empleado encontrado: {Nombre}", $"{empleado.NombresEmpleado} {empleado.ApellidosEmpleado}");
+
+                // Calcular fecha de cumpleaños para este año
+                var fechaCumpleanos = new DateTime(DateTime.Now.Year, empleado.FechaNacimiento.Month, empleado.FechaNacimiento.Day);
+                _logger.LogInformation("📅 Fecha de cumpleaños calculada: {Fecha}", fechaCumpleanos.ToString("dd/MM/yyyy"));
+
+                // Crear solicitud temporal en BD para poder generar el PDF
+                _logger.LogInformation("💾 Creando solicitud en BD...");
+                var solicitud = new SolicitudViewModel
+                {
+                    Encabezado = new SolicitudEncabezadoViewModel
+                    {
+                        NombreEmpleado = $"{empleado.NombresEmpleado} {empleado.ApellidosEmpleado}",
+                        DiasSolicitadosTotal = 1,
+                        FechaIngresoSolicitud = DateTime.Now,
+                        Observaciones = "Día de cumpleaños",
+                        TipoFormatoPdf = tipoFormato,
+                        IdAutorizador = idAutorizador,
+                        IdEmpleado = empleado.IdEmpleado,
+                        SolicitudLider = "No", // Solicitud de cumpleaños no requiere aprobación de líder
+                        Estado = 1 // 1 = Ingresada (estado inicial)
+                    },
+                    Detalles = new List<SolicitudDetalleViewModel>
+                    {
+                        new SolicitudDetalleViewModel
+                        {
+                            FechaInicio = fechaCumpleanos,
+                            FechaFin = fechaCumpleanos,
+                            DiasHabilesTomados = 1
+                        }
+                    }
+                };
+
+                // Crear la solicitud en BD
+                var idSolicitudCreada = await _daoSolicitud.InsertarSolicitudAsync(solicitud);
+                _logger.LogInformation("💾 Solicitud creada con ID: {IdSolicitud}", idSolicitudCreada);
+
+                if (idSolicitudCreada > 0)
+                {
+                    // Pasar el ID de la solicitud a la vista
+                    ViewBag.IdSolicitud = idSolicitudCreada;
+                    ViewBag.IdAutorizador = idAutorizador;
+                    ViewBag.TipoFormato = tipoFormato;
+                    ViewBag.FechaCumpleanos = empleado.FechaNacimiento;
+
+                    await _bitacoraService.RegistrarBitacoraAsync("Vista Solicitud Cumpleaños", $"Solicitud temporal #{idSolicitudCreada} creada para previsualización");
+
+                    _logger.LogInformation("✅ Redirigiendo a vista SolicitudCumpleanos con ID: {IdSolicitud}", idSolicitudCreada);
+                    return View(new SolicitudViewModel { Encabezado = new SolicitudEncabezadoViewModel { IdSolicitud = idSolicitudCreada } });
+                }
+                else
+                {
+                    _logger.LogError("❌ No se pudo crear la solicitud (ID = 0)");
+                    TempData["ErrorMessage"] = "No se pudo crear la solicitud temporal.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ ERROR al crear solicitud por cumpleaños");
+                await RegistrarError("crear solicitud por cumpleaños", ex);
+                TempData["ErrorMessage"] = $"Ocurrió un error al crear la solicitud: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        /*=================================================   
+		==   GENERAR PDF CUMPLEAÑOS (IFRAME)           == 
+		=================================================*/
+        [HttpGet]
+        [AuthorizeRole("Empleado", "SuperAdministrador")]
+        public async Task<IActionResult> GenerarPDFCumpleanos(int idSolicitud)
+        {
+            try
+            {
+                // Generar PDF usando el ID de la solicitud
+                var pdfBytes = await _pdfService.GenerarPDFSolicitudAsync(idSolicitud);
+
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    return BadRequest("Error al generar el PDF");
+                }
+
+                return File(pdfBytes, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al generar PDF de cumpleaños");
+                return BadRequest("Error al generar el PDF");
+            }
+        }
+
+        /*=================================================   
+		==   ENVIAR SOLICITUD POR CUMPLEAÑOS           == 
+		=================================================*/
+        [HttpPost]
+        [AuthorizeRole("Empleado", "SuperAdministrador")]
+        public async Task<IActionResult> EnviarSolicitudCumpleanos(int idSolicitud, int idAutorizador)
+        {
+            try
+            {
+                // La solicitud ya está creada, solo enviamos el email al autorizador
+                if (idSolicitud <= 0 || idAutorizador <= 0)
+                {
+                    TempData["ErrorMessage"] = "Parámetros inválidos.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Obtener empleado de sesión
+                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
+                if (idEmpleado == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado.Value);
+                if (empleado == null)
+                {
+                    TempData["ErrorMessage"] = "No se encontró el perfil del empleado.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Enviar email al autorizador
+                try
+                {
+                    // Obtener el IdEmpleado del usuario autorizador
+                    int? idEmpleadoAutorizador = null;
+                    using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    {
+                        await connection.OpenAsync();
+                        using (var cmd = new SqlCommand("SELECT FK_IdEmpleado FROM Usuarios WHERE IdUsuario = @IdUsuario", connection))
+                        {
+                            cmd.Parameters.AddWithValue("@IdUsuario", idAutorizador);
+                            var resultado = await cmd.ExecuteScalarAsync();
+                            if (resultado != null && resultado != DBNull.Value)
+                            {
+                                idEmpleadoAutorizador = Convert.ToInt32(resultado);
+                            }
+                        }
+                    }
+
+                    if (idEmpleadoAutorizador.HasValue)
+                    {
+                        var autorizador = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleadoAutorizador.Value);
+                        if (autorizador != null && !string.IsNullOrEmpty(autorizador.CorreoInstitucional))
+                        {
+                            // Calcular fecha de cumpleaños
+                            var fechaCumpleanos = new DateTime(DateTime.Now.Year, empleado.FechaNacimiento.Month, empleado.FechaNacimiento.Day);
+                            
+                            // URL para autorizar la solicitud
+                            var urlAutorizar = Url.Action("Index", "Solicitudes", null, Request.Scheme);
+                            
+                            // Enviar email de notificación
+                            await _emailService.EnviarNotificacionNuevaSolicitudAsync(
+                                nombreEmpleado: $"{empleado.NombresEmpleado} {empleado.ApellidosEmpleado}",
+                                nombreAutorizador: $"{autorizador.NombresEmpleado} {autorizador.ApellidosEmpleado}",
+                                correoAutorizador: autorizador.CorreoInstitucional,
+                                numeroSolicitud: idSolicitud,
+                                diasSolicitados: 1,
+                                fechaInicio: fechaCumpleanos,
+                                fechaFin: fechaCumpleanos,
+                                urlAutorizar: urlAutorizar
+                            );
+                            
+                            _logger.LogInformation("✅ Email de cumpleaños enviado exitosamente a {Email} para solicitud #{IdSolicitud}", autorizador.CorreoInstitucional, idSolicitud);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("⚠️ Autorizador sin correo institucional. ID: {IdAutorizador}", idEmpleadoAutorizador.Value);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("⚠️ No se encontró el empleado autorizador para el usuario ID: {IdUsuario}", idAutorizador);
+                    }
+                }
+                catch (Exception exEmail)
+                {
+                    _logger.LogError(exEmail, "❌ Error al enviar el email de notificación");
+                    // No lanzamos la excepción para que la solicitud se cree igual
+                }
+
+                await _bitacoraService.RegistrarBitacoraAsync("Solicitud Cumpleaños Enviada", $"Solicitud #{idSolicitud} por cumpleaños enviada al autorizador");
+
+                TempData["SuccessMessage"] = "¡Solicitud por cumpleaños enviada exitosamente! 🎉";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                await RegistrarError("enviar solicitud por cumpleaños", ex);
+                TempData["ErrorMessage"] = "Ocurrió un error al enviar la solicitud.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        /*=================================================   
+		==   MÉTODO HELPER: Calcular Días Disponibles  == 
+		=================================================*/
+        private async Task<double> CalcularDiasDisponiblesAsync(int idEmpleado)
+        {
+            try
+            {
+                // Obtener empleado
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado);
+                if (empleado == null) return 0;
+
+                // Días acumulados desde ingreso (cargados manualmente o calculados)
+                decimal diasAcumulados = empleado.DiasVacacionesAcumulados;
+
+                // Días tomados antes del sistema (históricos)
+                decimal diasTomadosHistoricos = empleado.DiasTomadosHistoricos;
+
+                // Días solicitados en el sistema (aprobadas, en proceso, finalizadas)
+                decimal diasSolicitadosEnSistema = 0;
+                using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    await connection.OpenAsync();
+                    using (var cmd = new SqlCommand(@"
+                        SELECT ISNULL(SUM(DiasSolicitadosTotal), 0)
+                        FROM SolicitudEncabezado
+                        WHERE FK_IdEmpleado = @IdEmpleado
+                          AND FK_IdEstadoSolicitud IN (2, 3, 5)", connection))
+                    {
+                        cmd.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
+                        var resultado = await cmd.ExecuteScalarAsync();
+                        if (resultado != null && resultado != DBNull.Value)
+                        {
+                            diasSolicitadosEnSistema = Convert.ToDecimal(resultado);
+                        }
+                    }
+                }
+
+                // Calcular días disponibles
+                decimal diasDisponibles = diasAcumulados - diasTomadosHistoricos - diasSolicitadosEnSistema;
+
+                // No permitir valores negativos
+                return (double)(diasDisponibles < 0 ? 0 : diasDisponibles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al calcular días disponibles para empleado {IdEmpleado}", idEmpleado);
+                return 0;
+            }
+        }
 
 
     }

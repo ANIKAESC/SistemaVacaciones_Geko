@@ -105,10 +105,6 @@
                         }
 
                     </select>
-                    @if (ViewBag.AdvertenciaEquipo != null)
-                    {
-                        <small class="text-warning">@ViewBag.AdvertenciaEquipo</small>
-                    }
                 </div>
 
 
@@ -185,25 +181,31 @@
 </div>
 
 <!-- Modal -->
-<div class="modal-overlay" id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#00000066; z-index:1000;">
-    <div class="modal-container" style="max-width:500px; margin:100px auto; background:#fff; border-radius:16px; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.3); position:relative;">
-        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0; font-size:1.4em;">Resumen de Solicitud</h3>
-            <button id="closeModal" style="background:none; border:none; font-size:1.5em; cursor:pointer;"><i class="fas fa-times"></i></button>
+<div class="modal-overlay" id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; backdrop-filter: blur(4px);">
+    <div class="modal-container" style="max-width:550px; margin:100px auto; background:#fff; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative; overflow:hidden;">
+        <!-- Header con gradiente -->
+        <div class="modal-header" style="background:linear-gradient(135deg, #003C9D 0%, #0056D2 100%); color:#fff; padding:24px 30px; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-size:1.5em; font-weight:600; display:flex; align-items:center; gap:12px;">
+                <i class="fas fa-calendar-check"></i>
+                Resumen de Solicitud
+            </h3>
+            <button id="closeModal" style="background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:50%; font-size:1.2em; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <div class="modal-body" style="margin-top:20px;">
-            <div style="text-align:center; margin-bottom: 16px;">
-                <i class="fas fa-calendar-check" style="font-size: 3em; color: #28a745;"></i>
-            </div>
-            <div id="resumenSolicitud" style="font-size: 1em; color: #333;"></div>
+        
+        <!-- Body -->
+        <div class="modal-body" style="padding:30px;">
+            <div id="resumenSolicitud" style="font-size:1.05em; color:#333; line-height:1.8;"></div>
         </div>
-        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-            <button type="button" class="btn btn-secondary" id="cancelAction">
+        
+        <!-- Footer -->
+        <div class="modal-footer" style="background:#f8f9fa; padding:20px 30px; display:flex; justify-content:flex-end; gap:12px; border-top:1px solid #dee2e6;">
+            <button type="button" class="btn btn-secondary" id="cancelAction" style="padding:12px 24px; border-radius:10px; font-weight:600; border:none; background:#6c757d; color:#fff; cursor:pointer; transition:all 0.3s;">
                 <i class="fas fa-times"></i> Cancelar
             </button>
-
-            <button type="button" class="btn btn-success" id="confirmAction">
-                <i class="fas fa-check"></i> Enviar
+            <button type="button" class="btn btn-success" id="confirmAction" style="padding:12px 24px; border-radius:10px; font-weight:600; border:none; background:linear-gradient(135deg, #28a745, #20c997); color:#fff; cursor:pointer; transition:all 0.3s; box-shadow:0 4px 12px rgba(40,167,69,0.3);">
+                <i class="fa-solid fa-check"></i> Confirmar
             </button>
         </div>
     </div>
@@ -211,6 +213,7 @@
 @section Styles {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -402,7 +405,7 @@
         }
 
         .modal-header h3 {
-            color: #003C9D;
+            color: white;
             font-weight: bold;
         }
 
@@ -453,6 +456,96 @@
         }
 
         }
+
+        /* ===== ESTILOS PERSONALIZADOS SWEETALERT2 ===== */
+        .swal-error-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 10px 40px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .swal-error-title {
+            color: #DC2626 !important;
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+        }
+
+        .swal-error-btn {
+            border-radius: 8px !important;
+            padding: 10px 24px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+        }
+
+        .swal-error-btn:hover {
+            background-color: #DC2626 !important;
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4) !important;
+        }
+
+        .swal-success-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.2) !important;
+        }
+
+        .swal-success-title {
+            color: #059669 !important;
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+        }
+
+        .swal-success-btn {
+            border-radius: 8px !important;
+            padding: 10px 24px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .swal-success-btn:hover {
+            background-color: #059669 !important;
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
+        }
+
+        /* Animaciones */
+        .animate__animated {
+            animation-duration: 0.5s;
+        }
+
+        .animate__faster {
+            animation-duration: 0.3s !important;
+        }
+
+        /* ===== ESTILOS SWEETALERT2 WARNING ===== */
+        .swal-warning-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.2) !important;
+        }
+
+        .swal-warning-title {
+            color: #D97706 !important;
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+        }
+
+        .swal-warning-btn {
+            border-radius: 8px !important;
+            padding: 10px 24px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+        }
+
+        .swal-warning-btn:hover {
+            background-color: #D97706 !important;
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4) !important;
+        }
+
+        .swal-cancel-btn {
+            border-radius: 8px !important;
+            padding: 10px 24px !important;
+            font-weight: 600 !important;
+        }
+
+        .swal-cancel-btn:hover {
+            background-color: #4B5563 !important;
+        }
     </style>
 }
 
@@ -461,48 +554,99 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+
+    <!-- Alertas TempData (jQuery) -->
     <script>
-        // Mostrar errores de validación con SweetAlert2
-        $(document).ready(function() {
+        $(document).ready(function () {
             console.log('Document ready - Verificando mensajes de error...');
+
             var errorMessage = '@Html.Raw(TempData["ErrorMessage"])';
             console.log('Mensaje de error:', errorMessage);
-            
+
+        @if (ViewBag.DebugInfo != null)
+        {
+            <text>
+                    console.log('=== DEBUG INFO ===');
+                    console.log('@Html.Raw(ViewBag.DebugInfo.Replace("\r\n", "\\n").Replace("\n", "\\n"))');
+                    console.log('==================');
+            </text>
+        }
+
             if (errorMessage && errorMessage !== '') {
                 console.log('Mostrando alerta de error...');
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error',
-                    text: errorMessage,
-                    confirmButtonColor: '#0039A6',
-                    confirmButtonText: 'Aceptar'
-                }).then((result) => {
-                    console.log('Alerta cerrada');
-                });
+                    title: '¡Oops! Algo salió mal',
+                    html: `<div style="text-align: left; padding: 10px;">
+                            <p style="margin: 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                                ${errorMessage}
+                            </p>
+                           </div>`,
+                    confirmButtonColor: '#EF4444',
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido',
+                    customClass: {
+                        popup: 'swal-error-popup',
+                        title: 'swal-error-title',
+                        htmlContainer: 'swal-error-html',
+                        confirmButton: 'swal-error-btn'
+                    },
+                    showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' },
+                    hideClass: { popup: 'animate__animated animate__fadeOutUp animate__faster' }
+                }).then(() => console.log('Alerta cerrada'));
             }
-            
-            // Limpiar el mensaje después de mostrarlo para que no se muestre en recargas
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <text>@(TempData["ErrorMessage"] = null);</text>
+
+            var infoMessage = '@Html.Raw(TempData["InfoMessage"])';
+            if (infoMessage && infoMessage !== '') {
+                console.log('Mostrando alerta de información...');
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Perfecto!',
+                    html: `<div style="text-align: left; padding: 10px;">
+                            <p style="margin: 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                                ${infoMessage}
+                            </p>
+                           </div>`,
+                    confirmButtonColor: '#10B981',
+                    confirmButtonText: '<i class="fas fa-check"></i> Entendido',
+                    customClass: {
+                        popup: 'swal-success-popup',
+                        title: 'swal-success-title',
+                        confirmButton: 'swal-success-btn'
+                    },
+                    showClass: { popup: 'animate__animated animate__bounceIn animate__faster' },
+                    hideClass: { popup: 'animate__animated animate__fadeOut animate__faster' }
+                });
             }
         });
     </script>
+
+    <!-- Lógica principal (rango de fechas, modal, etc.) -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Obtenemos los feriados desde el ViewBag y los convertimos a un objeto JavaScript
-            const feriadosData = @Html.Raw(Json.Serialize(ViewBag.Feriados));
+
+            // ===== Datos server =====
+            const feriadosData = @Html.Raw(Json.Serialize(ViewBag.Feriados ?? new { }));
             const feriados = Object.keys(feriadosData).reduce((acc, key) => {
                 acc[key] = parseFloat(feriadosData[key]);
                 return acc;
             }, {});
 
-            const fechaInicioInput = document.getElementById('NuevaFechaInicio');
-            const fechaFinInput = document.getElementById('NuevaFechaFin');
+            const diasDisponibles = @(ViewBag.DiasDisponibles ?? 0);
+            console.log('Días disponibles del empleado:', diasDisponibles);
 
+            // ===== Helpers =====
             const parseDateFromInput = (dateStr) => {
                 const parts = dateStr.split('-');
                 return new Date(parts[0], parts[1] - 1, parts[2]);
+            };
+
+            const formatDateLocal = (dateString) => {
+                const date = parseDateFromInput(dateString);
+                if (isNaN(date)) return dateString;
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
             };
 
             const diasEntre = (inicio, fin) => {
@@ -514,7 +658,7 @@
                     const diaSemana = actual.getDay();
                     const fechaActualStr = actual.toISOString().split('T')[0];
 
-                    if (diaSemana !== 0 && diaSemana !== 6) { // Excluir sábado y domingo
+                    if (diaSemana !== 0 && diaSemana !== 6) { // excluir domingo/sábado
                         if (feriados[fechaActualStr]) {
                             dias += (1 - feriados[fechaActualStr]);
                         } else {
@@ -525,6 +669,8 @@
                 }
                 return dias;
             };
+
+            window.rangos = window.rangos || [];
 
             const traslapa = (inicio, fin) => {
                 const nuevoInicio = new Date(parseDateFromInput(inicio));
@@ -537,53 +683,14 @@
                 });
             };
 
-            const formatDateLocal = (dateString) => {
-                const date = parseDateFromInput(dateString);
-                if (isNaN(date)) return dateString;
-
-                const day = date.getDate().toString().padStart(2, '0');
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                const year = date.getFullYear();
-
-                return `${day}/${month}/${year}`;
-            };
-
-            window.rangos = [];
-
-            window.agregarRango = function () {
-                const inicio = document.getElementById('NuevaFechaInicio').value;
-                const fin = document.getElementById('NuevaFechaFin').value;
-
-                if (!inicio || !fin) return alert('Debes ingresar ambas fechas.');
-                if (parseDateFromInput(fin) < parseDateFromInput(inicio)) return alert('La fecha final no puede ser menor que la inicial.');
-                if (traslapa(inicio, fin)) return alert('El rango se traslapa con otro ya agregado.');
-
-                // Confirmar si el rango inicia antes de la fecha actual
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
-                const inicioDate = parseDateFromInput(inicio);
-                const finDate = parseDateFromInput(fin);
-                if (inicioDate < hoy) {
-                    const ok = confirm('Ha seleccionado un rango con fecha inicial anterior a hoy. ¿Está seguro de continuar?');
-                    if (!ok) return;
-                }
-
-                const dias = diasEntre(inicio, fin);
-                window.rangos.push({ inicio, fin, dias });
-                window.renderRangos();
-            };
-
-            function eliminarRango(idx) {
-                window.rangos.splice(idx, 1);
-                window.renderRangos();
-            }
-
-            window.eliminarRango = eliminarRango;
-
-            window.renderRangos = function() {
+            // ===== Render tabla + hidden inputs =====
+            window.renderRangos = function () {
                 const tbody = document.querySelector('#tablaFechas tbody');
-                tbody.innerHTML = '';
                 const detallesContainer = document.getElementById('detallesContainer');
+
+                if (!tbody || !detallesContainer) return;
+
+                tbody.innerHTML = '';
                 detallesContainer.innerHTML = '';
 
                 window.rangos.forEach((r, i) => {
@@ -596,8 +703,8 @@
                         <td>${fechaFin}</td>
                         <td>${parseFloat(r.dias).toFixed(2)}</td>
                         <td>
-                            <button type='button' class='btn-eliminar' onclick='eliminarRango(${i})'>
-                                <i class='fas fa-trash-alt'></i>
+                            <button type="button" class="btn-eliminar" onclick="eliminarRango(${i})">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </td>
                     `;
@@ -611,72 +718,202 @@
                 });
 
                 const total = window.rangos.reduce((acc, r) => acc + parseFloat(r.dias), 0);
-                document.getElementById('TotalDias').value = total > 0 ? total.toFixed(2) : '';
+                const totalInput = document.getElementById('TotalDias');
+                if (totalInput) totalInput.value = total > 0 ? total.toFixed(2) : '';
             };
 
-        window.mostrarResumen = function () {
-            if (window.rangos.length === 0) {
-                alert("Debes agregar al menos un rango de fechas.");
-                return false;
-            }
+            window.eliminarRango = function (idx) {
+                window.rangos.splice(idx, 1);
+                window.renderRangos();
+            };
 
-            const totalDias = document.getElementById("TotalDias").value || "0";
-            const solicitado = document.getElementById("SolicitadoLider").value;
+            // ===== Agregar rango =====
+            window.agregarRango = function () {
+                const inicio = document.getElementById('NuevaFechaInicio')?.value;
+                const fin = document.getElementById('NuevaFechaFin')?.value;
 
-            if (!solicitado) {
-                alert("Debes indicar si ya solicitaste a tu líder.");
-                return false;
-            }
+                if (!inicio || !fin) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Campos incompletos',
+                        text: 'Debes ingresar ambas fechas.',
+                        confirmButtonColor: '#EF4444',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
 
-            let resumen = "<ul style='padding-left: 20px;'>";
-            window.rangos.forEach(r => {
-                const fechaInicio = formatDateLocal(r.inicio);
-                const fechaFin = formatDateLocal(r.fin);
-                resumen += `<li><strong>${fechaInicio}</strong> al <strong>${fechaFin}</strong> - ${parseFloat(r.dias).toFixed(2)} día(s)</li>`;
-            });
-            resumen += "</ul>";
-            resumen += `<p><strong>Total de días:</strong> ${totalDias}</p>`;
-            resumen += `<p><strong>Solicitado al líder:</strong> ${solicitado}</p>`;
+                if (parseDateFromInput(fin) < parseDateFromInput(inicio)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Rango inválido',
+                        text: 'La fecha final no puede ser menor que la inicial.',
+                        confirmButtonColor: '#EF4444',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
 
-            document.getElementById("resumenSolicitud").innerHTML = resumen;
-            document.getElementById("confirmModal").style.display = "block";
-        };
+                if (traslapa(inicio, fin)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Conflicto de fechas',
+                        text: 'El rango se traslapa con otro ya agregado.',
+                        confirmButtonColor: '#EF4444',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
 
+                const calcularYAgregar = () => {
+                    const dias = diasEntre(inicio, fin);
+                    const totalDiasSolicitados = window.rangos.reduce((sum, r) => sum + parseFloat(r.dias), 0) + dias;
 
-            document.getElementById("cancelAction").addEventListener("click", () => {
+                    if (totalDiasSolicitados > diasDisponibles) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: '❌ Días insuficientes',
+                            html: `<div style="text-align: left; padding: 10px;">
+                                    <p style="margin: 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                                        No tienes suficientes días disponibles.
+                                    </p>
+                                    <div style="background: #FEE2E2; padding: 12px; border-radius: 8px; margin-top: 12px;">
+                                        <p style="margin: 0; color: #991B1B; font-size: 14px;">
+                                            <strong>📊 Resumen:</strong><br>
+                                            • Días que intentas solicitar: <strong>${totalDiasSolicitados.toFixed(2)}</strong><br>
+                                            • Días disponibles: <strong>${diasDisponibles}</strong><br>
+                                            • Excedente: <strong style="color: #DC2626;">${(totalDiasSolicitados - diasDisponibles).toFixed(2)}</strong>
+                                        </p>
+                                    </div>
+                                   </div>`,
+                            confirmButtonColor: '#EF4444',
+                            confirmButtonText: '<i class="fas fa-check"></i> Entendido',
+                            customClass: {
+                                popup: 'swal-error-popup',
+                                title: 'swal-error-title',
+                                confirmButton: 'swal-error-btn'
+                            }
+                        });
+                        return;
+                    }
+
+                    window.rangos.push({ inicio, fin, dias });
+                    window.renderRangos();
+                };
+
+                // Confirmación si la fecha inicia antes de hoy
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const inicioDate = parseDateFromInput(inicio);
+
+                if (inicioDate < hoy) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '⚠️ Fecha Anterior Detectada',
+                        html: `<div style="text-align: left; padding: 10px;">
+                                <p style="margin: 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                                    Ha seleccionado un rango con <strong>fecha inicial anterior a hoy</strong>.
+                                </p>
+                                <p style="margin: 10px 0 0 0; color: #6B7280; font-size: 14px;">
+                                    ¿Está seguro de continuar?
+                                </p>
+                               </div>`,
+                        showCancelButton: true,
+                        confirmButtonColor: '#F59E0B',
+                        cancelButtonColor: '#6B7280',
+                        confirmButtonText: '<i class="fas fa-check"></i> Sí, continuar',
+                        cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                        customClass: {
+                            popup: 'swal-warning-popup',
+                            title: 'swal-warning-title',
+                            confirmButton: 'swal-warning-btn',
+                            cancelButton: 'swal-cancel-btn'
+                        },
+                        showClass: { popup: 'animate__animated animate__headShake animate__faster' },
+                        hideClass: { popup: 'animate__animated animate__fadeOut animate__faster' }
+                    }).then((result) => {
+                        if (result.isConfirmed) calcularYAgregar();
+                    });
+                    return;
+                }
+
+                calcularYAgregar();
+            };
+
+            // ===== Modal resumen =====
+            window.mostrarResumen = function () {
+                if (window.rangos.length === 0) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sin fechas',
+                        text: 'Debes agregar al menos un rango de fechas.',
+                        confirmButtonColor: '#EF4444',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return false;
+                }
+
+                const totalDias = document.getElementById("TotalDias")?.value || "0";
+                const solicitado = document.getElementById("SolicitadoLider")?.value;
+
+                if (!solicitado) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Falta información',
+                        text: 'Debes indicar si ya solicitaste a tu líder.',
+                        confirmButtonColor: '#EF4444',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return false;
+                }
+
+                let resumen = "<ul style='padding-left: 20px;'>";
+                window.rangos.forEach(r => {
+                    const fi = formatDateLocal(r.inicio);
+                    const ff = formatDateLocal(r.fin);
+                    resumen += `<li><strong>${fi}</strong> al <strong>${ff}</strong> - ${parseFloat(r.dias).toFixed(2)} día(s)</li>`;
+                });
+                resumen += "</ul>";
+                resumen += `<p><strong>Total de días:</strong> ${totalDias}</p>`;
+                resumen += `<p><strong>Solicitado al líder:</strong> ${solicitado}</p>`;
+
+                const resumenDiv = document.getElementById("resumenSolicitud");
+                const modal = document.getElementById("confirmModal");
+                if (resumenDiv) resumenDiv.innerHTML = resumen;
+                if (modal) modal.style.display = "block";
+            };
+
+            // ===== Botones modal =====
+            document.getElementById("cancelAction")?.addEventListener("click", () => {
                 document.getElementById("confirmModal").style.display = "none";
             });
 
-            document.getElementById("closeModal").addEventListener("click", () => {
+            document.getElementById("closeModal")?.addEventListener("click", () => {
                 document.getElementById("confirmModal").style.display = "none";
             });
 
-            document.getElementById("confirmAction").addEventListener("click", () => {
-                document.getElementById("solicitudForm").submit();
+            // Deja SOLO un listener (evita doble submit)
+            document.getElementById("confirmAction")?.addEventListener("click", (e) => {
+                e.preventDefault();
+                document.getElementById("solicitudForm")?.submit();
             });
-            document.getElementById("confirmAction").addEventListener("click", (e) => {
-            e.preventDefault();
-            console.log("SUBMIT!");
-            document.getElementById("solicitudForm").submit();
         });
+    </script>
 
-        });
-
-        // Cargar datos existentes si es una edición
-        @if (Model?.Detalles != null && Model.Detalles.Any())
-        {
-            <text>
-            // Función para cargar datos de edición
+    <!-- Edición: cargar datos existentes -->
+    @if (Model?.Detalles != null && Model.Detalles.Any())
+    {
+        <script>
             function cargarDatosEdicion() {
                 console.log('=== INICIANDO CARGA DE DATOS DE EDICIÓN ===');
-                
-                // Cargar rangos de fechas
-                const rangosExistentes = @Html.Raw(Json.Serialize(Model.Detalles.Select(d => new {
+
+                const rangosExistentes = @Html.Raw(Json.Serialize(Model.Detalles.Select(d => new
+                {
                     inicio = d.FechaInicio.ToString("yyyy-MM-dd"),
                     fin = d.FechaFin.ToString("yyyy-MM-dd"),
                     dias = d.DiasHabilesTomados
                 })));
-                
+
                 if (window.rangos !== undefined) {
                     window.rangos = rangosExistentes;
                     if (typeof window.renderRangos === 'function') {
@@ -685,71 +922,49 @@
                     }
                 }
 
-                // Cargar autorizador seleccionado
-                @if (Model?.Encabezado?.IdAutorizador != null)
-                {
-                    <text>
-                    const autorizadorSelect = document.getElementById('Autorizador');
-                    console.log('Buscando select Autorizador:', autorizadorSelect);
-                    if (autorizadorSelect) {
-                        const valorAutorizador = '@Model.Encabezado.IdAutorizador';
-                        autorizadorSelect.value = valorAutorizador;
-                        console.log('✅ Autorizador establecido a:', valorAutorizador, 'Valor actual:', autorizadorSelect.value);
-                        
-                        // Verificar si el valor se estableció correctamente
-                        if (autorizadorSelect.value !== valorAutorizador) {
-                            console.warn('⚠️ El valor del autorizador no se estableció correctamente');
-                            console.log('Opciones disponibles:', Array.from(autorizadorSelect.options).map(o => ({value: o.value, text: o.text})));
+            @if (Model?.Encabezado?.IdAutorizador != null)
+            {
+                <text>
+                        const autorizadorSelect = document.getElementById('Autorizador');
+                        if (autorizadorSelect) {
+                            autorizadorSelect.value = '@Model.Encabezado.IdAutorizador';
+                            autorizadorSelect.dispatchEvent(new Event('change'));
                         }
-                    } else {
-                        console.error('❌ No se encontró el select de Autorizador');
-                    }
-                    </text>
-                }
+                </text>
+            }
 
-                // Cargar solicitud a líder
-                @if (!string.IsNullOrEmpty(Model?.Encabezado?.SolicitudLider))
-                {
-                    <text>
-                    const solicitadoLiderSelect = document.getElementById('SolicitadoLider');
-                    console.log('Buscando select SolicitadoLider:', solicitadoLiderSelect);
-                    if (solicitadoLiderSelect) {
-                        const valorLider = '@Model.Encabezado.SolicitudLider';
-                        solicitadoLiderSelect.value = valorLider;
-                        console.log('✅ Solicitado a líder establecido a:', valorLider, 'Valor actual:', solicitadoLiderSelect.value);
-                    } else {
-                        console.error('❌ No se encontró el select de SolicitadoLider');
-                    }
-                    </text>
-                }
+            @if (!string.IsNullOrEmpty(Model?.Encabezado?.SolicitudLider))
+            {
+                <text>
+                        const solicitadoLiderSelect = document.getElementById('SolicitadoLider');
+                        if (solicitadoLiderSelect) {
+                            solicitadoLiderSelect.value = '@Html.Raw(Model.Encabezado.SolicitudLider)';
+                            solicitadoLiderSelect.dispatchEvent(new Event('change'));
+                        }
+                </text>
+            }
 
-                // Cargar observaciones
-                @if (!string.IsNullOrEmpty(Model?.Encabezado?.Observaciones))
-                {
-                    <text>
-                    const observacionesTextarea = document.getElementById('Observaciones');
-                    console.log('Buscando textarea Observaciones:', observacionesTextarea);
-                    if (observacionesTextarea) {
-                        observacionesTextarea.value = '@Html.Raw(Model.Encabezado.Observaciones.Replace("\r", "").Replace("\n", "\\n").Replace("'", "\\'"))';
-                        console.log('✅ Observaciones cargadas');
-                    } else {
-                        console.error('❌ No se encontró el textarea de Observaciones');
-                    }
-                    </text>
-                }
-                
+            @if (!string.IsNullOrEmpty(Model?.Encabezado?.Observaciones))
+            {
+                <text>
+                        const observacionesTextarea = document.getElementById('Observaciones');
+                        if (observacionesTextarea) {
+                            observacionesTextarea.value = '@Html.Raw(Model.Encabezado.Observaciones.Replace("\r", "").Replace("\n", "\\n").Replace("'", "\\'"))';
+                        }
+                </text>
+            }
+
                 console.log('=== FIN CARGA DE DATOS DE EDICIÓN ===');
             }
 
-            // Ejecutar cuando el DOM esté listo
+            // Ejecutar
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('DOMContentLoaded', function () {
                     setTimeout(cargarDatosEdicion, 200);
                 });
             } else {
                 setTimeout(cargarDatosEdicion, 200);
             }
-            </text>
-        }
-    </script>
+        </script>
+    }
 }

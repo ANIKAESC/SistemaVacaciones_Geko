@@ -350,3 +350,127 @@
     }
 
 </style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initPagination();
+        });
+
+        function initPagination() {
+            const table = document.getElementById('rhTable');
+            if (!table) return;
+
+            const rowsPerPage = 10;
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const totalRows = rows.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+            // Si no hay suficientes filas, ocultar paginación
+            if (totalPages <= 1) {
+                const paginationContainer = document.querySelector('.pagination-container');
+                if (paginationContainer) {
+                    paginationContainer.style.display = 'none';
+                }
+                return;
+            }
+
+            let currentPage = 1;
+
+            // Función para mostrar página
+            function showPage(pageNumber) {
+                currentPage = pageNumber;
+                const startIndex = (pageNumber - 1) * rowsPerPage;
+                const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+
+                // Mostrar/ocultar filas
+                rows.forEach((row, index) => {
+                    row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+                });
+
+                // Actualizar info de paginación
+                document.getElementById('showing-start').textContent = totalRows > 0 ? startIndex + 1 : 0;
+                document.getElementById('showing-end').textContent = endIndex;
+                document.getElementById('total-items').textContent = totalRows;
+
+                // Actualizar botones
+                document.getElementById('prev-page').disabled = pageNumber === 1;
+                document.getElementById('next-page').disabled = pageNumber === totalPages;
+
+                // Actualizar botones de página
+                updatePageButtons();
+            }
+
+            // Función para crear botones de página
+            function updatePageButtons() {
+                const paginationPages = document.getElementById('pagination-pages');
+                paginationPages.innerHTML = '';
+
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Botón primera página
+                if (startPage > 1) {
+                    const firstBtn = createPageButton(1);
+                    paginationPages.appendChild(firstBtn);
+                    if (startPage > 2) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = 'var(--gray-500)';
+                        paginationPages.appendChild(dots);
+                    }
+                }
+
+                // Botones de páginas
+                for (let i = startPage; i <= endPage; i++) {
+                    const btn = createPageButton(i);
+                    paginationPages.appendChild(btn);
+                }
+
+                // Botón última página
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = 'var(--gray-500)';
+                        paginationPages.appendChild(dots);
+                    }
+                    const lastBtn = createPageButton(totalPages);
+                    paginationPages.appendChild(lastBtn);
+                }
+            }
+
+            // Crear botón de página
+            function createPageButton(pageNumber) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (pageNumber === currentPage ? ' active' : '');
+                btn.textContent = pageNumber;
+                btn.onclick = () => showPage(pageNumber);
+                return btn;
+            }
+
+            // Event listeners para botones anterior/siguiente
+            document.getElementById('prev-page').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    showPage(currentPage - 1);
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    showPage(currentPage + 1);
+                }
+            });
+
+            // Mostrar primera página
+            showPage(1);
+        }
+    </script>
+}

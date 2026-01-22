@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Microsoft.Data.SqlClient;
 using ProyectoDojoGeko.Services;
 using ProyectoDojoGeko.Models;
@@ -276,6 +276,21 @@ namespace ProyectoDojoGeko.Data
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.Add(new SqlParameter("@IdEmpleado", Id));
                     return await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        // Método para actualizar los días acumulados de todos los empleados
+        public async Task ActualizarDiasAcumuladosEmpleadosAsync()
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand("sp_ActualizarDiasAcumuladosEmpleados", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandTimeout = 60; // 60 segundos de timeout por si hay muchos empleados
+                    await cmd.ExecuteNonQueryAsync();
                 }
             }
         }

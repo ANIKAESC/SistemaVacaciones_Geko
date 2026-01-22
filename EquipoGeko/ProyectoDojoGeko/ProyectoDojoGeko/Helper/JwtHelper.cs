@@ -12,7 +12,7 @@ namespace ProyectoDojoGeko.Helper
         // Declaración de nuestra clave secreta y otros parámetros
         private readonly string secretKey = "3[W3(0R3QV1?063{0!!3[W3(0R3QV1?063{0!!";
         // Tiempo de expiración del token en minutos
-        private readonly int expirationMinutes = 20;
+        private readonly int expirationMinutes = 1440;
 
         // Constructor de la clase JwtHelper
         public TokenUsuarioViewModel GenerarToken(int IdUsuario, string UsrName, int IdRol, string Rol)

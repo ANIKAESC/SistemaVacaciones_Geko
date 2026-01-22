@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
     initializeSearch()
     initializeFilters()
     initializePagination()
@@ -172,21 +172,34 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('editEstado').value = Estado;
             document.getElementById('editEmpleado').value = FK_IdEmpleado;
 
-            editModal.classList.add('active');
+            if (editModal) {
+                editModal.classList.add('active');
+            }
         });
     });
 
     // Cerrar modal
-    [closeEditModal, cancelEdit].forEach(btn => {
-        btn.addEventListener('click', function () {
-            editModal.classList.remove('active');
+    if (closeEditModal) {
+        closeEditModal.addEventListener('click', function () {
+            if (editModal) {
+                editModal.classList.remove('active');
+            }
         });
-    });
+    }
+
+    if (cancelEdit) {
+        cancelEdit.addEventListener('click', function () {
+            if (editModal) {
+                editModal.classList.remove('active');
+            }
+        });
+    }
 
     // Guardar cambios
-    saveChanges.addEventListener('click', async function () {
-        const form = document.getElementById('editUsuarioForm');
-        const formData = new FormData(form);
+    if (saveChanges) {
+        saveChanges.addEventListener('click', async function () {
+            const form = document.getElementById('editUsuarioForm');
+            const formData = new FormData(form);
 
         const empresaData = {
             IdUsuario: parseInt(formData.get('IdUsuario')),

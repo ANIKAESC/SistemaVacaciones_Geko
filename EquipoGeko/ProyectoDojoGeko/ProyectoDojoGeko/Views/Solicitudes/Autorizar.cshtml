@@ -25,11 +25,17 @@
         <div class="header-content">
             <h1 class="page-title">
                 <i class="fa-solid fa-clipboard-list"></i>
-                Solicitudes de vacaciones
+                Solicitudes Pendientes
             </h1>
             <p class="page-subtitle">
-                Listado de solicitudes de vacaciones de los empleados.
+                Solicitudes pendientes de autorización.
             </p>
+        </div>
+
+        <div class="header-actions">
+            <a href="@Url.Action("HistorialAutorizador", "Solicitudes")" class="btn-historial">
+                <i class="fas fa-clock-rotate-left"></i> Ver Historial Completo
+            </a>
         </div>
     </div>
 
@@ -68,8 +74,8 @@
     <div class="table-container">
         <div class="solicitudes-header">
             <h2>
-                <i class="fas fa-clipboard-list"></i>
-                Todas las Solicitudes
+                <i class="fas fa-clock"></i>
+                Solicitudes Pendientes de Autorización
             </h2>
         </div>
 
@@ -160,6 +166,7 @@
             --text-color: #343a40;
         }
 
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
@@ -179,10 +186,41 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .header-content {
-            max-width: 100%;
+            flex: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-historial {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-historial:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            color: white;
+            text-decoration: none;
         }
 
         .page-title {
@@ -502,6 +540,12 @@
                 padding: 20px;
             }
 
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -520,4 +564,134 @@
             }
         }
     </style>
+}
+
+@section Scripts {
+    <script>
+            function initializeSearch() {
+            const searchInput = document.getElementById("searchInput")
+            if (!searchInput) return
+
+            searchInput.addEventListener("input", function () {
+                const searchTerm = this.value.toLowerCase().trim()
+                applyFilters(searchTerm)
+            })
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            initPagination();
+        });
+
+        function initPagination() {
+            const table = document.getElementById('tablaAutorizaciones');
+            if (!table) return;
+
+            const rowsPerPage = 10;
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const totalRows = rows.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+            // Si no hay suficientes filas, ocultar paginación
+            if (totalPages <= 1) {
+                document.querySelector('.pagination-container').style.display = 'none';
+                return;
+            }
+
+            let currentPage = 1;
+
+            // Función para mostrar página
+            function showPage(pageNumber) {
+                currentPage = pageNumber;
+                const startIndex = (pageNumber - 1) * rowsPerPage;
+                const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+
+                // Mostrar/ocultar filas
+                rows.forEach((row, index) => {
+                    row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+                });
+
+                // Actualizar info de paginación
+                document.getElementById('showing-start').textContent = totalRows > 0 ? startIndex + 1 : 0;
+                document.getElementById('showing-end').textContent = endIndex;
+                document.getElementById('total-items').textContent = totalRows;
+
+                // Actualizar botones
+                document.getElementById('prev-page').disabled = pageNumber === 1;
+                document.getElementById('next-page').disabled = pageNumber === totalPages;
+
+                // Actualizar botones de página
+                updatePageButtons();
+            }
+
+            // Función para crear botones de página
+            function updatePageButtons() {
+                const paginationPages = document.getElementById('pagination-pages');
+                paginationPages.innerHTML = '';
+
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Botón primera página
+                if (startPage > 1) {
+                    const firstBtn = createPageButton(1);
+                    paginationPages.appendChild(firstBtn);
+                    if (startPage > 2) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = 'var(--gray-500)';
+                        paginationPages.appendChild(dots);
+                    }
+                }
+
+                // Botones de páginas
+                for (let i = startPage; i <= endPage; i++) {
+                    const btn = createPageButton(i);
+                    paginationPages.appendChild(btn);
+                }
+
+                // Botón última página
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.padding = '0 8px';
+                        dots.style.color = 'var(--gray-500)';
+                        paginationPages.appendChild(dots);
+                    }
+                    const lastBtn = createPageButton(totalPages);
+                    paginationPages.appendChild(lastBtn);
+                }
+            }
+
+            // Crear botón de página
+            function createPageButton(pageNumber) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (pageNumber === currentPage ? ' active' : '');
+                btn.textContent = pageNumber;
+                btn.onclick = () => showPage(pageNumber);
+                return btn;
+            }
+
+            // Event listeners para botones anterior/siguiente
+            document.getElementById('prev-page').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    showPage(currentPage - 1);
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    showPage(currentPage + 1);
+                }
+            });
+
+            // Mostrar primera página
+            showPage(1);
+        }
+    </script>
 }
