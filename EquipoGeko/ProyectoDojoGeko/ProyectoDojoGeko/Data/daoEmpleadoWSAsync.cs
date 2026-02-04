@@ -170,7 +170,7 @@ namespace ProyectoDojoGeko.Data
                     cmd.Parameters.Add(new SqlParameter("@Municipio", empleado.Municipio));
                     cmd.Parameters.Add(new SqlParameter("@Direccion", empleado.Direccion));
                     cmd.Parameters.Add(new SqlParameter("@Puesto", empleado.Puesto));
-                    cmd.Parameters.Add(new SqlParameter("@Codigo", empleado.CodigoEmpleado));
+                    cmd.Parameters.Add(new SqlParameter("@Codigo",string.IsNullOrWhiteSpace(empleado.CodigoEmpleado) ? DBNull.Value : empleado.CodigoEmpleado));
                     cmd.Parameters.Add(new SqlParameter("@DPI", string.IsNullOrEmpty(empleado.DPI) ? DBNull.Value : empleado.DPI));
                     cmd.Parameters.Add(new SqlParameter("@Pasaporte", string.IsNullOrEmpty(empleado.Pasaporte) ? DBNull.Value : empleado.Pasaporte));
                     cmd.Parameters.Add(new SqlParameter("@NombresEmpleado", empleado.NombresEmpleado));

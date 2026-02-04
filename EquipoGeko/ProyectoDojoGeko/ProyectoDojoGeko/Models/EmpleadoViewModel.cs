@@ -43,10 +43,9 @@ namespace ProyectoDojoGeko.Models
         [Column("Puesto")]
         public string Puesto { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El campo {0} es requerido")]
         [StringLength(25, MinimumLength = 5, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
         [Column("Codigo")]
-        public string CodigoEmpleado { get; set; } = string.Empty;
+        public string? CodigoEmpleado { get; set; }
 
         [StringLength(13, MinimumLength = 13, ErrorMessage = "El campo {0} debe tener exactamente {1} dígitos.")]
         [RegularExpression(@"^\d{13}$", ErrorMessage = "El campo {0} debe contener exactamente 13 números.")]

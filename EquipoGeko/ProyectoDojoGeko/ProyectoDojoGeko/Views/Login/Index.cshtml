@@ -59,7 +59,7 @@
                                         </div>
 
                                         <div class="form-outline mb-4">
-                                            <label class="form-label" for="usuario"><i class="bi bi-person-fill"></i>Correo geko</label>
+                                            <label class="form-label" for="usuario"><i class="bi bi-person-fill"></i>Correo Geko</label>
                                             <input type="text" id="usuario" name="usuario" class="form-control form-control-lg"
                                                    placeholder="TuUsuario123" required value="@ViewBag.Usuario" />
                                             <div class="invalid-feedback">Ingresa tu correo.</div>
@@ -67,8 +67,13 @@
 
                                         <div class="form-outline mb-4">
                                             <label class="form-label" for="password"><i class="bi bi-lock-fill"></i> Contraseña</label>
-                                            <input type="password" id="password" name="password" class="form-control form-control-lg"
-                                                   placeholder="******" required minlength="6" />
+                                            <div class="password-input-container">
+                                                <input type="password" id="password" name="password" class="form-control form-control-lg"
+                                                       placeholder="******" required minlength="6" />
+                                                <button type="button" class="password-toggle" id="togglePassword">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </div>
                                             <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres</div>
                                         </div>
 

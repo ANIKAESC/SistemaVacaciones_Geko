@@ -206,16 +206,57 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Función para alternar visibilidad de contraseña
   document.addEventListener('DOMContentLoaded', function() {
+    // Toggle para el campo de password principal (Login Index y Login Cambio Contraseña)
     const togglePassword = document.querySelector('#togglePassword');
     const password = document.querySelector('#password');
     
-    if (togglePassword) {
+    if (togglePassword && password) {
       togglePassword.addEventListener('click', function (e) {
         // Alternar el tipo de input
         const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
         password.setAttribute('type', type);
         
         // Alternar el ícono
+        const icon = this.querySelector('i');
+        if (type === 'password') {
+          icon.classList.remove('bi-eye-slash');
+          icon.classList.add('bi-eye');
+        } else {
+          icon.classList.remove('bi-eye');
+          icon.classList.add('bi-eye-slash');
+        }
+      });
+    }
+
+    // Toggle para el campo de nueva contraseña (ResetPassword)
+    const toggleNuevaPassword = document.querySelector('#toggleNuevaPassword');
+    const nuevaPassword = document.querySelector('#nuevaContraseña');
+    
+    if (toggleNuevaPassword && nuevaPassword) {
+      toggleNuevaPassword.addEventListener('click', function (e) {
+        const type = nuevaPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+        nuevaPassword.setAttribute('type', type);
+        
+        const icon = this.querySelector('i');
+        if (type === 'password') {
+          icon.classList.remove('bi-eye-slash');
+          icon.classList.add('bi-eye');
+        } else {
+          icon.classList.remove('bi-eye');
+          icon.classList.add('bi-eye-slash');
+        }
+      });
+    }
+
+    // Toggle para el campo de confirmar contraseña (ResetPassword)
+    const toggleConfirmarPassword = document.querySelector('#toggleConfirmarPassword');
+    const confirmarPassword = document.querySelector('#confirmarContraseña');
+    
+    if (toggleConfirmarPassword && confirmarPassword) {
+      toggleConfirmarPassword.addEventListener('click', function (e) {
+        const type = confirmarPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+        confirmarPassword.setAttribute('type', type);
+        
         const icon = this.querySelector('i');
         if (type === 'password') {
           icon.classList.remove('bi-eye-slash');

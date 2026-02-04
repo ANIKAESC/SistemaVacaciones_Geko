@@ -23,9 +23,8 @@ namespace ProyectoDojoGeko.Dtos.Empleados.Requests
         [Required(ErrorMessage = "El campo {0} es requerido")]
         public string Puesto { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El campo {0} es requerido")]
         [StringLength(20, MinimumLength = 5, ErrorMessage = "El campo {0} debe tener entre {2} y {1} caracteres.")]
-        public string CodigoEmpleado { get; set; } = string.Empty;
+        public string? CodigoEmpleado { get; set; }
 
         [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [StringLength(13, MinimumLength = 13, ErrorMessage = "El campo {0} debe tener exactamente {1} dígitos.")]

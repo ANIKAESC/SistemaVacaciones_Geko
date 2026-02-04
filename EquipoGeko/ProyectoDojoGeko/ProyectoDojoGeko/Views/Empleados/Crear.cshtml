@@ -309,14 +309,17 @@
                                 <span>Puesto</span>
                                 <span class="required">*</span>
                             </label>
-                            <select asp-for="Puesto" class="form-control">
+@*                             <select asp-for="Puesto" class="form-control">
                                 <option value="Desarrollador">Desarrollador</option>
 								<option value="Diseñador">Diseñador</option>
 								<option value="Gerente">Gerente</option>
 								<option value="Analista">Analista</option>
 								<option value="Otro">Otro</option>
-                            </select>
-                            <span asp-validation-for="Puesto" class="text-danger"></span>
+                            </select> *@
+                            <div class="input-container">
+                                <input asp-for="Puesto" class="form-control" placeholder="Puesto que ocupa" maxlength="40" />
+                                <span asp-validation-for="Puesto" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -327,11 +330,11 @@
                                 <i class="fas fa-id-badge"></i>
                             </div>
                             <span>Código Empleado</span>
-                            <span class="required">*</span>
+                            
                         </label>
                         <div class="input-container">
                             <input asp-for="CodigoEmpleado" class="form-control" placeholder="Código único del empleado" maxlength="20" />
-                            <span asp-validation-for="CodigoEmpleado" class="validation-message"></span>
+                           @*  <span asp-validation-for="CodigoEmpleado" class="validation-message"></span>  *@
                         </div>
                     </div>
 

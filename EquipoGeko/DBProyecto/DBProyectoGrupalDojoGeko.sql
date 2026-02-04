@@ -1876,7 +1876,7 @@ BEGIN
 END
 
 ------------- PROCEDIMIENTOS ALMACENADOS
-
+GO
 -- SP Para autorizar solicitudes 
 CREATE PROCEDURE sp_AutorizarSolicitud
 	@IdSolicitud INT
