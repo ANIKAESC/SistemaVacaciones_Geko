@@ -46,20 +46,39 @@ namespace ProyectoDojoGeko.Controllers
         // GET: Configuracion
         public async Task<IActionResult> Index()
         {
-            // Extraemos los datos del empleado desde la sesión
-            var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(HttpContext.Session.GetInt32("IdEmpleado") ?? 0);
-            if (empleado == null)
+            try
             {
-                await RegistrarError("acceder a la vista de creación de sistema", new Exception("Empleado no encontrado en la sesión."));
-                return RedirectToAction("Index");
+                // Extraemos los datos del empleado desde la sesión
+                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
+                
+                if (!idEmpleado.HasValue || idEmpleado.Value == 0)
+                {
+                    TempData["ErrorMessage"] = "No se encontró información del empleado en la sesión.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado.Value);
+                
+                if (empleado == null)
+                {
+                    await RegistrarError("acceder a configuración", new Exception($"Empleado con ID {idEmpleado.Value} no encontrado."));
+                    TempData["ErrorMessage"] = "No se pudo cargar la información del empleado.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Si no tiene foto, usa una imagen por defecto
+                ViewBag.FotoPerfilUrl = string.IsNullOrEmpty(empleado.Foto)
+                    ? "https://randomuser.me/api/portraits/men/75.jpg"
+                    : empleado.Foto;
+
+                return View(empleado);
             }
-
-            // Si no tiene foto, usa una imagen por defecto
-            ViewBag.FotoPerfilUrl = string.IsNullOrEmpty(empleado.Foto)
-                ? "imagenes/perfiles/default.png"
-                : empleado.Foto;
-
-            return View(empleado);
+            catch (Exception ex)
+            {
+                await RegistrarError("cargar configuración", ex);
+                TempData["ErrorMessage"] = "Ocurrió un error al cargar la configuración.";
+                return RedirectToAction("Index", "Home");
+            }
         }
 
         // POST: Configuracion/CambiarFoto

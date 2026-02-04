@@ -1,5 +1,5 @@
-
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using ProyectoDojoGeko.Data;
 using ProyectoDojoGeko.Dtos.Login.Requests;
@@ -22,6 +22,7 @@ namespace ProyectoDojoGeko.Controllers
         private readonly daoRolesWSAsync _daoRol;
         private readonly daoRolPermisosWSAsync _daoRolPermisos;
         private readonly ILoggingService _loggingService;
+        private readonly ITimeLimitedDataProtector _passwordResetProtector;
 
         public LoginController(
             EmailService emailService,
@@ -33,7 +34,8 @@ namespace ProyectoDojoGeko.Controllers
             daoUsuariosRolWSAsync daoRolUsuario,
             daoRolesWSAsync daoRol,
             daoRolPermisosWSAsync daoRolPermisos,
-            ILoggingService loggingService)
+            ILoggingService loggingService,
+            IDataProtectionProvider dataProtectionProvider)
         {
             _emailService = emailService;
             _daoTokenUsuario = daoTokenUsuario;
@@ -45,10 +47,186 @@ namespace ProyectoDojoGeko.Controllers
             _daoRol = daoRol;
             _daoRolPermisos = daoRolPermisos;
             _loggingService = loggingService;
+
+            _passwordResetProtector = dataProtectionProvider
+                .CreateProtector("ProyectoDojoGeko.Login.PasswordReset")
+                .ToTimeLimitedDataProtector();
         }
 
         [HttpGet]
         public IActionResult Index() => View();
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(string email)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    TempData["ForgotPasswordMessage"] = "Ingresa tu correo empresarial.";
+                    TempData["ForgotPasswordMessageType"] = "warning";
+                    return RedirectToAction(nameof(ForgotPassword));
+                }
+
+                var usuarios = await _daoUsuario.ObtenerUsuariosAsync();
+                var usuario = usuarios?.FirstOrDefault(u => string.Equals(u.Username, email, StringComparison.OrdinalIgnoreCase));
+
+                if (usuario != null)
+                {
+                    var token = _passwordResetProtector.Protect(usuario.IdUsuario.ToString(), TimeSpan.FromMinutes(30));
+                    var resetUrl = Url.Action(nameof(ResetPassword), "Login", new { token }, Request.Scheme);
+
+                    if (!string.IsNullOrEmpty(resetUrl))
+                    {
+                        await _emailService.EnviarCorreoResetPasswordAsync(email, resetUrl);
+                    }
+                    
+                    TempData["ForgotPasswordMessage"] = "Te enviamos un enlace a tu correo para restablecer tu contraseña.";
+                    TempData["ForgotPasswordMessageType"] = "success";
+                }
+                else
+                {
+                    TempData["ForgotPasswordMessage"] = "El usuario ingresado no existe en el sistema.";
+                    TempData["ForgotPasswordMessageType"] = "danger";
+                }
+
+                return RedirectToAction(nameof(ForgotPassword));
+            }
+            catch (Exception e)
+            {
+                await _loggingService.RegistrarLogAsync(new LogViewModel
+                {
+                    Accion = "Error ForgotPassword",
+                    Descripcion = $"Error al procesar recuperación de contraseña para {email}: {e.Message}",
+                    Estado = false
+                });
+
+                TempData["ForgotPasswordMessage"] = "Error al procesar la solicitud. Por favor, inténtelo de nuevo.";
+                TempData["ForgotPasswordMessageType"] = "danger";
+                return RedirectToAction(nameof(ForgotPassword));
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                ViewBag.Mensaje = "El enlace no es válido.";
+                return View();
+            }
+
+            try
+            {
+                _passwordResetProtector.Unprotect(token, out var expiration);
+                if (expiration <= DateTimeOffset.UtcNow)
+                {
+                    ViewBag.Mensaje = "El enlace ha expirado. Solicita uno nuevo.";
+                    return View();
+                }
+
+                ViewBag.Token = token;
+                return View();
+            }
+            catch
+            {
+                ViewBag.Mensaje = "El enlace no es válido o ha expirado.";
+                return View();
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(string token, string nuevaContraseña, string confirmarContraseña)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    ViewBag.Mensaje = "El enlace no es válido.";
+                    return View();
+                }
+
+                if (string.IsNullOrEmpty(nuevaContraseña) || string.IsNullOrEmpty(confirmarContraseña))
+                {
+                    ViewBag.Mensaje = "Todos los campos son obligatorios.";
+                    ViewBag.Token = token;
+                    return View();
+                }
+
+                if (nuevaContraseña != confirmarContraseña)
+                {
+                    ViewBag.Mensaje = "Las contraseñas no coinciden.";
+                    ViewBag.Token = token;
+                    return View();
+                }
+
+                if (nuevaContraseña.Length < 8)
+                {
+                    ViewBag.Mensaje = "La nueva contraseña debe tener al menos 8 caracteres.";
+                    ViewBag.Token = token;
+                    return View();
+                }
+
+                bool tieneMayuscula = nuevaContraseña.Any(char.IsUpper);
+                bool tieneMinuscula = nuevaContraseña.Any(char.IsLower);
+                bool tieneNumero = nuevaContraseña.Any(char.IsDigit);
+
+                if (!tieneMayuscula || !tieneMinuscula || !tieneNumero)
+                {
+                    ViewBag.Mensaje = "La contraseña debe contener al menos una letra mayúscula, una minúscula y un número.";
+                    ViewBag.Token = token;
+                    return View();
+                }
+
+                var unprotected = _passwordResetProtector.Unprotect(token, out var expiration);
+                if (expiration <= DateTimeOffset.UtcNow)
+                {
+                    ViewBag.Mensaje = "El enlace ha expirado. Solicita uno nuevo.";
+                    return View();
+                }
+
+                if (!int.TryParse(unprotected, out var idUsuario))
+                {
+                    ViewBag.Mensaje = "El enlace no es válido.";
+                    return View();
+                }
+
+                string hashNuevaContraseña = BCrypt.Net.BCrypt.HashPassword(nuevaContraseña);
+                _daoTokenUsuario.GuardarContrasenia(idUsuario, hashNuevaContraseña);
+
+                await _daoBitacora.InsertarBitacoraAsync(new BitacoraViewModel
+                {
+                    Accion = "Reset de Contraseña",
+                    Descripcion = $"Se restableció la contraseña del usuario con Id {idUsuario}.",
+                    FK_IdUsuario = idUsuario,
+                    FK_IdSistema = 1
+                });
+
+                TempData["ResetPasswordMessage"] = "Contraseña restablecida exitosamente. Ahora puedes iniciar sesión.";
+                return RedirectToAction("Index", "Login");
+            }
+            catch (Exception e)
+            {
+                await _loggingService.RegistrarLogAsync(new LogViewModel
+                {
+                    Accion = "Error ResetPassword",
+                    Descripcion = $"Error al restablecer contraseña: {e.Message}",
+                    Estado = false
+                });
+
+                ViewBag.Mensaje = "Error al procesar la solicitud. Por favor, inténtelo de nuevo.";
+                ViewBag.Token = token;
+                return View();
+            }
+        }
 
         [HttpGet]
         public IActionResult IndexCambioContrasenia() => View();
@@ -419,10 +597,10 @@ namespace ProyectoDojoGeko.Controllers
                     return Json(new { success = false, message = "No se han encontrado correos asociados al usuario" });
 
                 string nuevaContrasenia = daoUsuarioWSAsync.GenerarContraseniaAleatoria();
-                //string hash = BCrypt.Net.BCrypt.HashPassword(nuevaContrasenia);
-                DateTime nuevaExpiracion = DateTime.UtcNow.AddHours(1);
+                string hash = BCrypt.Net.BCrypt.HashPassword(nuevaContrasenia);
+                DateTime nuevaExpiracion = DateTime.Now.AddHours(1);
 
-                await _daoUsuario.ActualizarContraseniaExpiracionAsync(usuario.IdUsuario, nuevaContrasenia, nuevaExpiracion);
+                await _daoUsuario.ActualizarContraseniaExpiracionAsync(usuario.IdUsuario, hash, nuevaExpiracion);
 
                 string urlCambioPassword = "https://localhost:7001/CambioContrasena";
 

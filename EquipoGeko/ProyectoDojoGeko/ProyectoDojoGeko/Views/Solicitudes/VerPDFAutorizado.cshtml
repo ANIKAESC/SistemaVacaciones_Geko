@@ -13,7 +13,7 @@
                 Solicitud Autorizada Exitosamente
             </h1>
             <p class="page-subtitle">
-                Solicitud de <strong>@nombreEmpleado</strong> - N° @idSolicitud
+                Solicitud <strong>@nombreEmpleado</strong> - N° @idSolicitud
             </p>
         </div>
     </div>
@@ -42,9 +42,9 @@
             <a href="@Url.Action("Autorizar", "Solicitudes")" class="btn btn-primary btn-lg">
                 <i class="fas fa-arrow-left"></i> Volver a Lista de Solicitudes
             </a>
-            <a href="@Url.Action("DescargarPDF", "Solicitudes", new { idSolicitud = idSolicitud })" class="btn btn-success btn-lg">
+@*             <a href="@Url.Action("DescargarPDF", "Solicitudes", new { idSolicitud = idSolicitud })" class="btn btn-success btn-lg">
                 <i class="fas fa-download"></i> Descargar PDF
-            </a>
+            </a> *@
         </div>
     </div>
 </div>
@@ -130,15 +130,37 @@
         gap: 1rem;
         justify-content: center;
         flex-wrap: wrap;
+        margin-top: 2rem;
     }
 
     .acciones-pdf .btn {
-        padding: 0.75rem 2rem;
-        font-size: 1.1rem;
-        font-weight: bold;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        text-decoration: none;
+        padding: 0.75rem 2rem !important;
+        font-size: 1.1rem !important;
+        font-weight: bold !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        border: none !important;
+    }
+
+    .acciones-pdf .btn-primary {
+            background-color: #4C1D95 !important;
+        color: white !important;
+    }
+
+    .acciones-pdf .btn-primary:hover {
+                background-color: #2E1065 !important;
+    }
+
+    .acciones-pdf .btn-success {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+
+    .acciones-pdf .btn-success:hover {
+        background-color: #218838 !important;
     }
 
     .acciones-pdf .btn i {
@@ -146,7 +168,7 @@
     }
 
     .acciones-pdf .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
     }
 </style>

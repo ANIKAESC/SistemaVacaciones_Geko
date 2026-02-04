@@ -64,6 +64,9 @@ namespace ProyectoDojoGeko.Models
         [Column("FK_IdAutorizador")]
         public int? IdAutorizador { get; set; } // Aquí colocamos el ID del empleado con rol de TeamLider o SubLider para asociarle la solicitud
 
+        [NotMapped]
+        public string? NombreAutorizador { get; set; } // Nombre completo del autorizador (no mapeado a BD)
+
         [Column("FechaAutorizacion")]
         public DateTime? FechaAutorizacion { get; set; }
 

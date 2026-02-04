@@ -298,34 +298,30 @@
                 }
             </p>
         </div>
-        <div class="preview-actions">
-            @if (!soloVer && Model.Encabezado.Estado == 1)
-            {
-                <form id="formEnviarSolicitud" asp-action="EnviarSolicitud" asp-route-id="@Model.Encabezado.IdSolicitud" method="post">
-                    @Html.AntiForgeryToken()
-                    <button type="button" class="btn-action btn-success" id="btnEnviarSolicitud">
-                        <i class="fas fa-paper-plane"></i> Enviar Solicitud
-                    </button>
-                </form>
-                <a asp-action="Editar" asp-route-id="@Model.Encabezado.IdSolicitud" 
-                   class="btn-action btn-warning">
-                    <i class="fas fa-edit"></i> Editar Solicitud
-                </a>
-            }
-            @if (esRRHH)
-            {
-                <a asp-action="RecursosHumanos" class="btn-action btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Listado
-                </a>
-            }
-            else
-            {
-                <a asp-action="Index" class="btn-action btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver a las Solicitudes
-                </a>
-            }
-        </div>
     </div>
+
+    @* Información del Autorizador *@
+    @if (!string.IsNullOrEmpty(Model.Encabezado.NombreAutorizador))
+    {
+        <div style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); 
+                    border-left: 4px solid #3B82F6; 
+                    padding: 15px 20px; 
+                    border-radius: 8px; 
+                    margin-bottom: 20px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-user-tie" style="color: #3B82F6; font-size: 20px;"></i>
+                <div>
+                    <p style="margin: 0; font-size: 13px; color: #64748B; font-weight: 500;">
+                        Solicitud enviada a:
+                    </p>
+                    <p style="margin: 0; font-size: 16px; color: #1E40AF; font-weight: 600;">
+                        @Model.Encabezado.NombreAutorizador
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
 
     @* Mensaje de éxito ahora se muestra solo en SweetAlert2 *@
 
@@ -444,22 +440,55 @@
                         </a>
                     </div>
                 </object>
-                
-                <div style="text-align: center; margin-top: 15px;">
-                    <a asp-controller="Pdf"
-                       asp-action="BoletaDiasDisponibilidad"
-                       asp-route-id="@Model.Encabezado.IdSolicitud"
-                       asp-route-download="true"
-                       class="btn btn-primary btn-action">
-                        <i class="fas fa-download"></i> Descargar PDF
-                    </a>
-                    <a asp-controller="Pdf"
-                       asp-action="BoletaDiasDisponibilidad"
-                       asp-route-id="@Model.Encabezado.IdSolicitud"
-                       class="btn btn-secondary btn-action"
-                       target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Abrir en Nueva Pestaña
-                    </a>
+
+                @* Botones de acción organizados en dos filas *@
+                <div style="margin-top: 20px;">
+                    @* Primera fila: Enviar, Editar y Volver *@
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        @if (!soloVer && Model.Encabezado.Estado == 1)
+                        {
+                            <form id="formEnviarSolicitud" asp-action="EnviarSolicitud" asp-route-id="@Model.Encabezado.IdSolicitud" method="post" style="display: inline-block;">
+                                @Html.AntiForgeryToken()
+                                <button type="button" class="btn-action btn-success" id="btnEnviarSolicitud">
+                                    <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                                </button>
+                            </form>
+                            <a asp-action="Editar" asp-route-id="@Model.Encabezado.IdSolicitud"
+                               class="btn-action btn-warning">
+                                <i class="fas fa-edit"></i> Editar Solicitud
+                            </a>
+                        }
+                        @if (esRRHH)
+                        {
+                            <a asp-action="RecursosHumanos" class="btn-action btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver al Listado
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="Index" class="btn-action btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver a las Solicitudes
+                            </a>
+                        }
+                    </div>
+
+                    @* Segunda fila: Descargar y Abrir PDF *@
+@*                     <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                        <a asp-controller="Pdf"
+                           asp-action="BoletaDiasDisponibilidad"
+                           asp-route-id="@Model.Encabezado.IdSolicitud"
+                           asp-route-download="true"
+                           class="btn btn-primary btn-action">
+                            <i class="fas fa-download"></i> Descargar PDF
+                        </a>
+                        <a asp-controller="Pdf"
+                           asp-action="BoletaDiasDisponibilidad"
+                           asp-route-id="@Model.Encabezado.IdSolicitud"
+                           class="btn btn-secondary btn-action"
+                           target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Abrir en Nueva Pestaña
+                        </a>
+                    </div> *@
                 </div>
             </div>
         }

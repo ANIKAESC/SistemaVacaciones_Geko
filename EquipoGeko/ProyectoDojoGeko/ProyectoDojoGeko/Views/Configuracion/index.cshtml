@@ -10,6 +10,7 @@
         background: #f4f6fa;
         min-height: 100vh;
     }
+
     .config-body {
         min-height: 100vh;
         display: flex;
@@ -17,6 +18,7 @@
         justify-content: center;
         background: #f4f6fa;
     }
+
     .config-container {
         background: #fff;
         border-radius: 18px;
@@ -30,6 +32,7 @@
         border: 1px solid #ececec;
         min-height: 520px;
     }
+
     .config-title {
         font-size: 2rem;
         font-weight: bold;
@@ -37,12 +40,14 @@
         letter-spacing: 1px;
         color: #2d3a4b;
     }
+
     .config-options {
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
         margin-top: 2rem;
     }
+
     .config-option {
         background: #f7f9fb;
         border-radius: 12px;
@@ -57,16 +62,19 @@
         font-size: 1.1rem;
         border: 1px solid #e5e9f2;
     }
-    .config-option:hover {
-        background: #eaf0fa;
-        color: #1a2240;
-        text-decoration: none;
-    }
+
+        .config-option:hover {
+            background: #eaf0fa;
+            color: #1a2240;
+            text-decoration: none;
+        }
+
     .config-option-icon {
         font-size: 2.3rem;
         color: #f6c700;
         margin-right: 0.6rem;
     }
+
     .config-future {
         margin-top: 2.5rem;
         font-size: 0.95rem;
@@ -82,19 +90,29 @@
         box-shadow: 0 2px 10px rgba(60,72,88,0.10);
         margin-bottom: 1.3rem;
         border: 3px solid #e5e9f2;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        cursor: pointer;
     }
+    
+    .foto-preview:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(60,72,88,0.20);
+    }
+
     .foto-form label {
         font-weight: 500;
         color: #2d3a4b;
         display: block;
         margin-bottom: 0.7rem;
     }
+
     .foto-form input[type="file"] {
         margin-bottom: 1.3rem;
         display: block;
         margin-left: auto;
         margin-right: auto;
     }
+
     .spa-btn {
         background: #f6c700;
         color: #2d3a4b;
@@ -108,16 +126,19 @@
         transition: background 0.2s;
         box-shadow: 0 2px 8px rgba(60,72,88,0.05);
     }
-    .spa-btn:hover {
-        background: #ffe066;
-    }
-    .spa-btn.secondary {
-        background: #e5e9f2;
-        color: #2d3a4b;
-    }
-    .spa-btn.secondary:hover {
-        background: #d2d7e6;
-    }
+
+        .spa-btn:hover {
+            background: #ffe066;
+        }
+
+        .spa-btn.secondary {
+            background: #e5e9f2;
+            color: #2d3a4b;
+        }
+
+            .spa-btn.secondary:hover {
+                background: #d2d7e6;
+            }
 </style>
 
 <div class="config-body">
@@ -143,9 +164,9 @@
                         <i class="fas fa-user-edit"></i>
                     </span>
                     Editar información personal (próximamente)
-                </a>
+                </a> *@
             </div>
-            <div class="config-future">
+@*             <div class="config-future">
                 Más opciones estarán disponibles próximamente.<br />
                 ¡Personaliza tu experiencia!
             </div> *@
@@ -153,12 +174,12 @@
         <!-- Formulario de cambio de foto (oculto por defecto) -->
         <div id="spaFoto" style="display:none;">
             <div class="config-title" style="margin-bottom:1.1rem;">Cambiar foto de perfil</div>
-            <img class="foto-preview" src="https://randomuser.me/api/portraits/men/75.jpg" alt="Foto actual" />
+            <img id="imgPreview" class="foto-preview" src="https://randomuser.me/api/portraits/men/75.jpg" alt="Foto actual" />
             <form class="foto-form" enctype="multipart/form-data" asp-action="CambiarFoto" asp-controller="Configuracion" method="post">
 
                 <input type="hidden" name="IdEmpleado" value="@Model.IdEmpleado" />
                 <label for="FotoPerfil">Selecciona una nueva foto</label>
-                <input type="file" id="FotoPerfil" name="FotoPerfil" accept="image/*" required />
+                <input type="file" id="FotoPerfil" name="FotoPerfil" accept="image/*" required onchange="previewImage(event)" />
                 <div>
                     <button type="submit" class="spa-btn">Guardar foto</button>
                     <button type="button" class="spa-btn secondary" onclick="volverMenu()">Regresar</button>
@@ -171,17 +192,42 @@
 <!-- FontAwesome para iconos -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-@section Scripts{
+@section Scripts {
     <script>
         function showFotoForm() {
             document.getElementById('spaMenu').style.display = 'none';
             document.getElementById('spaFoto').style.display = 'block';
         }
+        
         function volverMenu() {
             document.getElementById('spaFoto').style.display = 'none';
             document.getElementById('spaMenu').style.display = 'block';
+            // Resetear la imagen a la por defecto al volver
+            document.getElementById('imgPreview').src = 'https://randomuser.me/api/portraits/men/75.jpg';
+        }
+        
+        function previewImage(event) {
+            const input = event.target;
+            const preview = document.getElementById('imgPreview');
+            
+            // Verificar que se seleccionó un archivo
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                // Cuando se cargue la imagen
+                reader.onload = function(e) {
+                    // Actualizar la imagen de vista previa con animación suave
+                    preview.style.opacity = '0.5';
+                    setTimeout(function() {
+                        preview.src = e.target.result;
+                        preview.style.opacity = '1';
+                    }, 200);
+                };
+                
+                // Leer el archivo como URL
+                reader.readAsDataURL(input.files[0]);
+            }
         }
     </script>
 }
 
-            

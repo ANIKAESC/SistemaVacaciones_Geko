@@ -20,6 +20,9 @@ builder.Logging.SetMinimumLevel(LogLevel.Information);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 
+// Data Protection (para tokens firmados de recuperación de contraseña)
+builder.Services.AddDataProtection();
+
 // Manejo de sesiones y caché
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>

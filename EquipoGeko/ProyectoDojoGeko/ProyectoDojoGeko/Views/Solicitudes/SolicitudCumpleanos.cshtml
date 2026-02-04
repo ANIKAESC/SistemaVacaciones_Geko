@@ -12,8 +12,8 @@
 <style>
     :root {
         --primary-color: #003C9D;
-        --cumpleanos-color: #FF6B9D;
-        --cumpleanos-dark: #C44569;
+        --cumpleanos-color: #7C9CD6;
+        --cumpleanos-dark: #4F81D6;
         --secondary-color: #6c757d;
         --success-color: #28a745;
         --light-bg: #f8f9fa;
@@ -81,7 +81,7 @@
     }
 
     .info-alert {
-        background: linear-gradient(135deg, #FFF0F5, #FFE4EC);
+        background: linear-gradient(135deg, #D4E0FA, #D4E0FA);
         border-left: 4px solid var(--cumpleanos-color);
         padding: 16px 20px;
         border-radius: 8px;
@@ -124,12 +124,12 @@
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+        box-shadow: 0 4px 12px rgba(79, 129, 214, 0.3);
     }
 
     .btn-enviar:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4);
+            box-shadow: 0 6px 16px rgba(79, 129, 214, 0.3);
     }
 
     .btn-volver {
@@ -256,7 +256,7 @@
                 html: 'Tu solicitud será enviada al autorizador para su aprobación.<br><strong>No se descontarán días de vacaciones.</strong>',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#FF6B9D',
+                confirmButtonColor: '#4F81D6',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: '<i class="fas fa-paper-plane"></i> Sí, enviar',
                 cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
@@ -285,7 +285,7 @@
                 title: '¡Éxito!',
                 html: '@Html.Raw(TempData["SuccessMessage"])',
                 icon: 'success',
-                confirmButtonColor: '#FF6B9D',
+                    confirmButtonColor: '#4F81D6',
                 confirmButtonText: 'Entendido',
                 customClass: {
                     popup: 'swal-birthday-popup',
@@ -320,22 +320,22 @@
         }
         
         .swal-birthday-title {
-            color: #FF6B9D;
+            color: #4F81D6;
             font-weight: 700;
         }
         
         .swal-birthday-btn {
-            background: linear-gradient(135deg, #FF6B9D, #C44569) !important;
+            background: linear-gradient(135deg, #7C9CD6, #4F81D6) !important;
             border: none !important;
             padding: 0.75rem 2rem !important;
             border-radius: 0.5rem !important;
             font-weight: 600 !important;
-            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3) !important;
+            box-shadow: 0 4px 12px rgba(79, 129, 214) !important;
         }
         
         .swal-birthday-btn:hover {
-            background: linear-gradient(135deg, #C44569, #FF6B9D) !important;
-            box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4) !important;
+                background: linear-gradient(135deg, #4F81D6, #7C9CD6) !important;
+                box-shadow: 0 6px 16px rgba(79, 129, 214) !important;
         }
         
         .swal-cancel-btn {

@@ -295,6 +295,22 @@ namespace ProyectoDojoGeko.Data
             }
         }
 
+        // Método para actualizar los días acumulados de UN empleado específico (más eficiente)
+        public async Task ActualizarDiasAcumuladosEmpleadoAsync(int idEmpleado)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = new SqlCommand("sp_ActualizarDiasAcumuladosEmpleado", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
+                    cmd.CommandTimeout = 30;
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
     }
 
 }

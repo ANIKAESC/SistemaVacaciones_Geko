@@ -20,14 +20,6 @@
 }
 
 <div class="solicitudes-container">
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
-    }
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success" role="alert">@TempData["Success"]</div>
-    }
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">
@@ -275,7 +267,7 @@
         }
 
         .btn-cumpleanos {
-            background: linear-gradient(135deg, #8ab5ff, #7194d2);
+            background: linear-gradient(135deg, #8ab5ff, #4F81D6);
             color: white;
             padding: 12px 24px;
             border: none;
@@ -293,7 +285,7 @@
         .btn-cumpleanos:hover {
             transform: translateY(-2px);
                 box-shadow: 0 6px 16px rgb(138, 181, 255);
-                background: linear-gradient(135deg, #7194d2, #8ab5ff);
+                background: linear-gradient(135deg, #4F81D6, #8ab5ff);
         }
 
         .btn-cumpleanos i {
@@ -674,7 +666,7 @@
 
         /* ===== ESTILOS INTERNOS DEL MODAL ===== */
         #modalCumpleanos .modal-header {
-            background: linear-gradient(135deg, #7194d2, #8ab5ff);
+            background: linear-gradient(135deg, #4F81D6, #7C9CD6);
             color: white;
             border-bottom: none;
             border-radius: 0.5rem 0.5rem 0 0;
@@ -711,7 +703,7 @@
             background: white;
             padding: 0.75rem;
             border-radius: 0.5rem;
-                border-left: 4px solid #8ab5ff;
+                border-left: 4px solid #4F81D6;
             margin-bottom: 1.25rem;
             font-size: 0.9rem;
         }
@@ -725,7 +717,7 @@
         }
 
         #modalCumpleanos .form-label i.icon-label {
-                color: #8ab5ff;
+                color: #4F81D6;
             display: inline-block;
             width: 20px; /* Ancho fijo para alineación perfecta */
             text-align: center;
@@ -742,8 +734,8 @@
         }
 
         #modalCumpleanos .form-select:focus {
-                border-color: #8ab5ff;
-            box-shadow: 0 0 0 0.2rem rgba(255, 107, 157, 0.25);
+                border-color: #4F81D6;
+                box-shadow: 0 0 0 0.2rem rgba(79, 129, 214, 0.3);
         }
 
         #modalCumpleanos .modal-footer {
@@ -768,7 +760,7 @@
         }
 
         #modalCumpleanos .btn-primary {
-            background: linear-gradient(135deg, #7194d2, #8ab5ff);
+            background: linear-gradient(135deg, #7C9CD6, #4F81D6);
             border: none;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -778,7 +770,7 @@
         }
 
         #modalCumpleanos .btn-primary:hover {
-                background: linear-gradient(135deg, #8ab5ff, #7194d2);
+                background: linear-gradient(135deg, #4F81D6, #7C9CD6);
             transform: translateY(-2px);
                 box-shadow: 0 6px 16px rgb(138, 181, 255);
         }
@@ -1042,6 +1034,35 @@
 
             // Mostrar primera página
             showPage(1);
+        }
+
+        // Mostrar mensajes de éxito o error con SweetAlert2
+        @if (TempData["Success"] != null)
+        {
+            <text>
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '@TempData["Success"]',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#10B981',
+                timer: 5000,
+                timerProgressBar: true
+            });
+            </text>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <text>
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: '@TempData["Error"]',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#EF4444'
+            });
+            </text>
         }
     </script>
 }

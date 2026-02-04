@@ -153,6 +153,21 @@ namespace ProyectoDojoGeko.Controllers
                 
                 if (resultado)
                 {
+                    // Actualizar días acumulados del empleado (devolver días)
+                    try
+                    {
+                        var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(idSolicitud);
+                        if (solicitud != null && solicitud.Encabezado != null)
+                        {
+                            await _daoEmpleado.ActualizarDiasAcumuladosEmpleadoAsync(solicitud.Encabezado.IdEmpleado);
+                            await _bitacoraService.RegistrarBitacoraAsync("Días Actualizados", $"Días devueltos al empleado {solicitud.Encabezado.IdEmpleado} después de rechazar solicitud {idSolicitud}");
+                        }
+                    }
+                    catch (Exception diasEx)
+                    {
+                        _logger.LogWarning($"⚠️ No se pudieron actualizar días después de rechazar: {diasEx.Message}");
+                    }
+
                     // Registrar en bitácora
                     await _bitacoraService.RegistrarBitacoraAsync("Rechazar", $"Solicitud {idSolicitud} rechazada por autorizador {idAutorizador}");
 
@@ -998,6 +1013,16 @@ namespace ProyectoDojoGeko.Controllers
             // si quieres llenar nombre desde sesión:
             solicitud.Encabezado.NombreEmpleado ??= HttpContext.Session.GetString("NombreCompletoEmpleado");
 
+            // Cargar nombre del autorizador si existe
+            if (solicitud.Encabezado.IdAutorizador.HasValue)
+            {
+                var autorizador = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdAutorizador.Value);
+                if (autorizador != null)
+                {
+                    solicitud.Encabezado.NombreAutorizador = $"{autorizador.NombresEmpleado} {autorizador.ApellidosEmpleado}";
+                }
+            }
+
             // Pasar el parámetro soloVer a la vista
             ViewBag.SoloVer = soloVer;
 
@@ -1371,8 +1396,8 @@ namespace ProyectoDojoGeko.Controllers
                     $"Solicitud #{id} enviada por {HttpContext.Session.GetString("NombreCompletoEmpleado")} al autorizador"
                 );
 
-                TempData["SuccessMessage"] = "¡Solicitud enviada exitosamente! 🎉<br><br>✅ El PDF ha sido firmado con tu firma digital<br>📧 Se ha notificado al autorizador por correo<br>⏳ Tu solicitud está pendiente de autorización";
-                return RedirectToAction("DetallePDF", new { id });
+                TempData["Success"] = "¡Solicitud enviada exitosamente! El PDF ha sido firmado con tu firma digital y se ha notificado al autorizador por correo. Tu solicitud está pendiente de autorización.";
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
@@ -1773,12 +1798,36 @@ namespace ProyectoDojoGeko.Controllers
                         // 2. Actualizar días acumulados del empleado
                         try
                         {
-                            await _daoEmpleado.ActualizarDiasAcumuladosEmpleadosAsync();
-                            await _bitacoraService.RegistrarBitacoraAsync("Días Actualizados", $"Días acumulados actualizados después de autorizar solicitud {idSolicitud}");
+                            // Obtener el IdEmpleado de la solicitud
+                            var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(idSolicitud);
+                            if (solicitud != null && solicitud.Encabezado != null)
+                            {
+                                // Obtener días antes del descuento
+                                var empleadoAntes = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdEmpleado);
+                                var diasAntes = empleadoAntes?.DiasVacacionesAcumulados ?? 0;
+                                
+                                _logger.LogInformation("💰 ANTES de actualizar - Empleado {IdEmpleado}: {DiasAntes} días disponibles, Solicitud #{IdSolicitud}: {DiasSolicitados} días", 
+                                    solicitud.Encabezado.IdEmpleado, diasAntes, idSolicitud, solicitud.Encabezado.DiasSolicitadosTotal);
+                                
+                                // Actualizar solo el empleado de esta solicitud (más eficiente)
+                                await _daoEmpleado.ActualizarDiasAcumuladosEmpleadoAsync(solicitud.Encabezado.IdEmpleado);
+                                
+                                // Obtener días después del descuento
+                                
+                                var empleadoDespues = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdEmpleado);
+                                var diasDespues = empleadoDespues?.DiasVacacionesAcumulados ?? 0;
+                                
+                                _logger.LogInformation("💰 DESPUÉS de actualizar - Empleado {IdEmpleado}: {DiasDespues} días disponibles (Descuento: {Descuento} días)", 
+                                    solicitud.Encabezado.IdEmpleado, diasDespues, diasAntes - diasDespues);
+                                
+                                await _bitacoraService.RegistrarBitacoraAsync("Días Actualizados", 
+                                    $"Días acumulados actualizados para empleado {solicitud.Encabezado.IdEmpleado} después de autorizar solicitud {idSolicitud}. Antes: {diasAntes}, Después: {diasDespues}, Descontados: {diasAntes - diasDespues}");
+                            }
                         }
                         catch (Exception diasEx)
                         {
                             // Si falla la actualización de días, logueamos pero no afectamos la autorización
+                            _logger.LogError(diasEx, "❌ Error al actualizar días para solicitud {IdSolicitud}", idSolicitud);
                             await _loggingService.RegistrarLogAsync(new LogViewModel
                             {
                                 Accion = "Warning - Actualización Días",
@@ -1993,22 +2042,15 @@ namespace ProyectoDojoGeko.Controllers
                     return RedirectToAction("Solicitudes");
                 }
 
-                var idEmpleado = HttpContext.Session.GetInt32("IdEmpleado");
-                if (!idEmpleado.HasValue || idEmpleado.Value == 0)
+                // Obtener el empleado dueño de la solicitud
+                var empleadoSolicitud = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdEmpleado);
+                if (empleadoSolicitud != null)
                 {
-                    await RegistrarError("Crear Solicitud", new Exception("El ID del empleado no se encontró en la sesión."));
-                    return RedirectToAction("Index", "Home");
+                    // Asignar el nombre completo del empleado al modelo
+                    solicitud.Encabezado.NombreEmpleado = $"{empleadoSolicitud.NombresEmpleado} {empleadoSolicitud.ApellidosEmpleado}";
                 }
 
-                // 1. Obtener el objeto empleado completo, como en la vista Index.
-                var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado.Value);
-                if (empleado == null)
-                {
-                    await RegistrarError("Crear Solicitud", new Exception("No se pudo encontrar el empleado."));
-                    return RedirectToAction("Index", "Home");
-                }
-
-                ViewBag.Empleado = empleado;
+                ViewBag.Empleado = empleadoSolicitud;
 
                 return View(solicitud);
             }
@@ -2085,6 +2127,21 @@ namespace ProyectoDojoGeko.Controllers
 
                 if (cancelada)
                 {
+                    // Actualizar días acumulados del empleado (devolver días)
+                    try
+                    {
+                        var solicitud = await _daoSolicitud.ObtenerDetalleSolicitudAsync(idSolicitud);
+                        if (solicitud != null && solicitud.Encabezado != null)
+                        {
+                            await _daoEmpleado.ActualizarDiasAcumuladosEmpleadoAsync(solicitud.Encabezado.IdEmpleado);
+                            await _bitacoraService.RegistrarBitacoraAsync("Días Actualizados", $"Días devueltos al empleado {solicitud.Encabezado.IdEmpleado} después de cancelar solicitud {idSolicitud}");
+                        }
+                    }
+                    catch (Exception diasEx)
+                    {
+                        _logger.LogWarning($"⚠️ No se pudieron actualizar días después de cancelar: {diasEx.Message}");
+                    }
+
                     TempData["SuccessMessage"] = "La solicitud ha sido cancelada exitosamente.";
                     await _bitacoraService.RegistrarBitacoraAsync("Cancelar Solicitud", $"La solicitud {idSolicitud} fue cancelada.");
                 }
@@ -2343,8 +2400,11 @@ namespace ProyectoDojoGeko.Controllers
         }
 
         /*=================================================   
-		==   MÉTODO HELPER: Calcular Días Disponibles  == 
+		==   MÉTODO HELPER: Obtener Días Disponibles  == 
 		=================================================*/
+        // NOTA: Los días disponibles ya están calculados por el SP sp_ActualizarDiasAcumuladosEmpleado
+        // que se ejecuta automáticamente al aprobar/rechazar/cancelar solicitudes.
+        // Este método solo devuelve el valor ya calculado en DiasVacacionesAcumulados.
         private async Task<double> CalcularDiasDisponiblesAsync(int idEmpleado)
         {
             try
@@ -2353,41 +2413,16 @@ namespace ProyectoDojoGeko.Controllers
                 var empleado = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(idEmpleado);
                 if (empleado == null) return 0;
 
-                // Días acumulados desde ingreso (cargados manualmente o calculados)
-                decimal diasAcumulados = empleado.DiasVacacionesAcumulados;
-
-                // Días tomados antes del sistema (históricos)
-                decimal diasTomadosHistoricos = empleado.DiasTomadosHistoricos;
-
-                // Días solicitados en el sistema (aprobadas, en proceso, finalizadas)
-                decimal diasSolicitadosEnSistema = 0;
-                using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-                {
-                    await connection.OpenAsync();
-                    using (var cmd = new SqlCommand(@"
-                        SELECT ISNULL(SUM(DiasSolicitadosTotal), 0)
-                        FROM SolicitudEncabezado
-                        WHERE FK_IdEmpleado = @IdEmpleado
-                          AND FK_IdEstadoSolicitud IN (2, 3, 5)", connection))
-                    {
-                        cmd.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
-                        var resultado = await cmd.ExecuteScalarAsync();
-                        if (resultado != null && resultado != DBNull.Value)
-                        {
-                            diasSolicitadosEnSistema = Convert.ToDecimal(resultado);
-                        }
-                    }
-                }
-
-                // Calcular días disponibles
-                decimal diasDisponibles = diasAcumulados - diasTomadosHistoricos - diasSolicitadosEnSistema;
+                // El SP ya calculó: DiasAcumulados - DiasTomadosHistoricos - DiasSolicitadosEnSistema
+                // Solo devolvemos el valor actualizado
+                decimal diasDisponibles = empleado.DiasVacacionesAcumulados;
 
                 // No permitir valores negativos
                 return (double)(diasDisponibles < 0 ? 0 : diasDisponibles);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al calcular días disponibles para empleado {IdEmpleado}", idEmpleado);
+                _logger.LogError(ex, "Error al obtener días disponibles para empleado {IdEmpleado}", idEmpleado);
                 return 0;
             }
         }

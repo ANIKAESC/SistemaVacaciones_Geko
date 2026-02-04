@@ -290,6 +290,89 @@ public class EmailService
         }
     }
 
+    public async Task EnviarCorreoResetPasswordAsync(string destino, string urlResetPassword)
+    {
+        try
+        {
+            await GuardarLogEnBDAsync(
+                "Envío de Correo ResetPassword - Inicio",
+                $"Iniciando envío de correo de reset a {destino}. FromEmail: {_settings.FromEmail}",
+                true
+            );
+
+            if (string.IsNullOrEmpty(destino))
+            {
+                _logger.LogError("El correo de destino está vacío");
+                throw new ArgumentException("El correo de destino no puede estar vacío");
+            }
+
+            if (string.IsNullOrEmpty(urlResetPassword))
+            {
+                _logger.LogError("La URL de reset está vacía");
+                throw new ArgumentException("La URL de restablecimiento no puede estar vacía");
+            }
+
+            var mensaje = new MimeMessage();
+            mensaje.From.Add(new MailboxAddress(_settings.FromName, _settings.FromEmail));
+            mensaje.To.Add(MailboxAddress.Parse(destino));
+            mensaje.Subject = "Restablecer contraseña";
+
+            var url = WebUtility.HtmlEncode(urlResetPassword);
+
+            var html = $@"
+                <div style='max-width:600px;margin:40px auto;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;border-radius:10px;overflow:hidden;box-shadow:0 0 15px rgba(0,0,0,0.1);background:#fff;color:#333;'>
+                  <div style='background-color:#007bff;color:#fff;padding:25px 30px;text-align:center;'>
+                    <h1 style='margin:0;font-size:22px;'>Restablecer contraseña</h1>
+                  </div>
+
+                  <div style='padding:30px;'>
+                    <p style='font-size:16px;line-height:1.6;'>
+                      Recibimos una solicitud para restablecer la contraseña de tu cuenta.
+                    </p>
+
+                    <p style='font-size:16px;'>Para continuar, haz clic en el siguiente botón:</p>
+
+                    <div style='text-align:center;margin:30px 0;'>
+                      <a href='{url}' style='background-color:#28a745;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold;box-shadow:0 4px 10px rgba(0,0,0,0.1);'>
+                        Restablecer contraseña
+                      </a>
+                    </div>
+
+                    <p style='font-size:14px;color:#6c757d;'>
+                      Si tú no solicitaste este cambio, ignora este correo.
+                    </p>
+                  </div>
+                </div>";
+
+
+
+            var builder = new BodyBuilder { HtmlBody = html };
+            mensaje.Body = builder.ToMessageBody();
+
+            using var smtp = new SmtpClient();
+            await smtp.ConnectAsync("in-v3.mailjet.com", 587, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(_settings.ApiKey, _settings.ApiSecret);
+            await smtp.SendAsync(mensaje);
+            await smtp.DisconnectAsync(true);
+
+            await GuardarLogEnBDAsync(
+                "Envío de Correo ResetPassword - Éxito",
+                $" Correo de reset enviado exitosamente a {destino}",
+                true
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"❌ ERROR AL ENVIAR CORREO RESET: {ex.Message}");
+            await GuardarLogEnBDAsync(
+                "Envío de Correo ResetPassword - ERROR",
+                $"❌ ERROR al enviar correo de reset a {destino}. Error: {ex.Message}. Tipo: {ex.GetType().Name}.",
+                false
+            );
+            throw;
+        }
+    }
+
     // Método para enviar notificación al autorizador sobre nueva solicitud
     public async Task EnviarNotificacionNuevaSolicitudAsync(
         string nombreEmpleado,

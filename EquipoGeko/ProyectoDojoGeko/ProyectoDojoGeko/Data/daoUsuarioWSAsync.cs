@@ -19,7 +19,7 @@ namespace ProyectoDojoGeko.Data
         // Método(función) para generar una contraseña aleatoria
         public static string GenerarContraseniaAleatoria(int longitud = 25)
         {
-            const string caracteres = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=<>?";
+            const string caracteres = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^*()_-+=.?";
 
             var random = new Random();
             var contrasenia = new char[longitud];
@@ -191,11 +191,10 @@ namespace ProyectoDojoGeko.Data
             Console.WriteLine($"[LOG] Contraseña generada: [{nuevaContrasenia}]");
 
             // Hasheamos la contraseña antes de guardarla
-            //var hashPassword = BCrypt.Net.BCrypt.HashPassword(nuevaContrasenia);
-            //Console.WriteLine($"[LOG] Hash generado: [{hashPassword}]");
+            var hashPassword = BCrypt.Net.BCrypt.HashPassword(nuevaContrasenia);
 
             // Calculamos la fecha de expiración de la contraseña (1 hora desde la fecha y hora actual)
-            DateTime fechaExpiracion = DateTime.UtcNow.AddHours(1);
+            DateTime fechaExpiracion = DateTime.Now.AddHours(1);
             usuario.FechaExpiracionContrasenia = fechaExpiracion;
 
             // Le pasamos el estado del usuario, el cuál tendrá que autorizarse
@@ -204,7 +203,7 @@ namespace ProyectoDojoGeko.Data
             var parametros = new[]
             {
                 new SqlParameter("@Username", usuario.Username),
-                new SqlParameter("@Contrasenia", nuevaContrasenia),
+                new SqlParameter("@Contrasenia", hashPassword),
                 new SqlParameter("@FK_IdEstado", FK_IdEstado),
                 new SqlParameter("@FK_IdEmpleado", usuario.FK_IdEmpleado),
                 new SqlParameter("@FechaExpiracionContrasenia", fechaExpiracion)

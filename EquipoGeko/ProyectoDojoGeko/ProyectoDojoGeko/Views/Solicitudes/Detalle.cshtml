@@ -70,7 +70,7 @@
     <div class="empleado-card">
         <!-- Tarjeta de resumen -->
         <div class="info-box">
-            <h2 class="empleado-nombre-s">@empleado?.NombresEmpleado @empleado?.ApellidosEmpleado</h2>
+            <h2 class="empleado-nombre-s">@Model.Encabezado.NombreEmpleado</h2>
             <p class="empleado-id">Número de solicitud: <strong>@Model.Encabezado.IdSolicitud</strong></p>
             <div class="estado-box">
                 <span class="badge estado-@Model.Encabezado.Estado">
@@ -247,9 +247,9 @@
           Rechazar Solicitud
         </h5>
 
-        <button type="button" class="close modal-rechazo__close" data-dismiss="modal" aria-label="Close">
+@*         <button type="button" class="close modal-rechazo__close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
-        </button>
+        </button> *@
       </div>
 
       <div class="modal-body modal-rechazo__body">
@@ -300,9 +300,9 @@
           Autorizar Solicitud
         </h5>
 
-        <button type="button" class="close modal-autorizar__close" data-dismiss="modal" aria-label="Close">
+@*         <button type="button" class="close modal-autorizar__close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
-        </button>
+        </button> *@
       </div>
 
       <div class="modal-body modal-autorizar__body">
@@ -406,7 +406,7 @@
 
                     /* Focus bonito */
                     #modalRechazarSolicitud textarea.form-control:focus {
-                        border-color: #2563EB;
+                        border-color: #BD452A;
                         box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .18);
                         outline: none;
                     }
@@ -437,10 +437,17 @@
                     gap: 8px;
                 }
 
+            #modalRechazarSolicitud .modal-title {
+                font-size: 1.4rem;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
             /* Primario con gradiente */
             #modalRechazarSolicitud .btn-primary {
                 border: 0;
-                background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+                background: linear-gradient(135deg, #BD452A 0%, #A61E00 100%);
             }
 
             /* Hover suaves */
@@ -453,7 +460,7 @@
             #modalRechazarSolicitud .modal-header {
                 padding: 18px 22px;
                 border: 0;
-                background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+                background: linear-gradient(135deg, #BD452A 0%, #A61E00 100%);
                 color: #fff;
             }
 
@@ -467,7 +474,7 @@
                     margin: 0;
                     padding: 0;
                     transition: transform .2s ease, opacity .2s ease;
-                    background: #1E40AF;
+                    background: #A61E00;
                 }
 
                     #modalRechazarSolicitud .modal-header .close:hover {
