@@ -163,7 +163,7 @@ public class EmailService
         padding: 25px 30px;
         text-align: center;
     '>
-        <h1 style='margin: 0; font-size: 24px;'>¡Bienvenido a Dojo .NET 2025!</h1>
+        <h1 style='margin: 0; font-size: 24px;'>¡Bienvenido al Sistema de días de Disponibilidad</h1>
     </div>
 
     <div style='padding: 30px;'>

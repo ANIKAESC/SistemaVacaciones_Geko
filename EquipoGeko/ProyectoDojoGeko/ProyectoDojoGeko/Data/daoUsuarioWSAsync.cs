@@ -188,13 +188,12 @@ namespace ProyectoDojoGeko.Data
         public async Task<(int IdUsuario, string Contrasenia)> InsertarUsuarioAsync(UsuarioViewModel usuario)
         {
             string nuevaContrasenia = GenerarContraseniaAleatoria();
-            Console.WriteLine($"[LOG] Contraseña generada: [{nuevaContrasenia}]");
 
             // Hasheamos la contraseña antes de guardarla
             var hashPassword = BCrypt.Net.BCrypt.HashPassword(nuevaContrasenia);
 
             // Calculamos la fecha de expiración de la contraseña (1 hora desde la fecha y hora actual)
-            DateTime fechaExpiracion = DateTime.Now.AddHours(1);
+            DateTime fechaExpiracion = DateTime.Now.AddHours(24);
             usuario.FechaExpiracionContrasenia = fechaExpiracion;
 
             // Le pasamos el estado del usuario, el cuál tendrá que autorizarse

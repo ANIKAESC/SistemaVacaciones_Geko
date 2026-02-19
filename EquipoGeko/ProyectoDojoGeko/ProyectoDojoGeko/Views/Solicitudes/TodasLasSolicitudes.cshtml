@@ -1,6 +1,6 @@
 @model List<ProyectoDojoGeko.Models.SolicitudViewModel>
 @{
-    ViewData["Title"] = "Todas las Solicitudes de Vacaciones";
+    ViewData["Title"] = "Todas las Solicitudes de días de disponibilidad";
     
     // Usar el mismo layout que la vista Index
     var codigoSistema = Context.Session.GetString("SistemaActual");
@@ -32,7 +32,7 @@
         <div class="header-content">
             <h1 class="page-title">
                 <i class="fas fa-list-alt"></i>
-                Todas las Solicitudes de Vacaciones
+                Todas las Solicitudes de días de disponibilidad
             </h1>
             <p class="page-subtitle">
                 Visualización completa de todas las solicitudes del sistema

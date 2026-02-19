@@ -343,7 +343,7 @@
             @if (!string.IsNullOrEmpty(Model.Encabezado.MotivoRechazo))
             {
                 <p style="margin: 0 0 20px 0; font-size: 16px; color: #003C9D;">
-                    El autorizador ha rechazado tu solicitud de vacaciones por el siguiente motivo:
+                    El autorizador ha rechazado tu solicitud de días de disponibilidad por el siguiente motivo:
                 </p>
                 <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px; border: 2px solid #93C5FD;">
                     <strong style="color: #003C9D; font-size: 18px; display: block; margin-bottom: 10px;">
@@ -354,7 +354,7 @@
             }
             else
             {
-                <p style="margin: 0; font-size: 16px; color: #003C9D;">El autorizador ha rechazado tu solicitud de vacaciones.</p>
+                <p style="margin: 0; font-size: 16px; color: #003C9D;">El autorizador ha rechazado tu solicitud de días de disponibilidad.</p>
             }
         </div>
 
@@ -376,16 +376,51 @@
     }
     else if (Model.Encabezado.Estado >= 2)
     {
-        <div class="success-alert">
-            <i class="fas fa-check-circle"></i> 
-            @if (esRRHH)
-            {
-                <text><strong>La solicitud fue autorizada.</strong> A continuación puedes ver el documento con ambas firmas.</text>
-            }
-            else
-            {
-                <text><strong>¡Solicitud Autorizada!</strong> La solicitud ha sido autorizada. A continuación puedes ver el documento con ambas firmas.</text>
-            }
+        <div style="margin-bottom: 25px; 
+                    background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); 
+                    border: none;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+                    padding: 24px 28px;
+                    position: relative;
+                    overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #10B981 0%, #059669 100%);"></div>
+            <div style="display: flex; align-items: flex-start; gap: 16px;">
+                <div style="flex-shrink: 0; 
+                           width: 48px; 
+                           height: 48px; 
+                           background: linear-gradient(135deg, #10B981 0%, #059669 100%); 
+                           border-radius: 12px; 
+                           display: flex; 
+                           align-items: center; 
+                           justify-content: center;
+                           box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);">
+                    <i class="fas fa-check-circle" style="color: white; font-size: 24px;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 8px 0; 
+                               color: #065F46; 
+                               font-size: 20px; 
+                               font-weight: 700;
+                               letter-spacing: -0.02em;">
+                        @if (esRRHH)
+                        {
+                            <text>La solicitud fue autorizada</text>
+                        }
+                        else
+                        {
+                            <text>¡Solicitud Autorizada!</text>
+                        }
+                    </h4>
+                    <p style="margin: 0; 
+                             color: #047857; 
+                             font-size: 15px; 
+                             line-height: 1.6;
+                             font-weight: 500;">
+                        La solicitud ha sido autorizada. A continuación puedes ver el documento con ambas firmas.
+                    </p>
+                </div>
+            </div>
         </div>
         
         <div class="pdf-viewer-section" style="margin-bottom: 30px;">
@@ -430,14 +465,7 @@
                            class="pdf-viewer" />
                     <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 8px;">
                         <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                        <p>Tu navegador no puede mostrar el PDF directamente.</p>
-                        <a asp-controller="Pdf"
-                           asp-action="BoletaDiasDisponibilidad"
-                           asp-route-id="@Model.Encabezado.IdSolicitud"
-                           class="btn btn-primary btn-action"
-                           target="_blank">
-                            <i class="fas fa-external-link-alt"></i> Abrir PDF en nueva pestaña
-                        </a>
+                        <p>Tu navegador no puede mostrar el PDF directamente. Por favor, usa los botones de abajo para descargar o abrir el PDF.</p>
                     </div>
                 </object>
 

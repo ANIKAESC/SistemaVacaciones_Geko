@@ -33,37 +33,147 @@
                     <span>Detalle de Solicitud</span>
                 }
             </h1>
-            <p class="page-subtitle">Información detallada sobre la solicitud de vacaciones</p>
+            <p class="page-subtitle">Información detallada sobre la solicitud de días de disponibilidad</p>
         </div>
     </div>
 
     @* Mensajes de éxito o error *@
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-bottom: 20px; background: #D1FAE5; border-left: 4px solid #10B981; color: #065F46; padding: 20px; font-size: 18px;">
-            <h4 style="margin: 0 0 10px 0; color: #065F46;">
-                <i class="fas fa-check-circle"></i> ¡Operación Exitosa!
-            </h4>
-            <p style="margin: 0; font-size: 16px;">@TempData["SuccessMessage"]</p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-success alert-dismissible fade show" role="alert" 
+             style="margin-bottom: 25px; 
+                    background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); 
+                    border: none;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+                    padding: 24px 28px;
+                    position: relative;
+                    overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #10B981 0%, #059669 100%);"></div>
+            <div style="display: flex; align-items: flex-start; gap: 16px;">
+                <div style="flex-shrink: 0; 
+                           width: 48px; 
+                           height: 48px; 
+                           background: linear-gradient(135deg, #10B981 0%, #059669 100%); 
+                           border-radius: 12px; 
+                           display: flex; 
+                           align-items: center; 
+                           justify-content: center;
+                           box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);">
+                    <i class="fas fa-check-circle" style="color: white; font-size: 24px;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 8px 0; 
+                               color: #065F46; 
+                               font-size: 20px; 
+                               font-weight: 700;
+                               letter-spacing: -0.02em;">
+                        ¡Operación Exitosa!
+                    </h4>
+                    <p style="margin: 0; 
+                             color: #047857; 
+                             font-size: 15px; 
+                             line-height: 1.6;
+                             font-weight: 500;">
+                        @TempData["SuccessMessage"]
+                    </p>
+                </div>
+                <button type="button" 
+                        class="btn-close" 
+                        data-bs-dismiss="alert" 
+                        aria-label="Close"
+                        style="opacity: 0.6; 
+                               filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(146deg) brightness(94%) contrast(97%);">
+                </button>
+            </div>
         </div>
     }
     @if (TempData["MensajeError"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 20px; background: #FEE2E2; border-left: 4px solid #DC2626; color: #991B1B;">
-            <i class="fas fa-exclamation-circle"></i> @TempData["MensajeError"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" 
+             style="margin-bottom: 25px; 
+                    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); 
+                    border: none;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+                    padding: 24px 28px;
+                    position: relative;
+                    overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #DC2626 0%, #B91C1C 100%);"></div>
+            <div style="display: flex; align-items: flex-start; gap: 16px;">
+                <div style="flex-shrink: 0; 
+                           width: 48px; 
+                           height: 48px; 
+                           background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); 
+                           border-radius: 12px; 
+                           display: flex; 
+                           align-items: center; 
+                           justify-content: center;
+                           box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);">
+                    <i class="fas fa-exclamation-circle" style="color: white; font-size: 24px;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <p style="margin: 0; 
+                             color: #991B1B; 
+                             font-size: 15px; 
+                             line-height: 1.6;
+                             font-weight: 500;">
+                        @TempData["MensajeError"]
+                    </p>
+                </div>
+                <button type="button" 
+                        class="btn-close" 
+                        data-bs-dismiss="alert" 
+                        aria-label="Close"
+                        style="opacity: 0.6; 
+                               filter: brightness(0) saturate(100%) invert(13%) sepia(93%) saturate(4743%) hue-rotate(356deg) brightness(91%) contrast(92%);">
+                </button>
+            </div>
         </div>
     }
     
     @* Alerta especial si la solicitud está rechazada *@
     @if (Model.Encabezado.Estado == 6 && !string.IsNullOrEmpty(Model.Encabezado.MotivoRechazo))
     {
-        <div class="alert alert-warning" role="alert" style="margin-bottom: 20px; background: #FEF3C7; border-left: 4px solid #F59E0B; color: #92400E;">
-            <h5 style="margin: 0 0 0.5rem 0; color: #92400E;">
-                <i class="fas fa-exclamation-triangle"></i> Esta solicitud fue rechazada
-            </h5>
-            <p style="margin: 0;">El autorizador ha rechazado tu solicitud. Revisa el motivo en la sección inferior.</p>
+        <div class="alert alert-warning" role="alert" 
+             style="margin-bottom: 25px; 
+                    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); 
+                    border: none;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+                    padding: 24px 28px;
+                    position: relative;
+                    overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);"></div>
+            <div style="display: flex; align-items: flex-start; gap: 16px;">
+                <div style="flex-shrink: 0; 
+                           width: 48px; 
+                           height: 48px; 
+                           background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); 
+                           border-radius: 12px; 
+                           display: flex; 
+                           align-items: center; 
+                           justify-content: center;
+                           box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);">
+                    <i class="fas fa-exclamation-triangle" style="color: white; font-size: 24px;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h5 style="margin: 0 0 8px 0; 
+                               color: #92400E; 
+                               font-size: 18px; 
+                               font-weight: 700;
+                               letter-spacing: -0.02em;">
+                        Esta solicitud fue rechazada
+                    </h5>
+                    <p style="margin: 0; 
+                             color: #B45309; 
+                             font-size: 15px; 
+                             line-height: 1.6;
+                             font-weight: 500;">
+                        El autorizador ha rechazado tu solicitud. Revisa el motivo en la sección inferior.
+                    </p>
+                </div>
+            </div>
         </div>
     }
 
@@ -256,7 +366,7 @@
         <div class="modal-rechazo__alert">
           <i class="fas fa-info-circle"></i>
           <div>
-            <strong>Importante:</strong> Esta acción rechazará la solicitud de vacaciones. El empleado será notificado del rechazo.
+            <strong>Importante:</strong> Esta acción rechazará la solicitud de días de disponibilidad. El empleado será notificado del rechazo.
           </div>
         </div>
 
@@ -271,7 +381,7 @@
             class="form-control modal-rechazo__textarea"
             id="motivoRechazoInput"
             rows="5"
-            placeholder="Explique detalladamente el motivo por el cual se rechaza esta solicitud de vacaciones..."
+            placeholder="Explique detalladamente el motivo por el cual se rechaza esta solicitud de días de disponibilidad..."
             required
           ></textarea>
         </div>
@@ -819,7 +929,7 @@
 
                     // Subtítulo - con color más fuerte
                     {
-                        text: 'Información detallada sobre la solicitud de vacaciones',
+                        text: 'Información detallada sobre la solicitud de días de disponibilidad',
                         style: 'subtitle',
                         margin: [0, 0, 0, 20]
                     },
@@ -1024,7 +1134,7 @@
             };
 
             // Generar y descargar el PDF
-            pdfMake.createPdf(docDefinition).download(`Solicitud_Vacaciones_${solicitudData.idSolicitud}_${new Date().toISOString().slice(0, 10)}.pdf`);
+            pdfMake.createPdf(docDefinition).download(`Solicitud_Días_de_Disponibilidad_${solicitudData.idSolicitud}_${new Date().toISOString().slice(0, 10)}.pdf`);
 
             // Mostrar notificación de éxito
             mostrarNotificacion("Archivo PDF exportado exitosamente", "success");
@@ -1449,12 +1559,20 @@
                 e.preventDefault();
                 console.log('Click en botón rechazar');
                 
+                // Guardar referencia al formulario
+                formRechazoActual = document.getElementById('formRechazar');
+                
                 // Limpiar el textarea
                 const textarea = document.getElementById('motivoRechazoInput');
                 if (textarea) {
                     textarea.value = '';
                     textarea.style.borderColor = '#E5E7EB';
                     textarea.style.boxShadow = 'none';
+                    // Limpiar errores previos
+                    const errorMsg = document.getElementById('errorMotivoRechazo');
+                    if (errorMsg) {
+                        errorMsg.remove();
+                    }
                 }
                 
                 abrirModal('modalRechazarSolicitud');

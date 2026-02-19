@@ -66,10 +66,6 @@ namespace ProyectoDojoGeko.Data
         // Validar un usuario por nombre de usuario y contraseña
         public UsuarioViewModel ValidarUsuario(string usuario, string claveIngresada)
         {
-            Console.WriteLine($"=== DEBUG LOGIN ===");
-            Console.WriteLine($"Usuario recibido: '{usuario}'");
-            Console.WriteLine($"Clave recibida: '{claveIngresada}'");
-
             UsuarioViewModel user = null;
 
             using (var conn = new SqlConnection(_connectionString))
@@ -86,34 +82,13 @@ namespace ProyectoDojoGeko.Data
                 {
                     if (reader.Read())
                     {
-                        Console.WriteLine("Usuario encontrado en BD");
                         string hashGuardado = reader["contrasenia"].ToString()?.Trim();
                         string clavePlana = claveIngresada?.Trim();
-                        Console.WriteLine($"Hash en BD: {hashGuardado}");
-                        Console.WriteLine($"Hash length: {(hashGuardado != null ? hashGuardado.Length : 0)}");
-                        Console.WriteLine($"Hash startsWith $2: {(hashGuardado != null && hashGuardado.StartsWith("$2") ? "SI" : "NO")}");
-                        Console.WriteLine($"Clave length: {(clavePlana != null ? clavePlana.Length : 0)}");
-
-                        // En caso de ser el usuario AdminDev, este no tiene un hash, por lo tanto debemos saltar la validación para este usuario
-                        if (usuario == "AdminDev")
-                        {
-                            Console.WriteLine("Validación exitosa - creando usuario");
-                            user = new UsuarioViewModel
-                            {
-                                IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
-                                Username = reader.GetString(reader.GetOrdinal("Username")),
-                                FK_IdEstado = reader.GetInt32(reader.GetOrdinal("FK_IdEstado")),
-                                FK_IdEmpleado = reader.GetInt32(reader.GetOrdinal("FK_IdEmpleado"))
-                            };
-                            return user;
-                        }
 
                         bool esValido = BCrypt.Net.BCrypt.Verify(clavePlana, hashGuardado);
-                        Console.WriteLine($"BCrypt.Verify resultado: {esValido}");
 
                         if (esValido)
                         {
-                            Console.WriteLine("Validación exitosa - creando usuario");
                             user = new UsuarioViewModel
                             {
                                 IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
@@ -123,29 +98,16 @@ namespace ProyectoDojoGeko.Data
 
                             };
                         }
-                        else
-                        {
-                            Console.WriteLine("BCrypt.Verify falló");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Usuario NO encontrado en BD");
                     }
                 }
             }
 
-            Console.WriteLine($"Retornando usuario: {(user != null ? "VÁLIDO" : "NULL")}");
             return user;
         }
 
         // Método para validar el usuario nuevo que va a cambiar su contraseña
         public UsuarioViewModel ValidarUsuarioCambioContrasenia(string usuario, string claveIngresada)
         {
-            Console.WriteLine($"=== DEBUG VALIDAR USUARIO CAMBIO CONTRASEÑA ===");
-            Console.WriteLine($"Usuario recibido: '{usuario}'");
-            Console.WriteLine($"Clave recibida (antes Trim): '{claveIngresada}'");
-
             UsuarioViewModel user = null;
             using (var conn = new SqlConnection(_connectionString))
             {
@@ -162,18 +124,14 @@ namespace ProyectoDojoGeko.Data
                 {
                     if (reader.Read())
                     {
-
-                        Console.WriteLine("Usuario encontrado en BD");
                         string hashGuardado = reader["contrasenia"].ToString()?.Trim();
                         string clavePLana = claveIngresada?.Trim();
 
                         try
                         {
                             bool esValido = BCrypt.Net.BCrypt.Verify(clavePLana, hashGuardado);
-                            Console.WriteLine($"BCrypt.Verify resultado: {esValido}");
                             if (!esValido)
                             {
-                                Console.WriteLine("BCrypt.Verify falló: contraseña incorrecta");
                                 return null;
                             }
 
@@ -184,11 +142,9 @@ namespace ProyectoDojoGeko.Data
                             DateTime? fechaExp = objFechaExp != DBNull.Value ? (DateTime?)Convert.ToDateTime(objFechaExp) : null;
                             if (fechaExp.HasValue && DateTime.Now > fechaExp.Value)
                             {
-                                Console.WriteLine($"Contraseña expirada: FechaExpiracion={fechaExp.Value}, Ahora={DateTime.Now}");
                                 return null;
                             }
 
-                            Console.WriteLine("Validación exitosa - creando usuario");
                             user = new UsuarioViewModel
                             {
                                 IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
@@ -199,17 +155,11 @@ namespace ProyectoDojoGeko.Data
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Error en BCrypt.Verify: {ex.GetType().Name} - {ex.Message}");
+                            // Error en validación
                         }
-
-                    }
-                    else
-                    {
-                        Console.WriteLine("Usuario NO encontrado en BD");
                     }
                 }
             }
-            Console.WriteLine($"Retornando usuario: {(user != null ? "VÁLIDO" : "NULL")}");
             return user;
         }
 

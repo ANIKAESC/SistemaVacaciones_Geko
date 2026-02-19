@@ -33,6 +33,7 @@ namespace ProyectoDojoGeko.Controllers
         private readonly ILogger<SolicitudesController> _logger;
         private readonly IConfiguration _configuration;
         private readonly EmailService _emailService;
+        private readonly daoUsuarioWSAsync _daoUsuario;
         //private readonly daoEmpleadoEquipo _daoEmpleadoEquipo;
 
         /*=================================================   
@@ -58,7 +59,8 @@ namespace ProyectoDojoGeko.Controllers
             IPdfSolicitudService pdfService,
             ILogger<SolicitudesController> logger,
             IConfiguration configuration,
-            EmailService emailService)
+            EmailService emailService,
+            daoUsuarioWSAsync daoUsuario)
         {
             _daoEmpleado = daoEmpleado;
             _daoSolicitud = daoSolicitud;
@@ -73,6 +75,7 @@ namespace ProyectoDojoGeko.Controllers
             _logger = logger;
             _configuration = configuration;
             _emailService = emailService;
+            _daoUsuario = daoUsuario;
         }
 
         #endregion
@@ -1016,10 +1019,19 @@ namespace ProyectoDojoGeko.Controllers
             // Cargar nombre del autorizador si existe
             if (solicitud.Encabezado.IdAutorizador.HasValue)
             {
-                var autorizador = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(solicitud.Encabezado.IdAutorizador.Value);
-                if (autorizador != null)
+                // IdAutorizador es el ID del USUARIO, no del empleado
+                // Primero obtenemos el usuario autorizador
+                var usuarios = await _daoUsuario.ObtenerUsuariosAsync();
+                var usuarioAutorizador = usuarios?.FirstOrDefault(u => u.IdUsuario == solicitud.Encabezado.IdAutorizador.Value);
+                
+                if (usuarioAutorizador != null && usuarioAutorizador.FK_IdEmpleado > 0)
                 {
-                    solicitud.Encabezado.NombreAutorizador = $"{autorizador.NombresEmpleado} {autorizador.ApellidosEmpleado}";
+                    // Ahora obtenemos el empleado asociado al usuario
+                    var autorizador = await _daoEmpleado.ObtenerEmpleadoPorIdAsync(usuarioAutorizador.FK_IdEmpleado);
+                    if (autorizador != null)
+                    {
+                        solicitud.Encabezado.NombreAutorizador = $"{autorizador.NombresEmpleado} {autorizador.ApellidosEmpleado}";
+                    }
                 }
             }
 
@@ -1980,10 +1992,15 @@ namespace ProyectoDojoGeko.Controllers
             {
                 // Verificar que el usuario tenga acceso a esta solicitud
                 var idEmpleadoSesion = HttpContext.Session.GetInt32("IdEmpleado");
-                var rolUsuario = HttpContext.Session.GetString("Rol");
+                var rolesString = HttpContext.Session.GetString("Roles") ?? "";
+                var roles = rolesString.Split(',').Select(r => r.Trim()).ToList();
 
-                // Solo empleados pueden descargar sus propias solicitudes, otros roles pueden descargar cualquiera
-                if (rolUsuario == "Empleado")
+                // Roles administrativos que pueden descargar cualquier PDF
+                var rolesAdministrativos = new[] { "SuperAdministrador", "RRHH", "Autorizador", "TeamLider", "SubTeamLider" };
+                bool esRolAdministrativo = roles.Any(r => rolesAdministrativos.Contains(r));
+
+                // Solo empleados SIN roles administrativos están restringidos a sus propias solicitudes
+                if (!esRolAdministrativo && roles.Contains("Empleado"))
                 {
                     var solicitudEmpleado = await _daoSolicitud.ObtenerDetalleSolicitudAsync(idSolicitud);
                     if (solicitudEmpleado?.Encabezado?.IdEmpleado != idEmpleadoSesion)
@@ -2000,11 +2017,11 @@ namespace ProyectoDojoGeko.Controllers
                 {
                     TempData["ErrorMessage"] = "No se pudo generar el PDF.";
                     // Redirigir según el rol
-                    if (rolUsuario == "Autorizador" || rolUsuario == "TeamLider" || rolUsuario == "SubTeamLider")
+                    if (rolesString == "Autorizador" || rolesString == "TeamLider" || rolesString == "SubTeamLider")
                     {
                         return RedirectToAction("Detalle", new { id = idSolicitud });
                     }
-                    else if (rolUsuario == "RRHH")
+                    else if (rolesString == "RRHH")
                     {
                         return RedirectToAction("DetalleRH", new { id = idSolicitud });
                     }

@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             e.stopPropagation();
         }
+        if (!form) return;
     });
 });
 
@@ -285,7 +286,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Función para manejar errores de red
   window.addEventListener("beforeunload", () => {
     const loginButton = document.getElementById("loginButton")
-    const loginSpinner = document.querySelector(".login-spinner")
+      const loginSpinner = document.querySelector(".login-spinner")
+      const loginText = document.querySelector(".login-text") 
   
     if (loginButton && loginButton.disabled) {
       loginButton.disabled = false

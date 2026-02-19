@@ -19,7 +19,7 @@
                 <i class="fas fa-file-alt"></i>
                 Detalle de Solicitud
             </h1>
-            <p class="page-subtitle">Información detallada sobre la solicitud de vacaciones</p>
+            <p class="page-subtitle">Información detallada sobre la solicitud de días de disponibilidad</p>
         </div>
     </div>
 
@@ -339,7 +339,7 @@
 
                         // Subtítulo - con color más fuerte
                         {
-                            text: 'Información detallada sobre la solicitud de vacaciones',
+                        text: 'Información detallada sobre la solicitud de días de disponibilidad',
                             style: 'subtitle',
                             margin: [0, 0, 0, 20]
                         },
@@ -544,7 +544,7 @@
                 };
 
                 // Generar y descargar el PDF
-                pdfMake.createPdf(docDefinition).download(`Solicitud_Vacaciones_${solicitudData.idSolicitud}_${new Date().toISOString().slice(0, 10)}.pdf`);
+                pdfMake.createPdf(docDefinition).download(`Solicitud_Días_de_Disponibilidad_${solicitudData.idSolicitud}_${new Date().toISOString().slice(0, 10)}.pdf`);
 
                 // Mostrar notificación de éxito
                 mostrarNotificacion("Archivo PDF exportado exitosamente", "success");
